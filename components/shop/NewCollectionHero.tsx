@@ -47,8 +47,8 @@ export function NewCollectionHero() {
   };
 
   return (
-    <section className="w-full bg-white px-5">
-      <div className="w-full mx-auto grid max-w-7xl grid-cols-12 gap-8 py-16">
+    <section className="w-full bg-neutral-100">
+      <div className="w-full mx-auto grid max-w-7xl grid-cols-12 gap-8 py-16 px-5">
         {/* LEFT COLUMN */}
         <div className="col-span-5 flex flex-col justify-between">
           {/* TOP */}
@@ -119,7 +119,7 @@ export function NewCollectionHero() {
             onTouchEnd={onEnd}
           >
             <div
-              className="flex gap-8 transition-transform duration-500 ease-out"
+              className="flex transition-transform duration-500 ease-out"
               style={{
                 transform: `translateX(calc(-${
                   index * STEP
@@ -130,13 +130,13 @@ export function NewCollectionHero() {
                 <Link
                   href="/"
                   key={i}
-                  className="relative h-[450px] w-[345px] shrink-0 bg-white"
+                  className="relative h-[450px] w-[345px] shrink-0 bg-white mr-8 last:mr-0"
                 >
                   <Image
                     src={img}
                     alt={`slide-${i}`}
                     fill
-                    className="object-contain"
+                    className="object-cover"
                   />
                 </Link>
               ))}

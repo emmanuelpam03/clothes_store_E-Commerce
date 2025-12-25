@@ -3,6 +3,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useEffect, useState } from "react";
 import {
   menuIcon,
   navArrow,
@@ -13,8 +14,23 @@ import {
 import { ShoppingBag, UserIcon } from "lucide-react";
 
 export function Navbar() {
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 0);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
-    <header className="w-full bg-white">
+    <header
+      className={`sticky top-0 z-50 w-full bg-neutral-100 ${
+        isScrolled ? "border-b border-gray-300" : ""
+      }`}
+    >
       <div className="mx-auto flex py-5 max-w-7xl items-center justify-between px-4">
         {/* LEFT */}
         <div className="flex items-center gap-4">

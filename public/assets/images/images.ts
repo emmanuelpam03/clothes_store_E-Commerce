@@ -11,5 +11,8 @@ import whiteShirt2 from './whiteShirt2.png'
 import whiteShirt3 from './whiteShirt3.png'
 import whiteShirt4 from './whiteShirt4.png'
 import whiteShirt5 from './whiteShirt5.png'
+import whiteShirt6 from './whiteShirt6.png'
+import soldierShirt from './soldierShirt.png'
 
-export { menuIcon, navArrow, heartIcon, userIcon, shoppingbag, rightArrow, leftArrow, whiteShirt1, blackShirt1, whiteShirt2, whiteShirt3, whiteShirt4, whiteShirt5 }
+
+export { menuIcon, navArrow, heartIcon, userIcon, shoppingbag, rightArrow, leftArrow, whiteShirt1, blackShirt1, whiteShirt2, whiteShirt3, whiteShirt4, whiteShirt5, whiteShirt6, soldierShirt }

@@ -83,10 +83,10 @@ export function NewThisWeek() {
   };
 
   return (
-    <section className="w-full bg-neutral-100 py-16 overflow-hidden">
-      <div className="px-6">
+    <section className="w-full bg-neutral-100">
+      <div className="max-w-7xl mx-auto px-5">
         {/* HEADER */}
-        <div className="mb-8 flex items-center justify-between max-w-7xl mx-auto">
+        <div className="mb-8 flex items-center justify-between">
           <h2 className="text-3xl font-extrabold tracking-tight text-black">
             NEW <br /> THIS WEEK{" "}
             <span className="text-sm font-bold text-blue-600">(50)</span>
@@ -98,7 +98,7 @@ export function NewThisWeek() {
 
         {/* SLIDER */}
         <div
-          className="relative"
+          className="relative overflow-hidden"
           onMouseDown={(e) => onStart(e.clientX)}
           onMouseMove={(e) => onMove(e.clientX)}
           onMouseUp={onEnd}
@@ -114,15 +114,14 @@ export function NewThisWeek() {
               transform: `translateX(calc(-${
                 index * (100 / visible)
               }% + ${dragOffset}px))`,
-              width: `${(PRODUCTS.length / visible) * 100}%`,
             }}
           >
             {PRODUCTS.map((product, i) => (
               <Link
                 href="/"
                 key={i}
-                className="px-3"
-                style={{ width: `${100 / PRODUCTS.length}%` }}
+                className="shrink-0 pr-4 last:pr-0"
+                style={{ width: `${100 / visible}%` }}
               >
                 {/* CARD */}
                 <div className="relative h-[360px] bg-white overflow-hidden">
@@ -134,7 +133,7 @@ export function NewThisWeek() {
                   />
 
                   {/* ADD */}
-                  <button className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full text-black bg-white px-3 py-1 text-sm">
+                  <button className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full text-black bg-white px-3 py-1 text-sm cursor-pointer">
                     +
                   </button>
                 </div>
@@ -153,14 +152,14 @@ export function NewThisWeek() {
           <button
             onClick={prev}
             disabled={index === 0}
-            className="h-8 w-8 border disabled:opacity-30 text-black"
+            className="h-8 w-8 border disabled:opacity-30 disabled:cursor-default text-black cursor-pointer"
           >
             ←
           </button>
           <button
             onClick={next}
             disabled={index === maxIndex}
-            className="h-8 w-8 border disabled:opacity-30 text-black"
+            className="h-8 w-8 border disabled:opacity-30 disabled:cursor-default text-black cursor-pointer"
           >
             →
           </button>
