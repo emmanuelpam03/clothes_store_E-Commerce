@@ -1,6 +1,7 @@
 import { CollectionsGrid } from "@/components/shop/CollectionsGrid";
 import { NewCollectionHero } from "@/components/shop/NewCollectionHero";
 import { NewThisWeek } from "@/components/shop/NewThisWeek";
+import { OurApproach } from "@/components/shop/OurApproach";
 
 export default function ShopPage() {
   return (
@@ -8,6 +9,7 @@ export default function ShopPage() {
       <NewCollectionHero />
       <NewThisWeek />
       <CollectionsGrid />
+      <OurApproach />
     </>
   );
 }
