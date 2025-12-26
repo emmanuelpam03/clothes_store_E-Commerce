@@ -39,8 +39,8 @@ export function Navbar() {
       <div className="mx-auto flex py-3 sm:py-5 max-w-7xl items-center justify-between px-4 sm:px-5">
         {/* LEFT */}
         <div className="flex items-center gap-2 sm:gap-4">
-          <button 
-            aria-label={isMenuOpen ? "Close menu" : "Open menu"} 
+          <button
+            aria-label={isMenuOpen ? "Close menu" : "Open menu"}
             className="rounded-full p-2"
             onClick={toggleMenu}
           >
@@ -50,7 +50,7 @@ export function Navbar() {
           {/* Desktop Nav */}
           <nav className="hidden lg:flex items-center gap-6 text-black text-base tracking-wide font-medium">
             <Link href="/">Home</Link>
-            <Link href="/collections">Collections</Link>
+            <Link href="/products">Products</Link>
             <Link href="/new">New</Link>
           </nav>
 
@@ -58,22 +58,22 @@ export function Navbar() {
           {isMenuOpen && (
             <nav className="absolute left-0 top-full w-full bg-white border-b border-gray-200 lg:hidden shadow-lg">
               <div className="mx-auto max-w-7xl px-4 sm:px-5 py-4 flex flex-col gap-4">
-                <Link 
-                  href="/" 
+                <Link
+                  href="/"
                   className="text-black text-base tracking-wide font-medium hover:text-gray-600"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Home
                 </Link>
-                <Link 
-                  href="/collections" 
+                <Link
+                  href="/collections"
                   className="text-black text-base tracking-wide font-medium hover:text-gray-600"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Collections
                 </Link>
-                <Link 
-                  href="/new" 
+                <Link
+                  href="/new"
                   className="text-black text-base tracking-wide font-medium hover:text-gray-600"
                   onClick={() => setIsMenuOpen(false)}
                 >
