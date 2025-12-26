@@ -4,11 +4,11 @@ import Link from "next/link";
 
 export function LandingMinimal() {
   return (
-    <section className="relative min-h-screen w-full bg-neutral-200">
-      <div className="relative mx-auto max-w-7xl px-5 py-6">
+    <section className="relative w-full bg-neutral-200 py-24">
+      <div className="relative mx-auto flex max-w-7xl items-center justify-between px-5">
         {/* LEFT INFO */}
-        <div className="absolute left-5 top-6 space-y-12 text-xs tracking-widest text-neutral-500">
-          <div className="space-y-2 pt-20">
+        <div className="flex flex-col space-y-12 text-xs tracking-widest text-neutral-500">
+          <div className="space-y-2">
             <p className="text-neutral-400">INFO</p>
             <div className="space-y-1">
               <Link href="/pricing">PRICING</Link>
@@ -28,9 +28,11 @@ export function LandingMinimal() {
         </div>
 
         {/* CENTER CONTENT */}
-        <div className="flex min-h-[70vh] flex-col items-center justify-center text-center">
+        <div className="flex flex-col items-center justify-center text-center">
           {/* ICON */}
-          <div className="mb-6 text-neutral-400 text-4xl"><Image src={navArrow} alt="nav-arrow" /></div>
+          <div className="mb-6 text-neutral-400">
+            <Image src={navArrow} alt="nav-arrow" width={40} height={40} />
+          </div>
 
           {/* TITLE */}
           <h1 className="text-6xl font-extrabold leading-none tracking-tight text-black">
@@ -44,7 +46,7 @@ export function LandingMinimal() {
         </div>
 
         {/* RIGHT META */}
-        <div className="absolute right-5 top-32 space-y-2 text-xs tracking-widest text-neutral-400">
+        <div className="flex flex-col space-y-2 text-xs tracking-widest text-neutral-400">
           <p>TECHNOLOGIES</p>
         </div>
       </div>
