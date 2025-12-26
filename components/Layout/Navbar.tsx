@@ -15,6 +15,7 @@ import { ShoppingBag, UserIcon } from "lucide-react";
 
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -25,6 +26,10 @@ export function Navbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
   return (
     <header
       className={`sticky top-0 z-50 w-full bg-white ${
@@ -34,15 +39,49 @@ export function Navbar() {
       <div className="mx-auto flex py-3 sm:py-5 max-w-7xl items-center justify-between px-4 sm:px-5">
         {/* LEFT */}
         <div className="flex items-center gap-2 sm:gap-4">
-          <button aria-label="Open menu" className="rounded-full p-2">
+          <button 
+            aria-label={isMenuOpen ? "Close menu" : "Open menu"} 
+            className="rounded-full p-2"
+            onClick={toggleMenu}
+          >
             <Image src={menuIcon} alt="menu" width={20} height={20} />
           </button>
 
+          {/* Desktop Nav */}
           <nav className="hidden lg:flex items-center gap-6 text-black text-base tracking-wide font-medium">
             <Link href="/">Home</Link>
             <Link href="/collections">Collections</Link>
             <Link href="/new">New</Link>
           </nav>
+
+          {/* Mobile Menu */}
+          {isMenuOpen && (
+            <nav className="absolute left-0 top-full w-full bg-white border-b border-gray-200 lg:hidden shadow-lg">
+              <div className="mx-auto max-w-7xl px-4 sm:px-5 py-4 flex flex-col gap-4">
+                <Link 
+                  href="/" 
+                  className="text-black text-base tracking-wide font-medium hover:text-gray-600"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Home
+                </Link>
+                <Link 
+                  href="/collections" 
+                  className="text-black text-base tracking-wide font-medium hover:text-gray-600"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Collections
+                </Link>
+                <Link 
+                  href="/new" 
+                  className="text-black text-base tracking-wide font-medium hover:text-gray-600"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  New
+                </Link>
+              </div>
+            </nav>
+          )}
         </div>
 
         {/* CENTER */}
