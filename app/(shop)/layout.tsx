@@ -1,5 +1,5 @@
 import '../globals.css'
-import { Navbar } from "@/components/Navbar/Navbar";
+import { Navbar } from "@/components/Layout/Navbar";
 
 export default function ShopLayout({
   children,
