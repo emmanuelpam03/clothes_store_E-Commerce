@@ -83,15 +83,18 @@ export function NewThisWeek() {
   };
 
   return (
-    <section className="w-full bg-neutral-100">
+    <section className="w-full bg-neutral-100 py-8 sm:py-16">
       <div className="max-w-7xl mx-auto px-5">
         {/* HEADER */}
-        <div className="mb-8 flex items-center justify-between">
-          <h2 className="text-3xl font-extrabold tracking-tight text-black">
-            NEW <br /> THIS WEEK{" "}
+        <div className="mb-6 sm:mb-8 flex items-center justify-between">
+          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-black">
+            NEW <br className="hidden sm:block" /> THIS WEEK{" "}
             <span className="text-sm font-bold text-blue-600">(50)</span>
           </h2>
-          <Link href="/" className="text-sm text-black hover:underline">
+          <Link
+            href="/"
+            className="text-xs sm:text-sm text-black hover:underline"
+          >
             See All
           </Link>
         </div>
@@ -124,7 +127,7 @@ export function NewThisWeek() {
                 style={{ width: `${100 / visible}%` }}
               >
                 {/* CARD */}
-                <div className="relative h-[360px] bg-white overflow-hidden">
+                <div className="relative h-[280px] sm:h-[320px] md:h-[360px] bg-white overflow-hidden">
                   <Image
                     src={product.image}
                     alt={product.name}
@@ -138,7 +141,7 @@ export function NewThisWeek() {
                   </button>
                 </div>
 
-                <div className="mt-3 text-sm text-black">
+                <div className="mt-3 text-xs sm:text-sm text-black">
                   <p className="font-medium">{product.name}</p>
                   <p className="font-semibold">{product.price}</p>
                 </div>

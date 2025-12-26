@@ -42,29 +42,29 @@ export function CollectionsGrid() {
     <section className="w-full bg-neutral-100 py-16">
       <div className="mx-auto max-w-7xl px-5">
         {/* HEADER */}
-        <div className="mb-10">
+        <div className="mb-8 sm:mb-10">
           <div>
-            <h1 className="text-5xl font-extrabold leading-none tracking-tight text-black">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold leading-none tracking-tight text-black">
               XIV <br /> COLLECTIONS <br /> 23–24
             </h1>
           </div>
 
           {/* CATEGORIES AND FILTERS ROW */}
-          <div className="mt-6 flex items-center justify-between">
+          <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             {/* CATEGORIES */}
-            <div className="flex gap-6 text-sm text-neutral-500">
-              <button className="text-black">(ALL)</button>
-              <button>Men</button>
-              <button>Women</button>
-              <button>Kid</button>
+            <div className="flex gap-4 sm:gap-6 text-xs sm:text-sm text-neutral-500 overflow-x-auto">
+              <button className="text-black whitespace-nowrap">(ALL)</button>
+              <button className="whitespace-nowrap">Men</button>
+              <button className="whitespace-nowrap">Women</button>
+              <button className="whitespace-nowrap">Kid</button>
             </div>
 
             {/* FILTER / SORT */}
-            <div className="flex items-center justify-center gap-32 text-sm text-neutral-500">
-              <p className="tex-black">Filters (+)</p>
+            <div className="flex items-start sm:items-center gap-6 sm:gap-32 text-xs sm:text-sm text-neutral-500">
+              <p className="text-black">Filters (+)</p>
               <div>
-                <p className="mt-2 text-black">Sorts (-)</p>
-                <p className="mt-2">Less to more</p>
+                <p className="mt-0 sm:mt-2 text-black">Sorts (-)</p>
+                <p className="mt-1 sm:mt-2">Less to more</p>
                 <p>More to Less</p>
               </div>
             </div>
@@ -72,11 +72,11 @@ export function CollectionsGrid() {
         </div>
 
         {/* GRID */}
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-3">
           {PRODUCTS.map((product, i) => (
             <div key={i} className="w-full">
               {/* IMAGE CARD */}
-              <div className="relative h-[420px] bg-white">
+              <div className="relative h-[300px] sm:h-[360px] md:h-[420px] bg-white">
                 <Image
                   src={product.image}
                   alt={product.name}

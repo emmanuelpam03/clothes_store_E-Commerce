@@ -48,30 +48,29 @@ export function NewCollectionHero() {
 
   return (
     <section className="w-full bg-neutral-100">
-      <div className="w-full mx-auto grid max-w-7xl grid-cols-12 gap-8 py-16 px-5">
-        {/* LEFT COLUMN */}
-        <div className="col-span-5 flex flex-col justify-between">
-          {/* TOP */}
-          <div className="space-y-6">
-            <nav className="flex flex-col space-y-1 text-xs tracking-widest text-black">
-              <Link href="/men">MEN</Link>
-              <Link href="/women">WOMEN</Link>
-              <Link href="/kids">KIDS</Link>
-            </nav>
+      <div className="w-full mx-auto max-w-7xl px-5 py-8 sm:py-16">
+        {/* Mobile & Tablet: Stacked Layout */}
+        <div className="lg:hidden space-y-6">
+          {/* CATEGORIES */}
+          <nav className="flex flex-col space-y-1 text-xs tracking-widest text-black">
+            <Link href="/men">MEN</Link>
+            <Link href="/women">WOMEN</Link>
+            <Link href="/kids">KIDS</Link>
+          </nav>
 
-            <div className="flex w-64 items-center gap-2 rounded bg-neutral-200 px-3 py-2 text-xs text-black">
-              <SearchIcon size={14} />
-              <input
-                type="text"
-                placeholder="Search"
-                className="text-black outline-none border-none w-full"
-              />
-            </div>
+          {/* SEARCH */}
+          <div className="flex w-full items-center gap-2 rounded bg-neutral-200 px-3 py-2 text-xs text-black">
+            <SearchIcon size={14} />
+            <input
+              type="text"
+              placeholder="Search"
+              className="text-black outline-none border-none w-full bg-transparent"
+            />
           </div>
 
-          {/* MIDDLE */}
-          <div className="space-y-4">
-            <h1 className="text-5xl font-extrabold leading-tight tracking-tight text-black">
+          {/* TITLE */}
+          <div className="space-y-2">
+            <h1 className="text-4xl sm:text-5xl font-extrabold leading-tight tracking-tight text-black">
               NEW <br /> COLLECTION
             </h1>
             <p className="text-sm tracking-wide text-black">
@@ -79,37 +78,9 @@ export function NewCollectionHero() {
             </p>
           </div>
 
-          {/* BOTTOM */}
-          <div className="flex items-center gap-6">
-            <button className="flex items-center gap-3 rounded bg-neutral-200 px-5 py-2 text-xs font-medium text-black cursor-pointer">
-              Go To Shop
-              <Image src={rightArrow} alt="arrow" />
-            </button>
-
-            <div className="flex gap-2">
-              <button
-                onClick={prev}
-                className="flex h-8 w-8 items-center justify-center rounded border text-black cursor-pointer"
-              >
-                ←
-              </button>
-              <button
-                onClick={next}
-                className="flex h-8 w-8 items-center justify-center rounded border text-black cursor-pointer"
-              >
-                →
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* RIGHT COLUMN */}
-        <div className="col-span-7 flex flex-col justify-between">
-          <div />
-
-          {/* SLIDER */}
+          {/* SLIDER - Mobile */}
           <div
-            className="relative overflow-hidden"
+            className="relative overflow-hidden -mx-5 px-5"
             onMouseDown={(e) => onStart(e.clientX)}
             onMouseMove={(e) => onMove(e.clientX)}
             onMouseUp={onEnd}
@@ -122,15 +93,16 @@ export function NewCollectionHero() {
               className="flex transition-transform duration-500 ease-out"
               style={{
                 transform: `translateX(calc(-${
-                  index * STEP
-                }px + ${dragOffset}px))`,
+                  index * (100 / 1)
+                }% + ${dragOffset}px))`,
               }}
             >
               {SLIDES.map((img, i) => (
                 <Link
                   href="/"
                   key={i}
-                  className="relative h-[450px] w-[345px] shrink-0 bg-white mr-8 last:mr-0"
+                  className="relative h-[400px] sm:h-[450px] w-full shrink-0 bg-white mr-4"
+                  style={{ minWidth: "calc(100% - 16px)" }}
                 >
                   <Image
                     src={img}
@@ -143,7 +115,111 @@ export function NewCollectionHero() {
             </div>
           </div>
 
-          <div />
+          {/* BUTTON */}
+          <button className="flex items-center gap-3 rounded bg-neutral-200 px-5 py-2 text-xs font-medium text-black cursor-pointer w-full justify-center sm:w-auto">
+            Go To Shop
+            <Image src={rightArrow} alt="arrow" width={16} height={16} />
+          </button>
+        </div>
+
+        {/* Desktop: Grid Layout */}
+        <div className="hidden lg:grid grid-cols-12 gap-8">
+          {/* LEFT COLUMN */}
+          <div className="col-span-5 flex flex-col justify-between">
+            {/* TOP */}
+            <div className="space-y-6">
+              <nav className="flex flex-col space-y-1 text-xs tracking-widest text-black">
+                <Link href="/men">MEN</Link>
+                <Link href="/women">WOMEN</Link>
+                <Link href="/kids">KIDS</Link>
+              </nav>
+
+              <div className="flex w-64 items-center gap-2 rounded bg-neutral-200 px-3 py-2 text-xs text-black">
+                <SearchIcon size={14} />
+                <input
+                  type="text"
+                  placeholder="Search"
+                  className="text-black outline-none border-none w-full bg-transparent"
+                />
+              </div>
+            </div>
+
+            {/* MIDDLE */}
+            <div className="space-y-4">
+              <h1 className="text-5xl font-extrabold leading-tight tracking-tight text-black">
+                NEW <br /> COLLECTION
+              </h1>
+              <p className="text-sm tracking-wide text-black">
+                Summer <br /> 2025
+              </p>
+            </div>
+
+            {/* BOTTOM */}
+            <div className="flex items-center gap-6">
+              <button className="flex items-center gap-3 rounded bg-neutral-200 px-5 py-2 text-xs font-medium text-black cursor-pointer">
+                Go To Shop
+                <Image src={rightArrow} alt="arrow" width={16} height={16} />
+              </button>
+
+              <div className="flex gap-2">
+                <button
+                  onClick={prev}
+                  className="flex h-8 w-8 items-center justify-center rounded border text-black cursor-pointer"
+                >
+                  ←
+                </button>
+                <button
+                  onClick={next}
+                  className="flex h-8 w-8 items-center justify-center rounded border text-black cursor-pointer"
+                >
+                  →
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT COLUMN */}
+          <div className="col-span-7 flex flex-col justify-between">
+            <div />
+
+            {/* SLIDER */}
+            <div
+              className="relative overflow-hidden"
+              onMouseDown={(e) => onStart(e.clientX)}
+              onMouseMove={(e) => onMove(e.clientX)}
+              onMouseUp={onEnd}
+              onMouseLeave={onEnd}
+              onTouchStart={(e) => onStart(e.touches[0].clientX)}
+              onTouchMove={(e) => onMove(e.touches[0].clientX)}
+              onTouchEnd={onEnd}
+            >
+              <div
+                className="flex transition-transform duration-500 ease-out"
+                style={{
+                  transform: `translateX(calc(-${
+                    index * STEP
+                  }px + ${dragOffset}px))`,
+                }}
+              >
+                {SLIDES.map((img, i) => (
+                  <Link
+                    href="/"
+                    key={i}
+                    className="relative h-[450px] w-[345px] shrink-0 bg-white mr-8 last:mr-0"
+                  >
+                    <Image
+                      src={img}
+                      alt={`slide-${i}`}
+                      fill
+                      className="object-cover"
+                    />
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            <div />
+          </div>
         </div>
       </div>
     </section>
