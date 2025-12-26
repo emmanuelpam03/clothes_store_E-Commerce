@@ -8,7 +8,7 @@ import {
 import { SearchIcon } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const SLIDES = [whiteShirt1, blackShirt1, whiteShirt1, blackShirt1];
 
@@ -21,13 +21,28 @@ export function NewCollectionHero() {
   const [index, setIndex] = useState(0);
   const [dragStart, setDragStart] = useState<number | null>(null);
   const [dragOffset, setDragOffset] = useState(0);
+  const [visible, setVisible] = useState(1); // Mobile: 1, Tablet: 2, Desktop: 1
+
+  // Responsive visible count for mobile/tablet slider
+  useEffect(() => {
+    const update = () => {
+      if (window.innerWidth < 640) setVisible(1); // Mobile
+      else if (window.innerWidth < 1024) setVisible(2); // Tablet
+      else setVisible(1); // Desktop uses fixed width slider
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  const maxIndex = Math.max(SLIDES.length - visible, 0);
 
   const prev = () => {
-    setIndex((i) => (i === 0 ? SLIDES.length - 1 : i - 1));
+    setIndex((i) => Math.max(i - 1, 0));
   };
 
   const next = () => {
-    setIndex((i) => (i === SLIDES.length - 1 ? 0 : i + 1));
+    setIndex((i) => Math.min(i + 1, maxIndex));
   };
 
   // 🔹 Drag logic
@@ -78,7 +93,7 @@ export function NewCollectionHero() {
             </p>
           </div>
 
-          {/* SLIDER - Mobile */}
+          {/* SLIDER - Mobile & Tablet */}
           <div
             className="relative overflow-hidden -mx-5 px-5"
             onMouseDown={(e) => onStart(e.clientX)}
@@ -90,10 +105,10 @@ export function NewCollectionHero() {
             onTouchEnd={onEnd}
           >
             <div
-              className="flex transition-transform duration-500 ease-out"
+              className="flex transition-transform duration-500 ease-out gap-4"
               style={{
                 transform: `translateX(calc(-${
-                  index * (100 / 1)
+                  index * (100 / visible)
                 }% + ${dragOffset}px))`,
               }}
             >
@@ -101,8 +116,12 @@ export function NewCollectionHero() {
                 <Link
                   href="/"
                   key={i}
-                  className="relative h-[400px] sm:h-[450px] w-full shrink-0 bg-white mr-4"
-                  style={{ minWidth: "calc(100% - 16px)" }}
+                  className="relative h-[350px] sm:h-[380px] md:h-[400px] shrink-0 bg-white"
+                  style={{
+                    width: `calc((100% - ${
+                      (visible - 1) * 16
+                    }px) / ${visible})`,
+                  }}
                 >
                   <Image
                     src={img}
@@ -113,6 +132,24 @@ export function NewCollectionHero() {
                 </Link>
               ))}
             </div>
+          </div>
+
+          {/* SLIDER CONTROLS - Mobile & Tablet */}
+          <div className="flex justify-center gap-2">
+            <button
+              onClick={prev}
+              disabled={index === 0}
+              className="flex h-8 w-8 items-center justify-center rounded border text-black cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              ←
+            </button>
+            <button
+              onClick={next}
+              disabled={index === maxIndex}
+              className="flex h-8 w-8 items-center justify-center rounded border text-black cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed"
+            >
+              →
+            </button>
           </div>
 
           {/* BUTTON */}
