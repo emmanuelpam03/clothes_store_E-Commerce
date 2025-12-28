@@ -9,9 +9,9 @@ import {
   product4,
   product5,
   product6,
-  product7,
 } from "@/public/assets/images/images";
-import { Search } from "lucide-react";
+import { Search, Heart } from "lucide-react";
+import { useState } from "react";
 
 type Product = {
   image: StaticImageData;
@@ -57,12 +57,6 @@ const PRODUCTS: Product[] = [
     name: "Basic Slim Fit T-Shirt",
     price: "$199",
   },
-  {
-    image: product7,
-    category: "Crewneck T-Shirt",
-    name: "Basic Heavy Weight T-Shirt",
-    price: "$199",
-  },
 ];
 
 const CATEGORIES = [
@@ -77,6 +71,22 @@ const CATEGORIES = [
 ];
 
 export default function ProductsPageComponent() {
+  const [favorites, setFavorites] = useState<Set<number>>(new Set());
+
+  const toggleFavorite = (index: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setFavorites((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
+  };
+
   return (
     <section className="w-full bg-neutral-100 py-16">
       <div className="mx-auto max-w-7xl px-6">
@@ -151,7 +161,7 @@ export default function ProductsPageComponent() {
             {/* OTHER FILTER HEADERS */}
             {[
               "Category",
-              "Colors",
+              // "Colors",
               "Price Range",
               "Collections",
               "Tags",
@@ -171,13 +181,28 @@ export default function ProductsPageComponent() {
           <div className="col-span-12 md:col-span-9 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {PRODUCTS.map((product, i) => (
               <Link key={i} href={`/products/${i}`}>
-                <div className="relative h-[420px] bg-white">
+                <div className="relative h-[420px] bg-white group">
                   <Image
                     src={product.image}
                     alt={product.name}
                     fill
                     className="object-cover"
                   />
+
+                  {/* FAVORITE BUTTON */}
+                  <button
+                    onClick={(e) => toggleFavorite(i, e)}
+                    className="absolute top-4 right-4 p-2 rounded-full bg-white/80 hover:bg-white transition-colors z-10"
+                    aria-label="Add to favorites"
+                  >
+                    <Heart
+                      className={`h-5 w-5 ${
+                        favorites.has(i)
+                          ? "fill-red-500 text-red-500"
+                          : "text-black"
+                      }`}
+                    />
+                  </button>
 
                   {/* ADD */}
                   <button className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white px-3 py-1 text-sm text-black">

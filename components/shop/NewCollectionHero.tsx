@@ -5,7 +5,7 @@ import {
   rightArrow,
   whiteShirt1,
 } from "@/public/assets/images/images";
-import { SearchIcon } from "lucide-react";
+import { SearchIcon, Heart } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState, useEffect } from "react";
@@ -22,6 +22,21 @@ export function NewCollectionHero() {
   const [dragStart, setDragStart] = useState<number | null>(null);
   const [dragOffset, setDragOffset] = useState(0);
   const [visible, setVisible] = useState(1); // Mobile: 1, Tablet: 2, Desktop: 1
+  const [favorites, setFavorites] = useState<Set<number>>(new Set());
+
+  const toggleFavorite = (index: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setFavorites((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
+  };
 
   // Responsive visible count for mobile/tablet slider
   useEffect(() => {
@@ -116,7 +131,7 @@ export function NewCollectionHero() {
                 <Link
                   href="/"
                   key={i}
-                  className="relative h-[350px] sm:h-[380px] md:h-[400px] shrink-0 bg-white"
+                  className="relative h-[350px] sm:h-[380px] md:h-[400px] shrink-0 bg-white group"
                   style={{
                     width: `calc((100% - ${
                       (visible - 1) * 16
@@ -129,6 +144,20 @@ export function NewCollectionHero() {
                     fill
                     className="object-cover"
                   />
+                  {/* FAVORITE BUTTON */}
+                  <button
+                    onClick={(e) => toggleFavorite(i, e)}
+                    className="absolute top-4 right-4 p-2 rounded-full bg-white/80 hover:bg-white transition-colors z-10"
+                    aria-label="Add to favorites"
+                  >
+                    <Heart
+                      className={`h-5 w-5 ${
+                        favorites.has(i)
+                          ? "fill-red-500 text-red-500"
+                          : "text-black"
+                      }`}
+                    />
+                  </button>
                 </Link>
               ))}
             </div>
@@ -242,7 +271,7 @@ export function NewCollectionHero() {
                   <Link
                     href="/"
                     key={i}
-                    className="relative h-[450px] w-[345px] shrink-0 bg-white mr-8 last:mr-0"
+                    className="relative h-[450px] w-[345px] shrink-0 bg-white mr-8 last:mr-0 group"
                   >
                     <Image
                       src={img}
@@ -250,6 +279,20 @@ export function NewCollectionHero() {
                       fill
                       className="object-cover"
                     />
+                    {/* FAVORITE BUTTON */}
+                    <button
+                      onClick={(e) => toggleFavorite(i, e)}
+                      className="absolute top-4 right-4 p-2 rounded-full bg-white/80 hover:bg-white transition-colors z-10"
+                      aria-label="Add to favorites"
+                    >
+                      <Heart
+                        className={`h-5 w-5 ${
+                          favorites.has(i)
+                            ? "fill-red-500 text-red-500"
+                            : "text-black"
+                        }`}
+                      />
+                    </button>
                   </Link>
                 ))}
               </div>

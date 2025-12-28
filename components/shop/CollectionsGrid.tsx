@@ -7,7 +7,8 @@ import {
   whiteShirt6,
   soldierShirt,
 } from "@/public/assets/images/images";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Heart } from "lucide-react";
+import { useState } from "react";
 
 type Product = {
   image: StaticImageData;
@@ -38,6 +39,22 @@ const PRODUCTS: Product[] = [
 ];
 
 export function CollectionsGrid() {
+  const [favorites, setFavorites] = useState<Set<number>>(new Set());
+
+  const toggleFavorite = (index: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setFavorites((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
+  };
+
   return (
     <section className="w-full bg-neutral-100 py-16">
       <div className="mx-auto max-w-7xl px-5">
@@ -76,13 +93,28 @@ export function CollectionsGrid() {
           {PRODUCTS.map((product, i) => (
             <div key={i} className="w-full">
               {/* IMAGE CARD */}
-              <div className="relative h-[300px] sm:h-[360px] md:h-[420px] bg-white">
+              <div className="relative h-[300px] sm:h-[360px] md:h-[420px] bg-white group">
                 <Image
                   src={product.image}
                   alt={product.name}
                   fill
                   className="object-cover"
                 />
+
+                {/* FAVORITE BUTTON */}
+                <button
+                  onClick={(e) => toggleFavorite(i, e)}
+                  className="absolute top-4 right-4 p-2 rounded-full bg-white/80 hover:bg-white transition-colors z-10"
+                  aria-label="Add to favorites"
+                >
+                  <Heart
+                    className={`h-5 w-5 ${
+                      favorites.has(i)
+                        ? "fill-red-500 text-red-500"
+                        : "text-black"
+                    }`}
+                  />
+                </button>
 
                 {/* ADD */}
                 <button className="absolute bottom-4 left-1/2 -translate-x-1/2 text-lg text-neutral-600">

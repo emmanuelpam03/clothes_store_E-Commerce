@@ -10,6 +10,7 @@ import {
   whiteShirt5,
 } from "@/public/assets/images/images";
 import Link from "next/link";
+import { Heart } from "lucide-react";
 
 type Product = {
   image: StaticImageData;
@@ -52,6 +53,21 @@ export function NewThisWeek() {
   const [visible, setVisible] = useState(4);
   const [dragStart, setDragStart] = useState<number | null>(null);
   const [dragOffset, setDragOffset] = useState(0);
+  const [favorites, setFavorites] = useState<Set<number>>(new Set());
+
+  const toggleFavorite = (index: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setFavorites((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
+  };
 
   // Responsive card count
   useEffect(() => {
@@ -127,13 +143,28 @@ export function NewThisWeek() {
                 style={{ width: `${100 / visible}%` }}
               >
                 {/* CARD */}
-                <div className="relative h-[280px] sm:h-[320px] md:h-[360px] bg-white overflow-hidden">
+                <div className="relative h-[280px] sm:h-[320px] md:h-[360px] bg-white overflow-hidden group">
                   <Image
                     src={product.image}
                     alt={product.name}
                     fill
                     className="object-cover"
                   />
+
+                  {/* FAVORITE BUTTON */}
+                  <button
+                    onClick={(e) => toggleFavorite(i, e)}
+                    className="absolute top-4 right-4 p-2 rounded-full bg-white/80 hover:bg-white transition-colors z-10"
+                    aria-label="Add to favorites"
+                  >
+                    <Heart
+                      className={`h-5 w-5 ${
+                        favorites.has(i)
+                          ? "fill-red-500 text-red-500"
+                          : "text-black"
+                      }`}
+                    />
+                  </button>
 
                   {/* ADD */}
                   <button className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full text-black bg-white px-3 py-1 text-sm cursor-pointer">
