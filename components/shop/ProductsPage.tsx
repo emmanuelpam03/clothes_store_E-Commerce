@@ -3,11 +3,13 @@
 import Image, { StaticImageData } from "next/image";
 import Link from "next/link";
 import {
-  whiteShirt1,
-  whiteShirt2,
-  whiteShirt3,
-  whiteShirt4,
-  whiteShirt5,
+  product1,
+  product2,
+  product3,
+  product4,
+  product5,
+  product6,
+  product7,
 } from "@/public/assets/images/images";
 import { Search } from "lucide-react";
 
@@ -20,31 +22,43 @@ type Product = {
 
 const PRODUCTS: Product[] = [
   {
-    image: whiteShirt1,
+    image: product1,
     category: "Cotton T-Shirt",
     name: "Basic Slim Fit T-Shirt",
     price: "$199",
   },
   {
-    image: whiteShirt2,
+    image: product2,
     category: "Crewneck T-Shirt",
     name: "Basic Heavy Weight T-Shirt",
     price: "$199",
   },
   {
-    image: whiteShirt3,
+    image: product3,
     category: "Cotton T-Shirt",
     name: "Full Sleeve Zipper",
     price: "$199",
   },
   {
-    image: whiteShirt4,
+    image: product4,
+    category: "Cotton T-Shirt",
+    name: "Full Sleeve Zipper",
+    price: "$199",
+  },
+  {
+    image: product5,
+    category: "Cotton T-Shirt",
+    name: "Full Sleeve Zipper",
+    price: "$199",
+  },
+  {
+    image: product6,
     category: "Cotton T-Shirt",
     name: "Basic Slim Fit T-Shirt",
     price: "$199",
   },
   {
-    image: whiteShirt5,
+    image: product7,
     category: "Crewneck T-Shirt",
     name: "Basic Heavy Weight T-Shirt",
     price: "$199",
