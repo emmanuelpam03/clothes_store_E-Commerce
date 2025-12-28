@@ -104,7 +104,7 @@ export function CollectionsGrid() {
                 {/* FAVORITE BUTTON */}
                 <button
                   onClick={(e) => toggleFavorite(i, e)}
-                  className="absolute top-4 right-4 p-2 rounded-full bg-white/80 hover:bg-white transition-colors z-10"
+                  className="absolute top-4 right-4 p-2 rounded-full bg-white/80 hover:bg-white transition-colors z-10 cursor-pointer"
                   aria-label="Add to favorites"
                 >
                   <Heart
