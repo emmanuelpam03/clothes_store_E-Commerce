@@ -10,7 +10,7 @@ import {
   product5,
   product6,
 } from "@/public/assets/images/images";
-import { Search, Heart } from "lucide-react";
+import { Search, Heart, ChevronDown } from "lucide-react";
 import { useState } from "react";
 
 type Product = {
@@ -72,6 +72,12 @@ const CATEGORIES = [
 
 export default function ProductsPageComponent() {
   const [favorites, setFavorites] = useState<Set<number>>(new Set());
+  const [expandedFilters, setExpandedFilters] = useState<Set<string>>(
+    new Set(["Category", "Price Range"])
+  );
+
+  // Add state for price range
+  const [maxPrice, setMaxPrice] = useState(500);
 
   const toggleFavorite = (index: number, e: React.MouseEvent) => {
     e.preventDefault();
@@ -85,6 +91,24 @@ export default function ProductsPageComponent() {
       }
       return next;
     });
+  };
+
+  const toggleFilter = (filterName: string) => {
+    setExpandedFilters((prev) => {
+      const next = new Set(prev);
+      if (next.has(filterName)) {
+        next.delete(filterName);
+      } else {
+        next.add(filterName);
+      }
+      return next;
+    });
+  };
+
+  const isExpanded = (filterName: string) => expandedFilters.has(filterName);
+
+  const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setMaxPrice(Number(e.target.value));
   };
 
   return (
@@ -158,23 +182,164 @@ export default function ProductsPageComponent() {
               </div>
             </div>
 
-            {/* OTHER FILTER HEADERS */}
-            {[
-              "Category",
-              // "Colors",
-              "Price Range",
-              "Collections",
-              "Tags",
-              "Ratings",
-            ].map((label) => (
+            {/* CATEGORY FILTER */}
+            <div>
               <button
-                key={label}
+                onClick={() => toggleFilter("Category")}
                 className="flex w-full items-center justify-between text-sm font-semibold text-black"
               >
-                {label}
-                <span>›</span>
+                Category
+                <ChevronDown
+                  className={`h-4 w-4 transition-transform ${
+                    isExpanded("Category") ? "" : "-rotate-90"
+                  }`}
+                />
               </button>
-            ))}
+              {isExpanded("Category") && (
+                <div className="mt-4 space-y-2 text-sm text-black">
+                  {CATEGORIES.map((cat) => (
+                    <label key={cat} className="flex items-center gap-2">
+                      <input type="checkbox" />
+                      {cat}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* PRICE RANGE FILTER - UPDATED WITH INTERACTIVE SLIDER */}
+            <div>
+              <button
+                onClick={() => toggleFilter("Price Range")}
+                className="flex w-full items-center justify-between text-sm font-semibold text-black"
+              >
+                Price Range
+                <ChevronDown
+                  className={`h-4 w-4 transition-transform ${
+                    isExpanded("Price Range") ? "" : "-rotate-90"
+                  }`}
+                />
+              </button>
+              {isExpanded("Price Range") && (
+                <div className="mt-4 space-y-3">
+                  <div className="flex items-center gap-2 text-sm text-black">
+                    <input
+                      type="range"
+                      min="0"
+                      max="1000"
+                      value={maxPrice}
+                      onChange={handlePriceChange}
+                      className="w-full accent-black cursor-pointer"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-neutral-500">
+                    <span>$0</span>
+                    <span>${maxPrice}</span>
+                  </div>
+                  <div className="text-center text-sm text-black font-medium">
+                    Range: $0 - ${maxPrice}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* COLLECTIONS FILTER */}
+            <div>
+              <button
+                onClick={() => toggleFilter("Collections")}
+                className="flex w-full items-center justify-between text-sm font-semibold text-black"
+              >
+                Collections
+                <ChevronDown
+                  className={`h-4 w-4 transition-transform ${
+                    isExpanded("Collections") ? "" : "-rotate-90"
+                  }`}
+                />
+              </button>
+              {isExpanded("Collections") && (
+                <div className="mt-4 space-y-2 text-sm text-black">
+                  {[
+                    "Spring 2024",
+                    "Summer 2024",
+                    "Fall 2024",
+                    "Winter 2024",
+                  ].map((collection) => (
+                    <label key={collection} className="flex items-center gap-2">
+                      <input type="checkbox" />
+                      {collection}
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* TAGS FILTER */}
+            <div>
+              <button
+                onClick={() => toggleFilter("Tags")}
+                className="flex w-full items-center justify-between text-sm font-semibold text-black"
+              >
+                Tags
+                <ChevronDown
+                  className={`h-4 w-4 transition-transform ${
+                    isExpanded("Tags") ? "" : "-rotate-90"
+                  }`}
+                />
+              </button>
+              {isExpanded("Tags") && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {["Casual", "Formal", "Sport", "Vintage", "Modern"].map(
+                    (tag) => (
+                      <button
+                        key={tag}
+                        className="rounded border border-neutral-300 px-2 py-1 text-xs text-black hover:bg-black hover:text-white"
+                      >
+                        {tag}
+                      </button>
+                    )
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* RATINGS FILTER */}
+            <div>
+              <button
+                onClick={() => toggleFilter("Ratings")}
+                className="flex w-full items-center justify-between text-sm font-semibold text-black"
+              >
+                Ratings
+                <ChevronDown
+                  className={`h-4 w-4 transition-transform ${
+                    isExpanded("Ratings") ? "" : "-rotate-90"
+                  }`}
+                />
+              </button>
+              {isExpanded("Ratings") && (
+                <div className="mt-4 space-y-2 text-sm text-black">
+                  {[5, 4, 3, 2, 1].map((rating) => (
+                    <label key={rating} className="flex items-center gap-2">
+                      <input type="checkbox" />
+                      <div className="flex">
+                        {[...Array(5)].map((_, i) => (
+                          <span
+                            key={i}
+                            className={`text-yellow-400 ${
+                              i < rating ? "fill-current" : ""
+                            }`}
+                          >
+                            ★
+                          </span>
+                        ))}
+                      </div>
+                      <span className="text-xs text-neutral-500">
+                        ({(6 - rating) * 15})
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
           </aside>
 
           {/* PRODUCTS GRID */}
