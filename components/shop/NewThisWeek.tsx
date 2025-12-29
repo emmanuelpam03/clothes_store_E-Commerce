@@ -137,7 +137,7 @@ export function NewThisWeek() {
           >
             {PRODUCTS.map((product, i) => (
               <Link
-                href="/"
+                href={`/products/${i}`}
                 key={i}
                 className="shrink-0 pr-4 last:pr-0"
                 style={{ width: `${100 / visible}%` }}

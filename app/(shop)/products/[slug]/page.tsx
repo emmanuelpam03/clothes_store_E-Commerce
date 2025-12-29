@@ -1,11 +1,9 @@
-export default function ProductDetailPage({
+export default async function ProductDetailPage({
   params,
 }: {
-  params: { slug: string };
+  params: Promise<{ slug: string }>;
 }) {
-  return (
-    <div>
-      <h1>Product: {params.slug}</h1>
-    </div>
-  );
+  const { slug } = await params;
+
+  return <h1>Product: {slug}</h1>;
 }
