@@ -9,6 +9,7 @@ import {
 } from "@/public/assets/images/images";
 import { ChevronDown, Heart } from "lucide-react";
 import { useState } from "react";
+import Link from "next/link";
 
 type Product = {
   image: StaticImageData;
@@ -91,7 +92,7 @@ export function CollectionsGrid() {
         {/* GRID */}
         <div className="grid grid-cols-1 gap-6 sm:gap-8 md:grid-cols-2 lg:grid-cols-3">
           {PRODUCTS.map((product, i) => (
-            <div key={i} className="w-full">
+            <Link href={`/products/${i}`} key={i} className="w-full">
               {/* IMAGE CARD */}
               <div className="relative h-[300px] sm:h-[360px] md:h-[420px] bg-white group">
                 <Image
@@ -117,7 +118,7 @@ export function CollectionsGrid() {
                 </button>
 
                 {/* ADD */}
-                <button className="absolute bottom-4 left-1/2 -translate-x-1/2 text-lg text-neutral-600">
+                <button className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white px-3 py-1 text-sm text-black cursor-pointer">
                   +
                 </button>
               </div>
@@ -130,7 +131,7 @@ export function CollectionsGrid() {
                 </div>
                 <p className="font-semibold">{product.price}</p>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
 

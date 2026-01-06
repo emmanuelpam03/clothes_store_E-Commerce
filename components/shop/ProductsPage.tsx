@@ -673,7 +673,7 @@ export default function ProductsPageComponent() {
                     {/* FAVORITE BUTTON */}
                     <button
                       onClick={(e) => toggleFavorite(i, e)}
-                      className="absolute top-4 right-4 p-2 rounded-full bg-white/80 hover:bg-white transition-colors z-10"
+                      className="absolute top-4 right-4 p-2 rounded-full bg-white/80 hover:bg-white transition-colors cursor-pointer z-10"
                       aria-label="Add to favorites"
                     >
                       <Heart
@@ -686,7 +686,7 @@ export default function ProductsPageComponent() {
                     </button>
 
                     {/* ADD */}
-                    <button className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white px-3 py-1 text-sm text-black">
+                    <button className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white px-3 py-1 text-sm text-black cursor-pointer">
                       +
                     </button>
                   </div>

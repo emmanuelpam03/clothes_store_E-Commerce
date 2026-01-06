@@ -167,7 +167,7 @@ export function NewThisWeek() {
                   </button>
 
                   {/* ADD */}
-                  <button className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full text-black bg-white px-3 py-1 text-sm cursor-pointer">
+                  <button className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white px-3 py-1 text-sm text-black cursor-pointer">
                     +
                   </button>
                 </div>
