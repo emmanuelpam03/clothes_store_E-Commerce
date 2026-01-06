@@ -32,7 +32,7 @@ export function Navbar() {
 
   return (
     <header
-      className={`sticky top-0 z-50 w-full bg-white ${
+      className={`sticky top-0 z-50 w-full bg-neutral-100 ${
         isScrolled ? "border-b border-gray-300" : ""
       }`}
     >

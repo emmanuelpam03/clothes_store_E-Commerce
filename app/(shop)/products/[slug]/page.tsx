@@ -8,7 +8,7 @@ export default async function ProductDetailPage({
   // const {slug} = await params
   return (
     <div>
-      <h1><ProductInfo /></h1>
+      <ProductInfo />
     </div>
   );
 }

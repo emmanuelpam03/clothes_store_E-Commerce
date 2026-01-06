@@ -1,7 +1,9 @@
+import ShoppingBagPage from "@/components/shop/ShoppingBag";
+
 export default function CartPage() {
   return (
     <div>
-      <h1>Cart</h1>
+      <ShoppingBagPage />
     </div>
   );
 }
