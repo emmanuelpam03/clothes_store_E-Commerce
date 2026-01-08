@@ -1,7 +1,8 @@
+import Checkout from "@/components/shop/CheckoutPage";
 export default function CheckoutPage() {
   return (
     <div>
-      <h1>Checkout</h1>
+      <Checkout />
     </div>
   );
 }
