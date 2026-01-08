@@ -25,7 +25,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
+    <html lang="en" className="no-scrollbar overflow-y-scroll">
       <body className={`${inter.variable} ${interTight.variable} antialiased`}>
         {children}
       </body>

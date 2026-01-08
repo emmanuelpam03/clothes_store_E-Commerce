@@ -28,11 +28,11 @@ export default function ProductPage() {
 
   return (
     <div className="min-h-screen bg-[#f3f3f3] px-4 md:px-10 lg:flex lg:items-center lg:justify-center">
-      <div className="w-full max-w-6xl">
+      <div className="w-full mx-auto max-w-7xl">
         <div
           className="
           grid gap-10
-          lg:grid-cols-[420px_70px_380px]
+          lg:grid-cols-[420px_70px_380px] justify-center items-center
         "
         >
           {/* IMAGE + THUMBS (MOBILE/TABLET STACKED) */}

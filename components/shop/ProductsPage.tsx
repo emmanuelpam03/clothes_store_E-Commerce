@@ -177,7 +177,7 @@ export default function ProductsPageComponent() {
         <div className="mt-12">
           <div className="flex gap-6">
             {/* FILTER SIDEBAR - Desktop always visible */}
-            <aside className="hidden md:block w-64 flex-shrink-0 space-y-10">
+            <aside className="hidden md:block w-64 shrink-0 space-y-10">
               {/* SIZE */}
               <div>
                 <h3 className="mb-4 text-sm font-semibold text-black">Size</h3>
@@ -409,7 +409,7 @@ export default function ProductsPageComponent() {
             {/* MOBILE FILTER SIDEBAR - Slides in and pushes content */}
             <aside
               className={`
-                md:hidden w-64 flex-shrink-0 space-y-8 bg-white p-4 overflow-y-auto
+                md:hidden w-64 shrink-0 space-y-8 bg-white p-4 overflow-y-auto
                 transition-all duration-300 ease-in-out
                 ${
                   isMobileFiltersOpen
