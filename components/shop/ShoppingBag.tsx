@@ -81,7 +81,7 @@ export default function ShoppingBag() {
     <div className="min-h-screen bg-[#f7f7f7]">
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* HEADER */}
-        <div className="flex items-center gap-4 uppercase text-black text-xs mb-5">
+        <div className="flex sm:flex-row justify-center items-center gap-4 uppercase text-black text-xs mb-5 text-center">
           <Link href="/cart">shopping bag</Link>
 
           <Link href="/favourites" className="flex items-center gap-2">
@@ -99,9 +99,12 @@ export default function ShoppingBag() {
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-16">
           {/* LEFT — CART ITEMS */}
-          <div className="flex flex-wrap gap-12 py-5 border-y border-neutral-300">
+          <div className="flex flex-wrap gap-12 py-5 border-y border-neutral-300 justify-center">
             {items.map((item) => (
-              <div key={item.id} className="flex gap-6 w-full sm:w-[320px]">
+              <div
+                key={item.id}
+                className="flex gap-6 w-fit sm:w-[320px] mx-auto"
+              >
                 {/* IMAGE & TEXT */}
                 <div>
                   <div className="relative w-[220px] h-[300px] border bg-white">
@@ -144,14 +147,14 @@ export default function ShoppingBag() {
 
                 {/* SIDE CONTROLS */}
                 <div className="flex flex-col items-center gap-4 text-xs">
-                  <XIcon className="text-neutral-400" />
+                  <XIcon className="text-neutral-400 cursor-pointer" />
 
-                  <div className="w-7 h-7 border flex items-center justify-center text-black">
+                  <div className="w-7 h-7 border flex items-center justify-center text-black cursor-pointer">
                     {item.size}
                   </div>
 
                   <div
-                    className="w-7 h-7 border"
+                    className="w-7 h-7 border cursor-pointer"
                     style={{ backgroundColor: item.color }}
                   />
 
@@ -160,7 +163,7 @@ export default function ShoppingBag() {
                     <button
                       aria-label="Increase quantity"
                       onClick={() => updateQty(item.id, "inc")}
-                      className="border border-neutral-400 text-black w-7 h-7 flex items-center justify-center"
+                      className="border border-neutral-400 text-black w-7 h-7 flex items-center justify-center cursor-pointer"
                     >
                       +
                     </button>
@@ -172,7 +175,7 @@ export default function ShoppingBag() {
                     <button
                       aria-label="Decrease quantity"
                       onClick={() => updateQty(item.id, "dec")}
-                      className="border border-neutral-400 text-black w-7 h-7 flex items-center justify-center"
+                      className="border border-neutral-400 text-black w-7 h-7 flex items-center justify-center cursor-pointer"
                     >
                       -
                     </button>
