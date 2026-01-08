@@ -58,12 +58,17 @@ export default function ShoppingBag() {
   };
 
   const toggleFavorite = (id: number, e: React.MouseEvent) => {
-    e.preventDefault();
     e.stopPropagation();
 
     setFavorites((prev) => {
       const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
+
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+
       return next;
     });
   };
@@ -77,9 +82,9 @@ export default function ShoppingBag() {
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* HEADER */}
         <div className="flex items-center gap-4 uppercase text-black text-xs mb-5">
-          <p>shopping bag</p>
+          <Link href="/cart">shopping bag</Link>
 
-          <div className="flex items-center gap-2">
+          <Link href="/favourites" className="flex items-center gap-2">
             <span className="bg-white p-3">
               <Image
                 src={favouritesIcon}
@@ -89,7 +94,7 @@ export default function ShoppingBag() {
               />
             </span>
             <p>favourites</p>
-          </div>
+          </Link>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-16">
@@ -116,8 +121,6 @@ export default function ShoppingBag() {
                       aria-label="Add to favourites"
                     >
                       <Heart
-                        // src={favouritesIcon}
-                        // alt="Add to favourites"
                         width={16}
                         height={16}
                         className={
@@ -198,7 +201,9 @@ export default function ShoppingBag() {
             </div>
 
             <div className="border-t mt-6 pt-6 flex justify-between font-medium">
-              <span className="text-black">Total</span>
+              <span className="flex gap-2 text-black">
+                Total <p className="text-neutral-400">(Tax incl.)</p>
+              </span>
               <span className="text-black">${total}</span>
             </div>
 
