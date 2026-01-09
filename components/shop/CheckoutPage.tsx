@@ -69,7 +69,7 @@ export default function Checkout() {
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
           {/* Left Column - Form */}
           <div className="space-y-8">
             {/* Contact Info */}
@@ -141,8 +141,8 @@ export default function Checkout() {
             </div>
 
             {/* Shipping Button */}
-            <div className="flex justify-end">
-              <button className="flex items-center justify-between w-1/2 bg-neutral-200 hover:bg-neutral-300 px-6 py-4 text-sm font-medium text-black transition-colors">
+            <div className="flex md:justify-end">
+              <button className="flex items-center justify-between w-full md:w-1/2 bg-neutral-200 hover:bg-neutral-300 px-6 py-4 text-sm font-medium text-black transition-colors">
                 <span>Shipping</span>
                 <ArrowLeft className="h-5 w-5 rotate-180" />
               </button>
