@@ -142,7 +142,7 @@ export default function Checkout() {
 
             {/* Shipping Button */}
             <div className="flex md:justify-end">
-              <button className="flex items-center justify-between w-full md:w-1/2 bg-neutral-200 hover:bg-neutral-300 px-6 py-4 text-sm font-medium text-black transition-colors">
+              <button className="flex items-center justify-between w-full md:w-1/2 bg-neutral-200 hover:bg-neutral-300 px-6 py-4 text-sm font-medium text-black transition-colors cursor-pointer">
                 <span>Shipping</span>
                 <ArrowLeft className="h-5 w-5 rotate-180" />
               </button>
