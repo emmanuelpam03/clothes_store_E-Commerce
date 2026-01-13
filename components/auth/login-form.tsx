@@ -11,10 +11,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { Router } from "next/router";
-import { useActionState, useEffect } from "react";
-import { toast } from "sonner";
+import { useActionState } from "react";
 
 const initialState = {
   email: "",
