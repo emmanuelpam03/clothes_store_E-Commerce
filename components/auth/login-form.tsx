@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { Router } from "next/router";
 import { useActionState, useEffect } from "react";
 import { toast } from "sonner";
 
@@ -23,11 +25,12 @@ const initialState = {
 
 export function LoginForm(props: React.ComponentProps<typeof Card>) {
   const [state, action, isLoading] = useActionState(loginAction, initialState);
-  useEffect(() => {
-    if (state.success) {
-      toast.success(state.success);
-    }
-  }, [state.success]);
+  // useEffect(() => {
+  //   if (state.success) {
+  //     // window.location.href = "/";
+  //     toast.success(state.success);
+  //   }
+  // }, [state.success]);
 
   return (
     <Card {...props} className="bg-white border border-slate-300 shadow-lg">
@@ -49,7 +52,7 @@ export function LoginForm(props: React.ComponentProps<typeof Card>) {
               </FieldLabel>
               <Input
                 id="email"
-                type="email"
+                // type="email"
                 name="email"
                 defaultValue={state.email ?? ""}
                 placeholder="pam@example.com"
@@ -87,7 +90,7 @@ export function LoginForm(props: React.ComponentProps<typeof Card>) {
           <div className="space-y-3 border">
             <Button
               type="submit"
-              className="w-full text-slate-900 border-2 border-slate-300 shadow-lg cursor-pointer"
+              className="w-full text-white border-2 border-slate-300 shadow-lg cursor-pointer"
             >
               {isLoading ? "Logging you in..." : "Login"}
             </Button>
@@ -97,7 +100,7 @@ export function LoginForm(props: React.ComponentProps<typeof Card>) {
               <Button
                 variant="outline"
                 type="button"
-                className="w-full border-slate-300 text-white shadow-lg cursor-pointer"
+                className="w-full border-slate-300 text-slate-900 shadow-lg cursor-pointer"
               >
                 Login with Google
               </Button>

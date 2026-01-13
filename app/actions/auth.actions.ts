@@ -2,6 +2,8 @@
 
 import { loginSchema } from "@/lib/validators/login.schema";
 import { registerSchema } from "@/lib/validators/register.schema";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
 type RegisterState = {
   name: string;
@@ -42,12 +44,20 @@ export async function loginAction(
     };
   }
 
-  return {
-    email: "",
-    error: null,
-    success: "Logged in successfully",
-    fieldErrors: {},
-  };
+  const cookieStore = await cookies(); // IMPORTANT
+
+  cookieStore.set("flash", "Welcome back!", {
+    path: "/",
+  });
+
+  redirect("/");
+
+  // return {
+  //   email: "",
+  //   error: null,
+  //   success: "Logged in successfully",
+  //   fieldErrors: {},
+  // };
 }
 
 export async function registerAction(
@@ -79,13 +89,20 @@ export async function registerAction(
 
   console.log(rawData.name, rawData.email);
 
+  const cookieStore = await cookies(); // IMPORTANT
 
-  return {
-    name: "",
-    email: "",
-    error: null,
-    success: "Registered successfully",
-  };
+  cookieStore.set("flash", "Account created successfully", {
+    path: "/",
+  });
+
+  redirect("/login");
+
+  // return {
+  //   name: "",
+  //   email: "",
+  //   error: null,
+  //   success: "Registered successfully",
+  // };
 }
 
 export async function logoutAction() {
