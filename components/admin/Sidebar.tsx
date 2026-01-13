@@ -19,9 +19,9 @@ const links = [
 
 export default function Sidebar() {
   return (
-    <aside className="w-64 bg-gradient-to-b from-slate-900 to-slate-800 text-white px-6 py-8 flex flex-col">
+    <aside className="w-64 bg-linear-to-b from-slate-900 to-slate-800 text-white px-6 py-8 flex flex-col">
       <div className="mb-12">
-        <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+        <h1 className="text-2xl font-bold bg-linear-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
           AdminHub
         </h1>
         <p className="text-xs text-slate-400 mt-1 tracking-widest">

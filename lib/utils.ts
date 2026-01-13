@@ -1,7 +1,6 @@
-// Utility functions
-// Note: If using Tailwind CSS with class merging, install clsx and tailwind-merge:
-// npm install clsx tailwind-merge
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
 
-export function cn(...inputs: (string | undefined | null | false)[]): string {
-  return inputs.filter(Boolean).join(" ");
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
 }
