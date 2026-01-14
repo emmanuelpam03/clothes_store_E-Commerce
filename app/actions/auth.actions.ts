@@ -4,6 +4,7 @@ import { loginSchema } from "@/lib/validators/login.schema";
 import { registerSchema } from "@/lib/validators/register.schema";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { signIn, signOut } from "@/lib/auth";
 
 type RegisterState = {
   name: string;
@@ -44,7 +45,7 @@ export async function loginAction(
     };
   }
 
-  const cookieStore = await cookies(); // IMPORTANT
+  const cookieStore = await cookies();
 
   cookieStore.set("flash", "Welcome back!", {
     path: "/",
@@ -89,7 +90,7 @@ export async function registerAction(
 
   console.log(rawData.name, rawData.email);
 
-  const cookieStore = await cookies(); // IMPORTANT
+  const cookieStore = await cookies();
 
   cookieStore.set("flash", "Account created successfully", {
     path: "/",
@@ -107,4 +108,19 @@ export async function registerAction(
 
 export async function logoutAction() {
   // Add logout logic here
+}
+
+export async function googleSignInAction() {
+  await signIn("google", {
+    callbackUrl: "/",
+    redirectTo: "/",
+  });
+}
+
+export async function signOutAction() {
+  console.log("Signing out...");
+
+  await signOut({
+    redirectTo: "/login",
+  });
 }

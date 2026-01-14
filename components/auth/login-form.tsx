@@ -1,6 +1,6 @@
 "use client";
 
-import { loginAction } from "@/app/actions/auth.actions";
+import { loginAction, googleSignInAction } from "@/app/actions/auth.actions";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -15,45 +15,36 @@ import { useActionState } from "react";
 
 const initialState = {
   email: "",
-  error: null,
-  success: null,
-  fieldErrors: {},
+  error: null as string | null,
+  success: null as string | null,
+  fieldErrors: {} as Record<string, string>,
 };
 
 export function LoginForm(props: React.ComponentProps<typeof Card>) {
   const [state, action, isLoading] = useActionState(loginAction, initialState);
-  // useEffect(() => {
-  //   if (state.success) {
-  //     // window.location.href = "/";
-  //     toast.success(state.success);
-  //   }
-  // }, [state.success]);
 
   return (
     <Card {...props} className="bg-white border border-slate-300 shadow-lg">
-      <CardHeader className="space-y-1 justify-center">
+      <CardHeader className="space-y-1 text-center">
         <CardTitle className="text-2xl font-semibold text-slate-900">
           Login to your account
         </CardTitle>
-        {/* <p className="text-sm text-slate-600">
-          Enter your information to get started.
-        </p> */}
       </CardHeader>
 
-      <CardContent>
+      <CardContent className="space-y-6">
+        {/* Email / Password Login */}
         <form className="space-y-6" action={action}>
-          <FieldGroup className="space-y-2">
+          <FieldGroup className="space-y-4">
             <Field>
-              <FieldLabel className="text-slate-700" htmlFor="email">
+              <FieldLabel htmlFor="email" className="text-slate-700">
                 Email
               </FieldLabel>
               <Input
                 id="email"
-                // type="email"
                 name="email"
-                defaultValue={state.email ?? ""}
+                defaultValue={state.email}
                 placeholder="pam@example.com"
-                className="bg-white text-slate-900 placeholder:text-slate-400 border-2 border-slate-400 focus:border focus:border-slate-900 focus:ring-slate-900"
+                className="bg-white text-slate-900 border-2 border-slate-400 focus:border-slate-900"
               />
               {state.fieldErrors?.email && (
                 <p className="text-sm text-red-600">
@@ -63,14 +54,14 @@ export function LoginForm(props: React.ComponentProps<typeof Card>) {
             </Field>
 
             <Field>
-              <FieldLabel className="text-slate-700" htmlFor="password">
+              <FieldLabel htmlFor="password" className="text-slate-700">
                 Password
               </FieldLabel>
               <Input
                 id="password"
                 type="password"
                 name="password"
-                className="bg-white text-slate-900 border-2 border-slate-400 focus:border focus:border-slate-900 focus:ring-slate-900"
+                className="bg-white text-slate-900 border-2 border-slate-400 focus:border-slate-900"
               />
               {state.fieldErrors?.password && (
                 <p className="text-sm text-red-600">
@@ -83,37 +74,45 @@ export function LoginForm(props: React.ComponentProps<typeof Card>) {
             </Field>
           </FieldGroup>
 
-          {/* Actions */}
-          <div className="space-y-3 border">
-            <Button
-              type="submit"
-              className="w-full text-white border-2 border-slate-300 shadow-lg cursor-pointer"
-            >
-              {isLoading ? "Logging you in..." : "Login"}
-            </Button>
-            {state.error && <p className="text-red-600">{state.error}</p>}
+          <Button
+            type="submit"
+            className="w-full text-white border-2 border-slate-300 shadow-lg"
+          >
+            {isLoading ? "Logging you in..." : "Login"}
+          </Button>
 
-            <Link href="/">
-              <Button
-                variant="outline"
-                type="button"
-                className="w-full border-slate-300 text-slate-900 shadow-lg cursor-pointer"
-              >
-                Login with Google
-              </Button>
-            </Link>
-          </div>
-
-          <FieldDescription className="text-center text-sm text-slate-600">
-            Don&apos;t have an account?{" "}
-            <Link
-              href="/register"
-              className="font-medium text-slate-900 underline underline-offset-4"
-            >
-              Sign up
-            </Link>
-          </FieldDescription>
+          {state.error && (
+            <p className="text-center text-sm text-red-600">{state.error}</p>
+          )}
         </form>
+
+        {/* Divider */}
+        <div className="flex items-center gap-4">
+          <div className="h-px flex-1 bg-slate-300" />
+          <span className="text-sm text-slate-500">OR</span>
+          <div className="h-px flex-1 bg-slate-300" />
+        </div>
+
+        {/* Google Login */}
+        <form action={googleSignInAction}>
+          <Button
+            variant="outline"
+            type="submit"
+            className="w-full border-slate-300 text-slate-900 shadow-lg cursor-pointer"
+          >
+            Login with Google
+          </Button>
+        </form>
+
+        <FieldDescription className="text-center text-sm text-slate-600">
+          Don&apos;t have an account?{" "}
+          <Link
+            href="/register"
+            className="font-medium text-slate-900 underline underline-offset-4"
+          >
+            Sign up
+          </Link>
+        </FieldDescription>
       </CardContent>
     </Card>
   );

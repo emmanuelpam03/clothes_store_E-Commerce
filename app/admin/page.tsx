@@ -64,6 +64,7 @@ const orderColumns: Column<Order>[] = [
 ];
 
 export default function DashboardPage() {
+  
   return (
     <div className="p-8 space-y-8 bg-slate-50 min-h-screen">
       <div>

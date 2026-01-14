@@ -18,3 +18,5 @@ export const config = {
     "/((?!api|_next/static|_next/image|favicon.ico).*)",
   ],
 };
+
+export { auth as auth } from "@/lib/auth";
