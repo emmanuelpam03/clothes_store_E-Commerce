@@ -42,8 +42,6 @@ export function NavbarClient({ session }: NavbarClientProps) {
     };
   }, []);
 
-  console.log("Avatar URL:", session?.user);
-
   return (
     <header
       className={`sticky top-0 z-50 w-full bg-neutral-100 ${
@@ -135,7 +133,7 @@ export function NavbarClient({ session }: NavbarClientProps) {
                 className="flex gap-2 px-3 py-1.5 justify-center items-center rounded-full shadow-md shadow-black/20 hover:shadow-xl transition-shadow cursor-pointer"
               >
                 <button
-                  className="flex rounded-full h-9 w-9 bg-black items-center justify-center"
+                  className="flex rounded-full h-9 w-9 bg-black items-center justify-center overflow-hidden"
                   aria-label="User menu"
                 >
                   {session.user?.image ? (
@@ -145,6 +143,7 @@ export function NavbarClient({ session }: NavbarClientProps) {
                       width={36}
                       height={36}
                       className="rounded-full object-cover cursor-pointer"
+                      unoptimized
                     />
                   ) : (
                     <UserIcon
@@ -154,7 +153,7 @@ export function NavbarClient({ session }: NavbarClientProps) {
                     />
                   )}
                 </button>
-                <p>{session.user?.name}</p>
+                <p>{session.user?.name?.split(" ")[0]}</p>
               </div>
 
               {isProfileOpen && (

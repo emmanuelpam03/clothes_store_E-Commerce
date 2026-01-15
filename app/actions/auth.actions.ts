@@ -2,9 +2,11 @@
 
 import { loginSchema } from "@/lib/validators/login.schema";
 import { registerSchema } from "@/lib/validators/register.schema";
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { signIn, signOut } from "@/lib/auth";
+import bcrypt from "bcryptjs";
+import prisma from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
 
 type RegisterState = {
   name: string;
@@ -25,40 +27,38 @@ export async function loginAction(
   previousState: LoginState,
   formData: FormData
 ): Promise<LoginState> {
-  const rawData = {
-    email: String(formData.get("email") ?? ""),
-    password: String(formData.get("password") ?? ""),
-  };
+  const email = String(formData.get("email") ?? "");
+  const password = String(formData.get("password") ?? "");
 
-  const parsed = loginSchema.safeParse(rawData);
-
+  const parsed = loginSchema.safeParse({ email, password });
   if (!parsed.success) {
-    const fieldErrors = parsed.error.flatten().fieldErrors;
-
     return {
-      email: rawData.email,
-      error: "Please ensure all inputs are valid",
+      email,
+      error: "Invalid input",
       success: null,
-      fieldErrors: Object.fromEntries(
-        Object.entries(fieldErrors).map(([k, v]) => [k, v?.[0] ?? ""])
-      ),
+      fieldErrors: {},
     };
   }
 
-  const cookieStore = await cookies();
-
-  cookieStore.set("flash", "Welcome back!", {
-    path: "/",
+  const result = await signIn("credentials", {
+    email,
+    password,
+    redirect: false,
   });
 
-  redirect("/");
+  // 🔴 THIS IS THE KEY CHECK
+  if (!result || result.error) {
+    return {
+      email,
+      error: "Invalid email or password",
+      success: null,
+      fieldErrors: {},
+    };
+  }
 
-  // return {
-  //   email: "",
-  //   error: null,
-  //   success: "Logged in successfully",
-  //   fieldErrors: {},
-  // };
+  revalidatePath("/");
+
+  redirect("/");
 }
 
 export async function registerAction(
@@ -88,22 +88,40 @@ export async function registerAction(
     };
   }
 
-  console.log(rawData.name, rawData.email);
-
-  const cookieStore = await cookies();
-
-  cookieStore.set("flash", "Account created successfully", {
-    path: "/",
+  // 🔴 PREVENT DUPLICATE EMAILS
+  const existingUser = await prisma.user.findUnique({
+    where: { email: rawData.email },
   });
 
-  redirect("/login");
+  if (existingUser) {
+    return {
+      name: rawData.name,
+      email: rawData.email,
+      error: "An account with this email already exists",
+      success: null,
+      fieldErrors: {},
+    };
+  }
 
-  // return {
-  //   name: "",
-  //   email: "",
-  //   error: null,
-  //   success: "Registered successfully",
-  // };
+  const hashedPassword = await bcrypt.hash(rawData.password, 10);
+
+  await prisma.user.create({
+    data: {
+      name: rawData.name,
+      email: rawData.email,
+      password: hashedPassword,
+    },
+  });
+
+  // // 🔴 AUTO LOGIN
+  // await signIn("credentials", {
+  //   email: rawData.email,
+  //   password: rawData.password,
+  //   redirect: false,
+  // });
+  // redirect("/")
+
+  redirect("/login");
 }
 
 export async function logoutAction() {

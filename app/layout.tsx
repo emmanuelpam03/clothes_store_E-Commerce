@@ -2,8 +2,6 @@ import type { Metadata } from "next";
 import { Inter, Inter_Tight } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
-import { cookies } from "next/headers";
-import FlashToaster from "@/components/shop/FlashToaster";
 
 export const inter = Inter({
   subsets: ["latin"],
@@ -27,9 +25,6 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const cookieStore = await cookies();
-  const flash = cookieStore.get("flash")?.value ?? null;
-
   return (
     <html lang="en" className="no-scrollbar overflow-y-scroll">
       <body className={`${inter.variable} ${interTight.variable} antialiased`}>
@@ -43,8 +38,6 @@ export default async function RootLayout({
             },
           }}
         />
-        {/* ONE client boundary */}
-        <FlashToaster message={flash} />
         {children}
       </body>
     </html>
