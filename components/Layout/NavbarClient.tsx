@@ -170,7 +170,7 @@ export function NavbarClient({ session }: NavbarClientProps) {
                   <button
                     onClick={() => {
                       setIsProfileOpen(false);
-                      signOut({ callbackUrl: "/login" });
+                      signOut({ callbackUrl: "/" });
                     }}
                     className="w-full flex items-center gap-2 px-4 py-3 text-sm text-red-600 hover:bg-gray-100 rounded-b-xl cursor-pointer"
                   >

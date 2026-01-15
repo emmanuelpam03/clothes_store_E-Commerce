@@ -46,7 +46,7 @@ export async function loginAction(
     redirect: false,
   });
 
-  // 🔴 THIS IS THE KEY CHECK
+  // THIS IS THE KEY CHECK
   if (!result || result.error) {
     return {
       email,
@@ -88,7 +88,7 @@ export async function registerAction(
     };
   }
 
-  // 🔴 PREVENT DUPLICATE EMAILS
+  // PREVENT DUPLICATE EMAILS
   const existingUser = await prisma.user.findUnique({
     where: { email: rawData.email },
   });
@@ -136,9 +136,8 @@ export async function googleSignInAction() {
 }
 
 export async function signOutAction() {
-  console.log("Signing out...");
 
   await signOut({
-    redirectTo: "/login",
+    redirectTo: "/",
   });
 }
