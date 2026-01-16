@@ -1,0 +1,154 @@
+"use client";
+
+import Image from "next/image";
+import { useState } from "react";
+
+type Props = {
+  user: {
+    name: string | null;
+    email: string | null;
+    image: string | null;
+  };
+  hasGoogle: boolean;
+  hasPassword: boolean;
+};
+
+export default function ProfileClient({
+  user,
+  hasGoogle,
+  hasPassword,
+}: Props) {
+  const [showUnlinkConfirm, setShowUnlinkConfirm] = useState(false);
+
+  return (
+    <div className="mx-auto max-w-xl space-y-10 bg-white rounded-2xl p-8 shadow-sm">
+      {/* PROFILE HEADER */}
+      <div className="flex items-center gap-4">
+        <div className="relative h-16 w-16 rounded-full bg-neutral-200 overflow-hidden">
+          {user.image ? (
+            <Image
+              src={user.image}
+              alt="Profile avatar"
+              fill
+              className="object-cover"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-lg font-bold text-neutral-500">
+              {user.name?.charAt(0)}
+            </div>
+          )}
+        </div>
+
+        <div>
+          <p className="font-semibold text-lg">
+            {user.name}
+          </p>
+          <p className="text-sm text-neutral-600">
+            {user.email}
+          </p>
+        </div>
+      </div>
+
+      {/* ACCOUNT ACCESS */}
+      <div className="space-y-6">
+        <h2 className="text-base font-medium">
+          Account access
+        </h2>
+
+        {/* PASSWORD */}
+        <div className="flex items-center justify-between rounded-lg border px-4 py-3">
+          <div>
+            <p className="text-sm font-medium">
+              Email & Password
+            </p>
+            <p className="text-xs text-neutral-500">
+              Sign in using your email
+            </p>
+          </div>
+
+          {hasPassword ? (
+            <span className="text-sm text-green-600">
+              Enabled
+            </span>
+          ) : (
+            <button className="text-sm underline">
+              Set password
+            </button>
+          )}
+        </div>
+
+        {/* GOOGLE */}
+        <div className="flex items-center justify-between rounded-lg border px-4 py-3">
+          <div>
+            <p className="text-sm font-medium">
+              Google account
+            </p>
+            <p className="text-xs text-neutral-500">
+              Sign in with Google
+            </p>
+          </div>
+
+          <span className="text-sm text-neutral-500">
+            {hasGoogle ? "Linked" : "Not linked"}
+          </span>
+        </div>
+
+        {!hasGoogle && (
+          <button className="w-full rounded-lg border py-2 text-sm font-medium hover:bg-neutral-50">
+            Link Google account
+          </button>
+        )}
+
+        {hasGoogle && hasPassword && (
+          <button
+            onClick={() => setShowUnlinkConfirm(true)}
+            className="w-full rounded-lg border border-red-500 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+          >
+            Unlink Google account
+          </button>
+        )}
+
+        {hasGoogle && !hasPassword && (
+          <p className="text-xs text-neutral-500">
+            Set a password before unlinking Google.
+          </p>
+        )}
+      </div>
+
+      {/* CONFIRM MODAL */}
+      {showUnlinkConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-sm rounded-xl bg-white p-6 space-y-5">
+            <h3 className="text-base font-semibold">
+              Unlink Google account?
+            </h3>
+
+            <p className="text-sm text-neutral-600">
+              You will no longer be able to sign in with Google.
+            </p>
+
+            <label className="flex items-start gap-2 text-sm">
+              <input type="checkbox" className="mt-1" />
+              <span>
+                I understand this action cannot be undone.
+              </span>
+            </label>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setShowUnlinkConfirm(false)}
+                className="flex-1 rounded-lg border py-2 text-sm hover:bg-neutral-50"
+              >
+                Cancel
+              </button>
+
+              <button className="flex-1 rounded-lg bg-red-600 py-2 text-sm text-white">
+                Unlink
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
