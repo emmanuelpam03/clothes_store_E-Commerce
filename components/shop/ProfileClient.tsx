@@ -3,7 +3,8 @@
 import Image from "next/image";
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { unlinkGoogleAction } from "@/app/actions/account.actions";
+import { unlinkGoogleAction, canLinkGoogleAction } from "@/app/actions/account.actions";
+import { toast } from "sonner";
 
 type Props = {
   user: {
@@ -17,7 +18,7 @@ type Props = {
 
 export default function ProfileClient({ user, hasGoogle, hasPassword }: Props) {
   const [showUnlinkConfirm, setShowUnlinkConfirm] = useState(false);
-  const [confirmed, setConfirmed] = useState(false); // ✅ added
+  const [confirmed, setConfirmed] = useState(false);
 
   return (
     <div className="mx-auto max-w-xl space-y-10 bg-white rounded-2xl p-8 shadow-sm">
@@ -74,23 +75,34 @@ export default function ProfileClient({ user, hasGoogle, hasPassword }: Props) {
           </span>
         </div>
 
+        {/* 🔗 LINK GOOGLE */}
         {!hasGoogle && (
           <button
-            onClick={() =>
+            onClick={async () => {
+              const result = await canLinkGoogleAction();
+
+              if (!result.ok) {
+                toast.error(
+                  "This Google account is already linked to another account. Please sign in using that account."
+                );
+                return;
+              }
+
               signIn("google", {
                 callbackUrl: "/profile",
-              })
-            }
+              });
+            }}
             className="w-full rounded-lg border py-2 text-sm font-medium hover:bg-neutral-50"
           >
             Link Google account
           </button>
         )}
 
+        {/* UNLINK GOOGLE */}
         {hasGoogle && hasPassword && (
           <button
             onClick={() => {
-              setConfirmed(false); // ✅ reset checkbox
+              setConfirmed(false);
               setShowUnlinkConfirm(true);
             }}
             className="w-full rounded-lg border border-red-500 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
@@ -121,7 +133,7 @@ export default function ProfileClient({ user, hasGoogle, hasPassword }: Props) {
                 type="checkbox"
                 className="mt-1"
                 checked={confirmed}
-                onChange={(e) => setConfirmed(e.target.checked)} // ✅ wired
+                onChange={(e) => setConfirmed(e.target.checked)}
               />
               <span>I understand this action cannot be undone.</span>
             </label>
@@ -137,11 +149,12 @@ export default function ProfileClient({ user, hasGoogle, hasPassword }: Props) {
               <form action={unlinkGoogleAction} className="flex-1">
                 <button
                   type="submit"
-                  disabled={!confirmed} // ✅ enforced
-                  className={`w-full rounded-lg py-2 text-sm text-white
-                    ${
-                      confirmed ? "bg-red-600" : "bg-red-300 cursor-not-allowed"
-                    }`}
+                  disabled={!confirmed}
+                  className={`w-full rounded-lg py-2 text-sm text-white ${
+                    confirmed
+                      ? "bg-red-600"
+                      : "bg-red-300 cursor-not-allowed"
+                  }`}
                 >
                   Unlink
                 </button>
