@@ -77,7 +77,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   // =========================
   callbacks: {
     async jwt({ token, user }) {
-      // 🔹 FIRST LOGIN (credentials OR google)
+      // FIRST LOGIN
       if (user) {
         token.id = user.id;
         token.name = user.name;
@@ -87,15 +87,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         return token;
       }
 
-      // 🔹 TOKEN EXISTS BUT ROLE IS MISSING (OAuth / old token)
-      if (!token.role && token.sub) {
+      // USER DELETED FROM DB → KILL SESSION
+      if (token.sub) {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.sub },
-          select: { role: true },
+          select: { id: true },
         });
 
-        if (dbUser) {
-          token.role = dbUser.role;
+        if (!dbUser) {
+          // ✅ THIS is the logout
+          return null;
         }
       }
 
@@ -103,13 +104,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
 
     async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.sub as string;
-        session.user.name = token.name as string;
-        session.user.email = token.email as string;
-        session.user.image = token.image as string | null;
-        session.user.role = token.role as "USER" | "ADMIN";
+      // If token is null → no session
+      if (!token || !session.user) {
+        return session;
       }
+
+      session.user.id = token.sub as string;
+      session.user.name = token.name as string;
+      session.user.email = token.email as string;
+      session.user.image = token.image as string | null;
+      session.user.role = token.role as "USER" | "ADMIN";
 
       return session;
     },

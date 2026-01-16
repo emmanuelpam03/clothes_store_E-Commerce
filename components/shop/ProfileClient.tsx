@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { signIn } from "next-auth/react";
 
 type Props = {
   user: {
@@ -13,11 +14,7 @@ type Props = {
   hasPassword: boolean;
 };
 
-export default function ProfileClient({
-  user,
-  hasGoogle,
-  hasPassword,
-}: Props) {
+export default function ProfileClient({ user, hasGoogle, hasPassword }: Props) {
   const [showUnlinkConfirm, setShowUnlinkConfirm] = useState(false);
 
   return (
@@ -40,52 +37,34 @@ export default function ProfileClient({
         </div>
 
         <div>
-          <p className="font-semibold text-lg">
-            {user.name}
-          </p>
-          <p className="text-sm text-neutral-600">
-            {user.email}
-          </p>
+          <p className="font-semibold text-lg">{user.name}</p>
+          <p className="text-sm text-neutral-600">{user.email}</p>
         </div>
       </div>
 
       {/* ACCOUNT ACCESS */}
       <div className="space-y-6">
-        <h2 className="text-base font-medium">
-          Account access
-        </h2>
+        <h2 className="text-base font-medium">Account access</h2>
 
         {/* PASSWORD */}
         <div className="flex items-center justify-between rounded-lg border px-4 py-3">
           <div>
-            <p className="text-sm font-medium">
-              Email & Password
-            </p>
-            <p className="text-xs text-neutral-500">
-              Sign in using your email
-            </p>
+            <p className="text-sm font-medium">Email & Password</p>
+            <p className="text-xs text-neutral-500">Sign in using your email</p>
           </div>
 
           {hasPassword ? (
-            <span className="text-sm text-green-600">
-              Enabled
-            </span>
+            <span className="text-sm text-green-600">Enabled</span>
           ) : (
-            <button className="text-sm underline">
-              Set password
-            </button>
+            <button className="text-sm underline">Set password</button>
           )}
         </div>
 
         {/* GOOGLE */}
         <div className="flex items-center justify-between rounded-lg border px-4 py-3">
           <div>
-            <p className="text-sm font-medium">
-              Google account
-            </p>
-            <p className="text-xs text-neutral-500">
-              Sign in with Google
-            </p>
+            <p className="text-sm font-medium">Google account</p>
+            <p className="text-xs text-neutral-500">Sign in with Google</p>
           </div>
 
           <span className="text-sm text-neutral-500">
@@ -94,7 +73,14 @@ export default function ProfileClient({
         </div>
 
         {!hasGoogle && (
-          <button className="w-full rounded-lg border py-2 text-sm font-medium hover:bg-neutral-50">
+          <button
+            onClick={() =>
+              signIn("google", {
+                callbackUrl: "/profile",
+              })
+            }
+            className="w-full rounded-lg border py-2 text-sm font-medium hover:bg-neutral-50"
+          >
             Link Google account
           </button>
         )}
@@ -119,9 +105,7 @@ export default function ProfileClient({
       {showUnlinkConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div className="w-full max-w-sm rounded-xl bg-white p-6 space-y-5">
-            <h3 className="text-base font-semibold">
-              Unlink Google account?
-            </h3>
+            <h3 className="text-base font-semibold">Unlink Google account?</h3>
 
             <p className="text-sm text-neutral-600">
               You will no longer be able to sign in with Google.
@@ -129,9 +113,7 @@ export default function ProfileClient({
 
             <label className="flex items-start gap-2 text-sm">
               <input type="checkbox" className="mt-1" />
-              <span>
-                I understand this action cannot be undone.
-              </span>
+              <span>I understand this action cannot be undone.</span>
             </label>
 
             <div className="flex gap-3 pt-2">
