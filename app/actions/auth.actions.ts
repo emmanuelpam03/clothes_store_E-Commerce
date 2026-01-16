@@ -2,11 +2,9 @@
 
 import { loginSchema } from "@/lib/validators/login.schema";
 import { registerSchema } from "@/lib/validators/register.schema";
-import { redirect } from "next/navigation";
 import { signIn, signOut } from "@/lib/auth";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
-import { revalidatePath } from "next/cache";
 
 type RegisterState = {
   name: string;
@@ -24,7 +22,7 @@ type LoginState = {
 };
 
 export async function loginAction(
-  previousState: LoginState,
+  _prev: LoginState,
   formData: FormData
 ): Promise<LoginState> {
   const email = String(formData.get("email") ?? "");
@@ -46,7 +44,6 @@ export async function loginAction(
     redirect: false,
   });
 
-  // THIS IS THE KEY CHECK
   if (!result || result.error) {
     return {
       email,
@@ -56,13 +53,16 @@ export async function loginAction(
     };
   }
 
-  revalidatePath("/");
-
-  redirect("/");
+  return {
+    email: "",
+    error: null,
+    success: "Logged in successfully",
+    fieldErrors: {},
+  };
 }
 
 export async function registerAction(
-  previousState: RegisterState,
+  _prev: RegisterState,
   formData: FormData
 ): Promise<RegisterState> {
   const rawData = {
@@ -88,7 +88,6 @@ export async function registerAction(
     };
   }
 
-  // PREVENT DUPLICATE EMAILS
   const existingUser = await prisma.user.findUnique({
     where: { email: rawData.email },
   });
@@ -113,31 +112,19 @@ export async function registerAction(
     },
   });
 
-  // // 🔴 AUTO LOGIN
-  // await signIn("credentials", {
-  //   email: rawData.email,
-  //   password: rawData.password,
-  //   redirect: false,
-  // });
-  // redirect("/")
-
-  redirect("/login");
-}
-
-export async function logoutAction() {
-  // Add logout logic here
+  return {
+    name: "",
+    email: "",
+    error: null,
+    success: "Account created successfully",
+    fieldErrors: {},
+  };
 }
 
 export async function googleSignInAction() {
-  await signIn("google", {
-    callbackUrl: "/",
-    redirectTo: "/",
-  });
+  await signIn("google", { redirectTo: "/" });
 }
 
 export async function signOutAction() {
-
-  await signOut({
-    redirectTo: "/",
-  });
+  await signOut({ redirectTo: "/" });
 }

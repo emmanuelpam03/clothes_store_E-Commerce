@@ -75,7 +75,7 @@ export default function ProfileClient({ user, hasGoogle, hasPassword }: Props) {
           </span>
         </div>
 
-        {/* 🔗 LINK GOOGLE */}
+        {/* LINK GOOGLE */}
         {!hasGoogle && (
           <button
             onClick={async () => {

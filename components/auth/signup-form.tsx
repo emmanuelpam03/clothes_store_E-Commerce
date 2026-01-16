@@ -12,6 +12,9 @@ import {
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { useActionState } from "react";
+import { useEffect } from "react"; // ✅ added
+import { toast } from "sonner"; // ✅ added
+import { useRouter } from "next/navigation"; // ✅ added
 
 const initialState = {
   name: "",
@@ -26,6 +29,20 @@ export function SignupForm(props: React.ComponentProps<typeof Card>) {
     registerAction,
     initialState
   );
+
+  const router = useRouter(); // ✅ added
+
+  // ✅ added (ONLY side-effects, no logic changes)
+  useEffect(() => {
+    if (state.error) {
+      toast.error(state.error);
+    }
+
+    if (state.success) {
+      toast.success(state.success);
+      router.push("/login");
+    }
+  }, [state, router]);
 
   return (
     <Card {...props} className="bg-white border border-slate-300 shadow-lg">
