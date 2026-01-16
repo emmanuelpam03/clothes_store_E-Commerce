@@ -1,5 +1,7 @@
 import Table, { Column } from "@/components/admin/Table";
-import { Users } from "lucide-react";
+import { auth } from "@/lib/auth";
+import { notFound } from "next/navigation";
+// import { Users } from "lucide-react";
 
 type User = {
   id: string;
@@ -59,7 +61,11 @@ const columns: Column<User>[] = [
   { key: "joinDate", label: "Join Date" },
 ];
 
-export default function UsersPage() {
+export default async function UsersPage() {
+  const session = await auth();
+  if (session?.user.role !== "ADMIN") {
+    notFound(); // hides existence of route
+  }
   return (
     <div className="p-8 space-y-8 bg-slate-50 min-h-screen">
       <div>

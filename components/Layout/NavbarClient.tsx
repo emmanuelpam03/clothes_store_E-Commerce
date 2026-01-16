@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { menuIcon, navArrow, heartIcon } from "@/public/assets/images/images";
-import { ShoppingBag, UserIcon, LogOut } from "lucide-react";
+import { ShoppingBag, UserIcon, LogOut, UserStar } from "lucide-react";
 import { signOut } from "next-auth/react";
 import type { Session } from "next-auth";
 
@@ -158,10 +158,19 @@ export function NavbarClient({ session }: NavbarClientProps) {
 
               {isProfileOpen && (
                 <div className="absolute right-0 mt-2 w-44 rounded-xl bg-white shadow-xl border border-gray-200 z-50">
+                  {session?.user?.role === "ADMIN" && (
+                    <Link href={"/admin"}>
+                      <div className="flex items-center gap-2 px-4 py-3 text-sm text-gray-900 hover:bg-gray-100">
+                        <UserStar className="h-4 w-4" />
+                        Admin
+                      </div>
+                    </Link>
+                  )}
+
                   <Link
                     href="/profile"
                     onClick={() => setIsProfileOpen(false)}
-                    className="flex items-center gap-2 px-4 py-3 text-sm text-gray-900 hover:bg-gray-100 rounded-t-xl"
+                    className="flex items-center gap-2 px-4 py-3 text-sm text-gray-900 hover:bg-gray-100"
                   >
                     <UserIcon className="h-4 w-4" />
                     Profile

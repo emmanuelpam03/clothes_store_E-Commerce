@@ -1,5 +1,7 @@
 import Table, { Column } from "@/components/admin/Table";
-import { ShoppingCart } from "lucide-react";
+import { auth } from "@/lib/auth";
+import { notFound } from "next/navigation";
+// import { ShoppingCart } from "lucide-react";
 
 type Order = {
   id: string;
@@ -58,8 +60,8 @@ const columns: Column<Order>[] = [
           v === "Completed"
             ? "bg-green-100 text-green-700"
             : v === "Pending"
-              ? "bg-yellow-100 text-yellow-700"
-              : "bg-red-100 text-red-700"
+            ? "bg-yellow-100 text-yellow-700"
+            : "bg-red-100 text-red-700"
         }`}
       >
         {String(v)}
@@ -70,7 +72,11 @@ const columns: Column<Order>[] = [
   { key: "date", label: "Date" },
 ];
 
-export default function OrdersPage() {
+export default async function OrdersPage() {
+  const session = await auth();
+  if (session?.user.role !== "ADMIN") {
+    notFound(); // hides existence of route
+  }
   return (
     <div className="p-8 space-y-8 bg-slate-50 min-h-screen">
       <div>

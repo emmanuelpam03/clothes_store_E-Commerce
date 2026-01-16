@@ -1,6 +1,8 @@
 import Link from "next/link";
 import Table, { Column } from "@/components/admin/Table";
 import { Plus } from "lucide-react";
+import { auth } from "@/lib/auth";
+import { notFound } from "next/navigation";
 
 type Product = {
   id: string;
@@ -67,7 +69,11 @@ const products: Product[] = [
   },
 ];
 
-export default function ProductsPage() {
+export default async function ProductsPage() {
+  const session = await auth();
+if (session?.user.role !== "ADMIN") {
+  notFound(); // hides existence of route
+}
   return (
     <div className="p-8 space-y-8 bg-slate-50 min-h-screen">
       <div className="flex justify-between items-center">

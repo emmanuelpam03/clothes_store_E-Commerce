@@ -1,7 +1,13 @@
 import { TrendingUp, TrendingDown, BarChart3 } from "lucide-react";
 import StatCard from "@/components/admin/StatCard";
+import { auth } from "@/lib/auth";
+import { notFound } from "next/navigation";
 
-export default function AnalyticsPage() {
+export default async function AnalyticsPage() {
+  const session = await auth();
+  if (session?.user.role !== "ADMIN") {
+    notFound(); // hides existence of route
+  }
   return (
     <div className="p-8 space-y-8 bg-slate-50 min-h-screen">
       <div>
