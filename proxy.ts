@@ -1,24 +1,38 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
+import prisma from "@/lib/prisma";
 
 export async function proxy(request: NextRequest) {
   const session = await auth();
-
   const { pathname } = request.nextUrl;
 
+  let validSession = session;
+
+  // HARD CHECK: user must exist
+  if (session?.user?.id) {
+    const userExists = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { id: true },
+    });
+
+    if (!userExists) {
+      validSession = null;
+    }
+  }
+
   // Block logged-in users from login & register
-  if (session && (pathname === "/login" || pathname === "/register")) {
+  if (validSession && (pathname === "/login" || pathname === "/register")) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
   // Protect admin routes
   if (pathname.startsWith("/admin")) {
-    if (!session) {
+    if (!validSession) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
 
-    if (session.user.role !== "ADMIN") {
+    if (validSession.user.role !== "ADMIN") {
       return NextResponse.redirect(new URL("/", request.url));
     }
   }

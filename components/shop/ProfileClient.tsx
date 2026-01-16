@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import { signIn } from "next-auth/react";
+import { unlinkGoogleAction } from "@/app/actions/account.actions";
 
 type Props = {
   user: {
@@ -16,6 +17,7 @@ type Props = {
 
 export default function ProfileClient({ user, hasGoogle, hasPassword }: Props) {
   const [showUnlinkConfirm, setShowUnlinkConfirm] = useState(false);
+  const [confirmed, setConfirmed] = useState(false); // ✅ added
 
   return (
     <div className="mx-auto max-w-xl space-y-10 bg-white rounded-2xl p-8 shadow-sm">
@@ -87,7 +89,10 @@ export default function ProfileClient({ user, hasGoogle, hasPassword }: Props) {
 
         {hasGoogle && hasPassword && (
           <button
-            onClick={() => setShowUnlinkConfirm(true)}
+            onClick={() => {
+              setConfirmed(false); // ✅ reset checkbox
+              setShowUnlinkConfirm(true);
+            }}
             className="w-full rounded-lg border border-red-500 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
           >
             Unlink Google account
@@ -112,7 +117,12 @@ export default function ProfileClient({ user, hasGoogle, hasPassword }: Props) {
             </p>
 
             <label className="flex items-start gap-2 text-sm">
-              <input type="checkbox" className="mt-1" />
+              <input
+                type="checkbox"
+                className="mt-1"
+                checked={confirmed}
+                onChange={(e) => setConfirmed(e.target.checked)} // ✅ wired
+              />
               <span>I understand this action cannot be undone.</span>
             </label>
 
@@ -124,9 +134,18 @@ export default function ProfileClient({ user, hasGoogle, hasPassword }: Props) {
                 Cancel
               </button>
 
-              <button className="flex-1 rounded-lg bg-red-600 py-2 text-sm text-white">
-                Unlink
-              </button>
+              <form action={unlinkGoogleAction} className="flex-1">
+                <button
+                  type="submit"
+                  disabled={!confirmed} // ✅ enforced
+                  className={`w-full rounded-lg py-2 text-sm text-white
+                    ${
+                      confirmed ? "bg-red-600" : "bg-red-300 cursor-not-allowed"
+                    }`}
+                >
+                  Unlink
+                </button>
+              </form>
             </div>
           </div>
         </div>
