@@ -662,7 +662,7 @@ export default function ProductsPageComponent() {
             >
               {PRODUCTS.map((product, i) => (
                 <Link key={i} href={`/products/${i}`}>
-                  <div className="relative h-[420px] bg-white group">
+                  <div className="relative h-105 bg-white group">
                     <Image
                       src={product.image}
                       alt={product.name}
