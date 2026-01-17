@@ -3,8 +3,12 @@
 import Image from "next/image";
 import { useState } from "react";
 import { signIn } from "next-auth/react";
-import { unlinkGoogleAction, canLinkGoogleAction } from "@/app/actions/account.actions";
+import {
+  unlinkGoogleAction,
+  canLinkGoogleAction,
+} from "@/app/actions/account.actions";
 import { toast } from "sonner";
+import SetPasswordModal from "@/app/(shop)/setPasswordModal";
 
 type Props = {
   user: {
@@ -19,6 +23,7 @@ type Props = {
 export default function ProfileClient({ user, hasGoogle, hasPassword }: Props) {
   const [showUnlinkConfirm, setShowUnlinkConfirm] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+  const [showSetPassword, setShowSetPassword] = useState(false);
 
   return (
     <div className="mx-auto max-w-xl space-y-10 bg-white rounded-2xl p-8 shadow-sm">
@@ -59,7 +64,12 @@ export default function ProfileClient({ user, hasGoogle, hasPassword }: Props) {
           {hasPassword ? (
             <span className="text-sm text-green-600">Enabled</span>
           ) : (
-            <button className="text-sm underline">Set password</button>
+            <button
+              onClick={() => setShowSetPassword(true)}
+              className="text-sm underline"
+            >
+              Set password
+            </button>
           )}
         </div>
 
@@ -151,9 +161,7 @@ export default function ProfileClient({ user, hasGoogle, hasPassword }: Props) {
                   type="submit"
                   disabled={!confirmed}
                   className={`w-full rounded-lg py-2 text-sm text-white ${
-                    confirmed
-                      ? "bg-red-600"
-                      : "bg-red-300 cursor-not-allowed"
+                    confirmed ? "bg-red-600" : "bg-red-300 cursor-not-allowed"
                   }`}
                 >
                   Unlink
@@ -162,6 +170,9 @@ export default function ProfileClient({ user, hasGoogle, hasPassword }: Props) {
             </div>
           </div>
         </div>
+      )}
+      {showSetPassword && (
+        <SetPasswordModal onClose={() => setShowSetPassword(false)} />
       )}
     </div>
   );

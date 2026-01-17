@@ -2,7 +2,14 @@
 
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { setPasswordSchema } from "@/lib/validators/set-password.schema";
+import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
+
+type SetPasswordState = {
+  error: string | null;
+  success: boolean;
+};
 
 /**
  * CHECK IF GOOGLE CAN BE LINKED
@@ -79,4 +86,48 @@ export async function unlinkGoogleAction() {
   });
 
   redirect("/profile");
+}
+
+/**
+ * SET PASSWORD ACTION
+ */
+
+export async function setPasswordAction(
+  _prevState: SetPasswordState,
+  formData: FormData
+): Promise<SetPasswordState> {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return {
+      error: "Unauthorized",
+      success: false,
+    };
+  }
+
+  const parsed = setPasswordSchema.safeParse({
+    password: formData.get("password"),
+    confirmPassword: formData.get("confirmPassword"),
+  });
+
+  if (!parsed.success) {
+    const errors = parsed.error.flatten().fieldErrors;
+    return {
+      error:
+        errors.password?.[0] || errors.confirmPassword?.[0] || "Invalid input",
+      success: false,
+    };
+  }
+
+  const hashedPassword = await bcrypt.hash(parsed.data.password, 10);
+
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: { password: hashedPassword },
+  });
+
+  return {
+    error: null,
+    success: true,
+  };
 }
