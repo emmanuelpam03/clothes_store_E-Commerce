@@ -5,7 +5,7 @@ import prisma from "@/lib/prisma";
 import { redirect } from "next/navigation";
 
 /**
- * 🔒 CHECK IF GOOGLE CAN BE LINKED
+ * CHECK IF GOOGLE CAN BE LINKED
  * Prevents redirect to NextAuth default OAuthAccountNotLinked page
  */
 export async function canLinkGoogleAction() {
@@ -35,7 +35,7 @@ export async function canLinkGoogleAction() {
 }
 
 /**
- * 🔓 UNLINK GOOGLE ACCOUNT
+ * UNLINK GOOGLE ACCOUNT
  */
 export async function unlinkGoogleAction() {
   const session = await auth();

@@ -1,3 +1,4 @@
+// import { Toaster } from 'sonner';
 import '../globals.css'
 import { Navbar } from "@/components/Layout/Navbar";
 
@@ -9,5 +10,6 @@ export default function ShopLayout({
   return <>
   <Navbar />
   {children}
+  {/* <Toaster /> */}
   </>;
 }

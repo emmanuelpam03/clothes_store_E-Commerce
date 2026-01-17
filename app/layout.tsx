@@ -28,17 +28,8 @@ export default async function RootLayout({
   return (
     <html lang="en" className="no-scrollbar overflow-y-scroll">
       <body className={`${inter.variable} ${interTight.variable} antialiased`}>
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            classNames: {
-              success: "bg-emerald-600 text-white border border-emerald-700",
-              error: "bg-red-600 text-white border border-red-700",
-              warning: "bg-yellow-500 text-black border border-yellow-600",
-            },
-          }}
-        />
         {children}
+        <Toaster richColors position="top-right" />
       </body>
     </html>
   );
