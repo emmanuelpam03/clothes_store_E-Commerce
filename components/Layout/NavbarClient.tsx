@@ -7,6 +7,7 @@ import { menuIcon, navArrow, heartIcon } from "@/public/assets/images/images";
 import { ShoppingBag, UserIcon, LogOut, UserStar } from "lucide-react";
 import { signOut } from "next-auth/react";
 import type { Session } from "next-auth";
+import RoleBadge from "../ui/role-badge";
 
 interface NavbarClientProps {
   session: Session | null;
@@ -153,7 +154,11 @@ export function NavbarClient({ session }: NavbarClientProps) {
                     />
                   )}
                 </button>
-                <p>{session.user?.name?.split(" ")[0]}</p>
+                {/* <p>{session.user?.name?.split(" ")[0]}</p> */}
+                <p className="flex items-center text-sm font-medium">
+                  {session?.user?.name?.split(" ")[0]}
+                  <RoleBadge role={session?.user?.role} />
+                </p>
               </div>
 
               {isProfileOpen && (
