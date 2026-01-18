@@ -6,6 +6,7 @@ import { setPasswordAction } from "../actions/account.actions";
 
 type Props = {
   onClose: () => void;
+  onPasswordSet: () => void;
 };
 
 const initialState = {
@@ -13,7 +14,7 @@ const initialState = {
   success: false,
 };
 
-export default function SetPasswordModal({ onClose }: Props) {
+export default function SetPasswordModal({ onClose, onPasswordSet }: Props) {
   const [state, action, isPending] = useActionState(
     setPasswordAction,
     initialState
@@ -22,9 +23,10 @@ export default function SetPasswordModal({ onClose }: Props) {
   useEffect(() => {
     if (state.success) {
       toast.success("Password set successfully");
+      onPasswordSet();
       onClose();
     }
-  }, [state.success, onClose]);
+  }, [state.success, onClose, onPasswordSet]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">

@@ -20,10 +20,15 @@ type Props = {
   hasPassword: boolean;
 };
 
-export default function ProfileClient({ user, hasGoogle, hasPassword }: Props) {
+export default function ProfileClient({
+  user,
+  hasGoogle,
+  hasPassword: initialHasPassword,
+}: Props) {
   const [showUnlinkConfirm, setShowUnlinkConfirm] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [showSetPassword, setShowSetPassword] = useState(false);
+  const [hasPassword, setHasPassword] = useState(initialHasPassword);
 
   return (
     <div className="mx-auto max-w-xl space-y-10 bg-white rounded-2xl p-8 shadow-sm">
@@ -172,7 +177,10 @@ export default function ProfileClient({ user, hasGoogle, hasPassword }: Props) {
         </div>
       )}
       {showSetPassword && (
-        <SetPasswordModal onClose={() => setShowSetPassword(false)} />
+        <SetPasswordModal
+          onClose={() => setShowSetPassword(false)}
+          onPasswordSet={() => setHasPassword(true)}
+        />
       )}
     </div>
   );

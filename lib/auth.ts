@@ -131,17 +131,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
          * not an explicit account-linking action.
          */
         if (!session) {
+          // Check if this Google account is already linked to any user
+          const existingAccount = await prisma.account.findUnique({
+            where: {
+              provider_providerAccountId: {
+                provider: "google",
+                providerAccountId: account.providerAccountId!,
+              },
+            },
+          });
+
+          if (existingAccount) {
+            // Allow sign-in, as the account is linked
+            return true;
+          }
+
+          // If not linked, check if email is taken by a user
           const existingUser = await prisma.user.findUnique({
             where: { email: user.email! },
             select: { id: true },
           });
 
-          /**
-           * If a user with this email already exists,
-           * block OAuth login and redirect with an error.
-           *
-           * The UI will handle this and show a toast.
-           */
           if (existingUser) {
             return "/login?error=email-exists";
           }
