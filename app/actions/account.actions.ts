@@ -13,31 +13,37 @@ type SetPasswordState = {
 
 /**
  * CHECK IF GOOGLE CAN BE LINKED
- * Prevents redirect to NextAuth default OAuthAccountNotLinked page
+ * Blocks ONLY when Google email belongs to another user
  */
 export async function canLinkGoogleAction() {
   const session = await auth();
 
-  if (!session?.user?.email || !session.user.id) {
+  if (!session?.user?.id || !session.user.email) {
     return { ok: false };
   }
 
-  const existingGoogleAccount = await prisma.account.findFirst({
+  // Find any existing Google account with the same email
+  const existingAccount = await prisma.account.findFirst({
     where: {
       provider: "google",
-      NOT: {
-        userId: session.user.id,
+      user: {
+        email: session.user.email,
       },
+    },
+    select: {
+      userId: true,
     },
   });
 
-  if (existingGoogleAccount) {
+  // If Google account exists but belongs to another user → block
+  if (existingAccount && existingAccount.userId !== session.user.id) {
     return {
       ok: false,
-      reason: "GOOGLE_ALREADY_LINKED",
+      reason: "EMAIL_ALREADY_IN_USE",
     };
   }
 
+  // Otherwise linking is allowed
   return { ok: true };
 }
 
@@ -51,13 +57,9 @@ export async function unlinkGoogleAction() {
     redirect("/login");
   }
 
-  const userId = session.user.id;
-
   const user = await prisma.user.findUnique({
-    where: { id: userId },
-    include: {
-      accounts: true,
-    },
+    where: { id: session.user.id },
+    include: { accounts: true },
   });
 
   if (!user) {
@@ -91,7 +93,6 @@ export async function unlinkGoogleAction() {
 /**
  * SET PASSWORD ACTION
  */
-
 export async function setPasswordAction(
   _prevState: SetPasswordState,
   formData: FormData
@@ -114,7 +115,9 @@ export async function setPasswordAction(
     const errors = parsed.error.flatten().fieldErrors;
     return {
       error:
-        errors.password?.[0] || errors.confirmPassword?.[0] || "Invalid input",
+        errors.password?.[0] ||
+        errors.confirmPassword?.[0] ||
+        "Invalid input",
       success: false,
     };
   }

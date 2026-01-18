@@ -12,9 +12,9 @@ import {
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { useActionState } from "react";
-import { useEffect } from "react"; // ✅ added
-import { toast } from "sonner"; // ✅ added
-import { useRouter } from "next/navigation"; // ✅ added
+import { useEffect } from "react";
+import { toast } from "sonner";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const initialState = {
   name: "",
@@ -30,9 +30,19 @@ export function SignupForm(props: React.ComponentProps<typeof Card>) {
     initialState
   );
 
-  const router = useRouter(); // ✅ added
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  // ✅ added (ONLY side-effects, no logic changes)
+  useEffect(() => {
+    if (searchParams.get("error") === "email-exists") {
+      toast.error(
+        "An account with this email already exists. Please sign in instead."
+      );
+
+      router.replace("/register");
+    }
+  }, [searchParams, router]);
+
   useEffect(() => {
     if (state.error) {
       toast.error(state.error);
@@ -53,7 +63,6 @@ export function SignupForm(props: React.ComponentProps<typeof Card>) {
       </CardHeader>
 
       <CardContent className="space-y-6">
-        {/* Email / Password Signup */}
         <form className="space-y-6" action={action}>
           <FieldGroup className="space-y-4">
             <Field>
@@ -135,20 +144,14 @@ export function SignupForm(props: React.ComponentProps<typeof Card>) {
           >
             {isLoading ? "Signing you up..." : "Create Account"}
           </Button>
-
-          {state.error && (
-            <p className="text-center text-sm text-red-600">{state.error}</p>
-          )}
         </form>
 
-        {/* Divider */}
         <div className="flex items-center gap-4">
           <div className="h-px flex-1 bg-slate-300" />
           <span className="text-sm text-slate-500">OR</span>
           <div className="h-px flex-1 bg-slate-300" />
         </div>
 
-        {/* Google Sign Up */}
         <form action={googleSignInAction}>
           <Button
             type="submit"

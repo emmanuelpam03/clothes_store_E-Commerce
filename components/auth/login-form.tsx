@@ -12,9 +12,9 @@ import {
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { useActionState } from "react";
-import { useEffect } from "react"; // ✅ added
-import { toast } from "sonner"; // ✅ added
-import { useRouter } from "next/navigation"; // ✅ added
+import { useEffect } from "react";
+import { toast } from "sonner";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const initialState = {
   email: "",
@@ -27,8 +27,21 @@ export function LoginForm(props: React.ComponentProps<typeof Card>) {
   const [state, action, isLoading] = useActionState(loginAction, initialState);
 
   const router = useRouter();
+  const searchParams = useSearchParams();
 
-  // added (ONLY side-effects)
+  // Handle blocked Google login (email already exists)
+  useEffect(() => {
+    if (searchParams.get("error") === "email-exists") {
+      toast.error(
+        "An account with this email already exists. Please sign in using your original method."
+      );
+
+      // Clean the URL so toast doesn’t repeat
+      router.replace("/login");
+    }
+  }, [searchParams, router]);
+
+  // 🔵 Handle normal login feedback
   useEffect(() => {
     if (state.error) {
       toast.error(state.error);
@@ -49,7 +62,6 @@ export function LoginForm(props: React.ComponentProps<typeof Card>) {
       </CardHeader>
 
       <CardContent className="space-y-6">
-        {/* Email / Password Login */}
         <form className="space-y-6" action={action}>
           <FieldGroup className="space-y-4">
             <Field>
@@ -97,20 +109,14 @@ export function LoginForm(props: React.ComponentProps<typeof Card>) {
           >
             {isLoading ? "Logging you in..." : "Login"}
           </Button>
-
-          {state.error && (
-            <p className="text-center text-sm text-red-600">{state.error}</p>
-          )}
         </form>
 
-        {/* Divider */}
         <div className="flex items-center gap-4">
           <div className="h-px flex-1 bg-slate-300" />
           <span className="text-sm text-slate-500">OR</span>
           <div className="h-px flex-1 bg-slate-300" />
         </div>
 
-        {/* Google Login */}
         <form action={googleSignInAction}>
           <Button
             variant="outline"
