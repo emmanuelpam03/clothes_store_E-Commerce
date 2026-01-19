@@ -156,6 +156,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             return "/login?error=email-exists";
           }
         }
+
+        // This runs ONLY when:
+        // - Google sign-in is allowed
+        // - No takeover was detected
+        // - Account is safe to trust
+        if (account?.provider === "google") {
+          await prisma.user.update({
+            where: { email: user.email! },
+            data: { emailVerified: new Date() },
+          });
+        }
       }
 
       // Allow sign-in in all other cases
@@ -221,6 +232,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       session.user.email = token.email as string;
       session.user.image = token.image as string | null;
       session.user.role = token.role as "USER" | "ADMIN";
+      session.user.emailVerified = token.emailVerified as Date | null;
 
       return session;
     },

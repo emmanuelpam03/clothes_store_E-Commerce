@@ -5,6 +5,8 @@ import { registerSchema } from "@/lib/validators/register.schema";
 import { signIn, signOut } from "@/lib/auth";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
+import { createEmailVerificationToken } from "@/lib/auth/email-verification";
+import { sendVerificationEmail } from "@/lib/email";
 
 type RegisterState = {
   name: string;
@@ -104,13 +106,30 @@ export async function registerAction(
 
   const hashedPassword = await bcrypt.hash(rawData.password, 10);
 
-  await prisma.user.create({
+  const user = await prisma.user.create({
     data: {
       name: rawData.name,
       email: rawData.email,
       password: hashedPassword,
     },
   });
+
+  // 🔒 ensure email exists
+  if (!user.email) {
+    return {
+      name: "",
+      email: "",
+      error: "Invalid email",
+      success: null,
+      fieldErrors: {},
+    };
+  }
+
+  // create token
+  const token = await createEmailVerificationToken(user.id);
+
+  // send email
+  await sendVerificationEmail(user.email, token);
 
   return {
     name: "",

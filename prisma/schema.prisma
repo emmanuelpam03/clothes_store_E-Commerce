@@ -53,16 +53,23 @@ model User {
   password      String?
   accounts      Account[]
   sessions      Session[]
+  emailVerificationTokens EmailVerificationToken[]
 
   @@map("users")
 }
 
 
-model VerificationToken {
-  identifier String
-  token      String
-  expires    DateTime
+model EmailVerificationToken {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  code        String   // 6-digit numeric code (e.g. "483920")
+  expiresAt   DateTime
+  attempts    Int      @default(0)
+  lockedUntil DateTime?
+  createdAt   DateTime @default(now())
 
-  @@unique([identifier, token])
-  @@map("verification_tokens")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("email_verification_tokens")
 }

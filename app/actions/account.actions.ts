@@ -115,9 +115,7 @@ export async function setPasswordAction(
     const errors = parsed.error.flatten().fieldErrors;
     return {
       error:
-        errors.password?.[0] ||
-        errors.confirmPassword?.[0] ||
-        "Invalid input",
+        errors.password?.[0] || errors.confirmPassword?.[0] || "Invalid input",
       success: false,
     };
   }
@@ -133,4 +131,96 @@ export async function setPasswordAction(
     error: null,
     success: true,
   };
+}
+
+/** VERIFY EMAIL CODE ACTION
+ */
+export async function verifyEmailCodeAction(code: string) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return { ok: false, error: "Unauthorized" };
+  }
+
+  const record = await prisma.emailVerificationToken.findFirst({
+    where: {
+      userId: session.user.id,
+      code,
+    },
+  });
+
+  if (!record) {
+    return { ok: false, error: "Invalid or expired code" };
+  }
+
+  if (record.expiresAt < new Date()) {
+    return { ok: false, error: "Invalid or expired code" };
+  }
+
+  if (record.lockedUntil && record.lockedUntil > new Date()) {
+    return {
+      ok: false,
+      error: "Too many attempts. Try again later.",
+    };
+  }
+
+  // ✅ VERIFY ONLY HERE
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: { emailVerified: new Date() },
+  });
+
+  await prisma.emailVerificationToken.delete({
+    where: { id: record.id },
+  });
+
+  return { ok: true };
+}
+
+/** RESEND VERIFICATION CODE ACTION
+ */
+
+function generate6DigitCode() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+export async function resendVerificationCodeAction() {
+  const session = await auth();
+
+  if (!session?.user?.id || !session.user.email) {
+    throw new Error("Unauthorized");
+  }
+
+  const userId = session.user.id;
+
+  const existing = await prisma.emailVerificationToken.findUnique({
+    where: { userId },
+  });
+
+  // Optional: simple cooldown (60s)
+  if (existing && existing.createdAt > new Date(Date.now() - 60_000)) {
+    throw new Error("Please wait before requesting another code.");
+  }
+
+  const code = generate6DigitCode();
+
+  await prisma.emailVerificationToken.upsert({
+    where: { userId },
+    update: {
+      code,
+      attempts: 0,
+      lockedUntil: null,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 min
+      createdAt: new Date(),
+    },
+    create: {
+      userId,
+      code,
+      attempts: 0,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+    },
+  });
+
+  // TEMP (until Nodemailer)
+  console.log(`📧 Verification code for ${session.user.email}: ${code}`);
 }

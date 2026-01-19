@@ -33,7 +33,7 @@ export type Session = Prisma.SessionModel
  */
 export type User = Prisma.UserModel
 /**
- * Model VerificationToken
+ * Model EmailVerificationToken
  * 
  */
-export type VerificationToken = Prisma.VerificationTokenModel
+export type EmailVerificationToken = Prisma.EmailVerificationTokenModel

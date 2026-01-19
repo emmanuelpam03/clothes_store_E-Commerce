@@ -15,6 +15,7 @@ export default async function ProfilePage() {
     redirect("/login");
   }
 
+
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: {
