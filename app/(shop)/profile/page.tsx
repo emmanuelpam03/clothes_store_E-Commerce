@@ -23,6 +23,7 @@ export default async function ProfilePage() {
       email: true,
       image: true,
       password: true,
+      emailVerified: true,
       accounts: {
         select: { provider: true },
       },
@@ -46,6 +47,7 @@ export default async function ProfilePage() {
           name: user.name,
           email: user.email,
           image: user.image,
+          emailVerified: user.emailVerified,
         }}
         hasGoogle={hasGoogle}
         hasPassword={hasPassword}

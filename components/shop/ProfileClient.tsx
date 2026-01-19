@@ -6,15 +6,18 @@ import { signIn } from "next-auth/react";
 import {
   unlinkGoogleAction,
   canLinkGoogleAction,
+  resendVerificationCodeAction,
 } from "@/app/actions/account.actions";
 import { toast } from "sonner";
 import SetPasswordModal from "@/app/(shop)/setPasswordModal";
+import { useRouter } from "next/navigation";
 
 type Props = {
   user: {
     name: string | null;
     email: string | null;
     image: string | null;
+    emailVerified: Date | null;
   };
   hasGoogle: boolean;
   hasPassword: boolean;
@@ -29,6 +32,7 @@ export default function ProfileClient({
   const [confirmed, setConfirmed] = useState(false);
   const [showSetPassword, setShowSetPassword] = useState(false);
   const [hasPassword, setHasPassword] = useState(initialHasPassword);
+  const router = useRouter();
 
   return (
     <div className="mx-auto max-w-xl space-y-10 bg-white rounded-2xl p-8 shadow-sm">
@@ -59,6 +63,41 @@ export default function ProfileClient({
       <div className="space-y-6">
         <h2 className="text-base font-medium">Account access</h2>
 
+        {/* EMAIL VERIFICATION */}
+        <div className="flex items-center justify-between rounded-lg border px-4 py-3">
+          <div>
+            <p className="text-sm font-medium">Email verification</p>
+            <p className="text-xs text-neutral-500">
+              {user.emailVerified
+                ? "Your email is verified"
+                : "Your email is not verified"}
+            </p>
+          </div>
+
+          {user.emailVerified ? (
+            <span className="text-sm text-green-600">Verified</span>
+          ) : (
+            <button
+              onClick={async () => {
+                try {
+                  await resendVerificationCodeAction();
+                  toast.success("Verification code sent to your email");
+                  router.push("/verify")
+                } catch (err) {
+                  if (err instanceof Error) {
+                    toast.error(err.message);
+                  } else {
+                    toast.error("Failed to send verification code");
+                  }
+                }
+              }}
+              className="text-sm underline cursor-pointer"
+            >
+              Verify email
+            </button>
+          )}
+        </div>
+
         {/* PASSWORD */}
         <div className="flex items-center justify-between rounded-lg border px-4 py-3">
           <div>
@@ -71,7 +110,7 @@ export default function ProfileClient({
           ) : (
             <button
               onClick={() => setShowSetPassword(true)}
-              className="text-sm underline"
+              className="text-sm underline cursor-pointer"
             >
               Set password
             </button>
@@ -107,7 +146,7 @@ export default function ProfileClient({
                 callbackUrl: "/profile",
               });
             }}
-            className="w-full rounded-lg border py-2 text-sm font-medium hover:bg-neutral-50"
+            className="w-full rounded-lg border py-2 text-sm font-medium hover:bg-neutral-50 cursor-pointer"
           >
             Link Google account
           </button>
@@ -120,7 +159,7 @@ export default function ProfileClient({
               setConfirmed(false);
               setShowUnlinkConfirm(true);
             }}
-            className="w-full rounded-lg border border-red-500 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+            className="w-full rounded-lg border border-red-500 py-2 text-sm font-medium text-red-600 hover:bg-red-50 cursor-pointer"
           >
             Unlink Google account
           </button>
@@ -156,7 +195,7 @@ export default function ProfileClient({
             <div className="flex gap-3 pt-2">
               <button
                 onClick={() => setShowUnlinkConfirm(false)}
-                className="flex-1 rounded-lg border py-2 text-sm hover:bg-neutral-50"
+                className="flex-1 rounded-lg border py-2 text-sm hover:bg-neutral-50 cursor-pointer"
               >
                 Cancel
               </button>
@@ -165,7 +204,7 @@ export default function ProfileClient({
                 <button
                   type="submit"
                   disabled={!confirmed}
-                  className={`w-full rounded-lg py-2 text-sm text-white ${
+                  className={`w-full rounded-lg py-2 text-sm text-white cursor-pointer ${
                     confirmed ? "bg-red-600" : "bg-red-300 cursor-not-allowed"
                   }`}
                 >
