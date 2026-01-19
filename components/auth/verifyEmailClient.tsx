@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,17 @@ export default function VerifyEmailClient() {
   const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
+  const [cooldown, setCooldown] = useState(60);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+
+    const timer = setInterval(() => {
+      setCooldown((c) => c - 1);
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [cooldown]);
 
   async function handleVerify() {
     if (!code) {
@@ -68,16 +79,17 @@ export default function VerifyEmailClient() {
             className="text-center text-lg tracking-widest"
           />
 
-          <Button type="submit" onClick={handleVerify} disabled={loading} className="w-full">
+          <Button
+            type="submit"
+            onClick={handleVerify}
+            disabled={loading}
+            className="w-full"
+          >
             {loading ? "Verifying..." : "Verify email"}
           </Button>
 
-          <button
-            onClick={handleResend}
-            disabled={resending}
-            className="w-full text-sm underline"
-          >
-            {resending ? "Resending..." : "Resend code"}
+          <button onClick={handleResend} disabled={resending || cooldown > 0}>
+            {cooldown > 0 ? `Resend in ${cooldown}s` : "Resend code"}
           </button>
         </CardContent>
       </Card>

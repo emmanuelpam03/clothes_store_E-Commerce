@@ -32,6 +32,8 @@ export default function ProfileClient({
   const [confirmed, setConfirmed] = useState(false);
   const [showSetPassword, setShowSetPassword] = useState(false);
   const [hasPassword, setHasPassword] = useState(initialHasPassword);
+  const [isSending, setIsSending] = useState(false);
+
   const router = useRouter();
 
   return (
@@ -78,22 +80,28 @@ export default function ProfileClient({
             <span className="text-sm text-green-600">Verified</span>
           ) : (
             <button
+              disabled={isSending}
               onClick={async () => {
                 try {
+                  setIsSending(true);
                   await resendVerificationCodeAction();
-                  toast.success("Verification code sent to your email");
-                  router.push("/verify")
+                  toast.success("Verification code sent");
+                  router.push("/verify");
                 } catch (err) {
                   if (err instanceof Error) {
                     toast.error(err.message);
                   } else {
                     toast.error("Failed to send verification code");
                   }
+                } finally {
+                  setIsSending(false);
                 }
               }}
-              className="text-sm underline cursor-pointer"
+              className={`text-sm underline cursor-pointer ${
+                isSending ? "opacity-50 cursor-not-allowed" : ""
+              }`}
             >
-              Verify email
+              {isSending ? "Sending..." : "Verify email"}
             </button>
           )}
         </div>

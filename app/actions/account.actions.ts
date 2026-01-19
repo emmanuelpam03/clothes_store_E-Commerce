@@ -211,7 +211,6 @@ export async function resendVerificationCodeAction() {
       attempts: 0,
       lockedUntil: null,
       expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 min
-      createdAt: new Date(),
     },
     create: {
       userId,
