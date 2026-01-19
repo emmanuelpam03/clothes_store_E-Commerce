@@ -135,46 +135,106 @@ export async function setPasswordAction(
 
 /** VERIFY EMAIL CODE ACTION
  */
+// export async function verifyEmailCodeAction(code: string) {
+//   const session = await auth();
+
+//   if (!session?.user?.id) {
+//     return { ok: false, error: "Unauthorized" };
+//   }
+
+//   const record = await prisma.emailVerificationToken.findFirst({
+//     where: {
+//       userId: session.user.id,
+//       code,
+//     },
+//   });
+
+//   if (!record) {
+//     return { ok: false, error: "Invalid or expired code" };
+//   }
+
+//   if (record.expiresAt < new Date()) {
+//     return { ok: false, error: "Invalid or expired code" };
+//   }
+
+//   if (record.lockedUntil && record.lockedUntil > new Date()) {
+//     return {
+//       ok: false,
+//       error: "Too many attempts. Try again later.",
+//     };
+//   }
+
+//   // ✅ VERIFY ONLY HERE
+//   await prisma.user.update({
+//     where: { id: session.user.id },
+//     data: { emailVerified: new Date() },
+//   });
+
+//   await prisma.emailVerificationToken.delete({
+//     where: { id: record.id },
+//   });
+
+//   return { ok: true };
+// }
+
 export async function verifyEmailCodeAction(code: string) {
   const session = await auth();
 
   if (!session?.user?.id) {
-    return { ok: false, error: "Unauthorized" };
+    throw new Error("Unauthorized");
   }
 
-  const record = await prisma.emailVerificationToken.findFirst({
-    where: {
-      userId: session.user.id,
-      code,
-    },
+  const userId = session.user.id;
+
+  const record = await prisma.emailVerificationToken.findUnique({
+    where: { userId },
   });
 
-  if (!record) {
-    return { ok: false, error: "Invalid or expired code" };
+  // ❌ No record or expired
+  if (!record || record.expiresAt < new Date()) {
+    throw new Error("Invalid or expired code");
   }
 
-  if (record.expiresAt < new Date()) {
-    return { ok: false, error: "Invalid or expired code" };
-  }
-
+  // 🔒 Locked
   if (record.lockedUntil && record.lockedUntil > new Date()) {
-    return {
-      ok: false,
-      error: "Too many attempts. Try again later.",
-    };
+    throw new Error("Too many attempts. Try again later.");
   }
 
-  // ✅ VERIFY ONLY HERE
+  // ❌ Wrong code
+  if (record.code !== code) {
+    const attempts = record.attempts + 1;
+
+    // Lock after 5 attempts
+    if (attempts >= 5) {
+      await prisma.emailVerificationToken.update({
+        where: { userId },
+        data: {
+          attempts,
+          lockedUntil: new Date(Date.now() + 15 * 60 * 1000), // 15 min
+        },
+      });
+
+      throw new Error("Too many attempts. Verification locked.");
+    }
+
+    // Normal failed attempt
+    await prisma.emailVerificationToken.update({
+      where: { userId },
+      data: { attempts },
+    });
+
+    throw new Error("Invalid verification code");
+  }
+
+  // ✅ SUCCESS
   await prisma.user.update({
-    where: { id: session.user.id },
+    where: { id: userId },
     data: { emailVerified: new Date() },
   });
 
   await prisma.emailVerificationToken.delete({
-    where: { id: record.id },
+    where: { userId },
   });
-
-  return { ok: true };
 }
 
 /** RESEND VERIFICATION CODE ACTION

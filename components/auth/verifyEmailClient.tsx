@@ -28,23 +28,19 @@ export default function VerifyEmailClient() {
     return () => clearInterval(timer);
   }, [cooldown]);
 
-  async function handleVerify() {
-    if (!code) {
-      toast.error("Enter the verification code");
-      return;
-    }
-
+  async function handleVerify(value: string) {
     setLoading(true);
     try {
-      const result = await verifyEmailCodeAction(code);
-
-      if (!result.ok) {
-        toast.error(result.error);
-        return;
-      }
+      await verifyEmailCodeAction(value);
 
       toast.success("Email verified successfully");
       router.push("/profile");
+    } catch (e) {
+      if (e instanceof Error) {
+        toast.error(e.message);
+      } else {
+        toast.error("Verification failed");
+      }
     } finally {
       setLoading(false);
     }
@@ -55,6 +51,7 @@ export default function VerifyEmailClient() {
       setResending(true);
       await resendVerificationCodeAction();
       toast.success("Verification code resent");
+      setCooldown(60);
     } catch {
       toast.error("Could not resend code");
     } finally {
@@ -80,9 +77,9 @@ export default function VerifyEmailClient() {
           />
 
           <Button
-            type="submit"
-            onClick={handleVerify}
-            disabled={loading}
+            type="button"
+            onClick={() => handleVerify(code)}
+            disabled={loading || code.length !== 6}
             className="w-full"
           >
             {loading ? "Verifying..." : "Verify email"}

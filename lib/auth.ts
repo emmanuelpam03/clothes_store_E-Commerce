@@ -161,12 +161,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // - Google sign-in is allowed
         // - No takeover was detected
         // - Account is safe to trust
-        if (account?.provider === "google") {
-          await prisma.user.update({
-            where: { email: user.email! },
-            data: { emailVerified: new Date() },
-          });
-        }
+        //   if (account?.provider === "google") {
+        //     await prisma.user.update({
+        //       where: { email: user.email! },
+        //       data: { emailVerified: new Date() },
+        //     });
+        //   }
       }
 
       // Allow sign-in in all other cases
@@ -195,6 +195,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.email = user.email;
         token.image = user.image;
         token.role = user.role;
+
+        if (user && token.sub) {
+          // Auto-verify Google users SAFELY
+          await prisma.user.updateMany({
+            where: {
+              id: token.sub,
+              emailVerified: null,
+            },
+            data: {
+              emailVerified: new Date(),
+            },
+          });
+        }
         return token;
       }
 
