@@ -13,6 +13,12 @@ import bcrypt from "bcryptjs";
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma as never),
 
+  // logger:{
+  //   error(code){
+  //     if(code === "CredentialsSignin")return;
+  //   }
+  // },
+
   /**
    * JWT sessions are required here because:
    * - We want fine-grained control over session invalidation
@@ -185,10 +191,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
      * - invalidate sessions if the user is deleted
      */
     async jwt({ token, user }) {
-      /**
-       * First login (credentials OR OAuth)
-       * Attach user data to the token
-       */
       if (user) {
         token.id = user.id;
         token.name = user.name;
@@ -196,26 +198,31 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.image = user.image;
         token.role = user.role;
 
-        if (user && token.sub) {
-          // Auto-verify Google users SAFELY
-          await prisma.user.updateMany({
+        if (token.sub) {
+          const hasGoogleAccount = await prisma.account.findFirst({
             where: {
-              id: token.sub,
-              emailVerified: null,
+              userId: token.sub,
+              provider: "google",
             },
-            data: {
-              emailVerified: new Date(),
-            },
+            select: { id: true },
           });
+
+          if (hasGoogleAccount) {
+            await prisma.user.updateMany({
+              where: {
+                id: token.sub,
+                emailVerified: null,
+              },
+              data: {
+                emailVerified: new Date(),
+              },
+            });
+          }
         }
+
         return token;
       }
 
-      /**
-       * Session hardening:
-       * If the user no longer exists in the database,
-       * invalidate the JWT → forces logout everywhere.
-       */
       if (token.sub) {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.sub },

@@ -40,13 +40,30 @@ export async function loginAction(
     };
   }
 
-  const result = await signIn("credentials", {
-    email,
-    password,
-    redirect: false,
-  });
+  try {
+    const result = await signIn("credentials", {
+      email,
+      password,
+      redirect: false,
+    });
 
-  if (!result || result.error) {
+    if (!result) {
+      return {
+        email,
+        error: "Invalid email or password",
+        success: null,
+        fieldErrors: {},
+      };
+    }
+
+    return {
+      email: "",
+      error: null,
+      success: "Logged in successfully",
+      fieldErrors: {},
+    };
+  } catch {
+    // Auth.js throws CredentialsSignin on wrong password
     return {
       email,
       error: "Invalid email or password",
@@ -54,14 +71,8 @@ export async function loginAction(
       fieldErrors: {},
     };
   }
-
-  return {
-    email: "",
-    error: null,
-    success: "Logged in successfully",
-    fieldErrors: {},
-  };
 }
+
 
 export async function registerAction(
   _prev: RegisterState,
@@ -111,6 +122,7 @@ export async function registerAction(
       name: rawData.name,
       email: rawData.email,
       password: hashedPassword,
+      emailVerified: null,
     },
   });
 
