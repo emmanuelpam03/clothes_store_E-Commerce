@@ -1,4 +1,5 @@
-import { transporter } from "./transporter";
+// lib/email/send-email.ts
+import { resend } from "./resend";
 
 type SendEmailArgs = {
   to: string;
@@ -7,20 +8,12 @@ type SendEmailArgs = {
 };
 
 export async function sendEmail({ to, subject, html }: SendEmailArgs) {
-  // DEV: log instead of sending
-  if (process.env.NODE_ENV !== "production") {
-    console.log("📧 DEV EMAIL");
-    console.log("To:", to);
-    console.log("Subject:", subject);
-    console.log("HTML:", html);
-    return;
-  }
-
-  // PROD: real email
-  await transporter.sendMail({
+  const result = await resend.emails.send({
     from: process.env.EMAIL_FROM!,
     to,
     subject,
     html,
   });
+
+  console.log("RESEND RESULT:", result);
 }
