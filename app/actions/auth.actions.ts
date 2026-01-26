@@ -5,8 +5,8 @@ import { registerSchema } from "@/lib/validators/register.schema";
 import { signIn, signOut } from "@/lib/auth";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
-import { createEmailVerificationToken } from "@/lib/auth/email-verification";
-import { sendVerificationEmail } from "@/lib/email";
+// import { createEmailVerificationToken } from "@/lib/auth/email-verification";
+// import { sendVerificationEmail } from "@/lib/email";
 
 type RegisterState = {
   name: string;
@@ -137,11 +137,11 @@ export async function registerAction(
     };
   }
 
-  // create token
-  const token = await createEmailVerificationToken(user.id);
+  // // create token
+  // const token = await createEmailVerificationToken(user.id);
 
-  // send email
-  await sendVerificationEmail(user.email, token);
+  // // send email
+  // await sendVerificationEmail(user.email, token);
 
   return {
     name: "",

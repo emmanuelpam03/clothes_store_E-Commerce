@@ -174,7 +174,7 @@ export async function verifyEmailCodeAction(code: string) {
         },
       });
 
-      throw new Error("Too many attempts. Verification locked.");
+      throw new Error("Too many attempts. Verification locked for 15 mins.");
     }
 
     // Normal failed attempt
