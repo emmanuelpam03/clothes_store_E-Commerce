@@ -37,3 +37,8 @@ export type User = Prisma.UserModel
  * 
  */
 export type EmailVerificationToken = Prisma.EmailVerificationTokenModel
+/**
+ * Model RateLimit
+ * 
+ */
+export type RateLimit = Prisma.RateLimitModel

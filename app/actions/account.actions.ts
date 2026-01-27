@@ -3,6 +3,7 @@
 import { auth } from "@/lib/auth";
 import { sendVerificationEmail } from "@/lib/email";
 import prisma from "@/lib/prisma";
+// import { rateLimit } from "@/lib/rate-limit";
 import { setPasswordSchema } from "@/lib/validators/set-password.schema";
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
@@ -68,7 +69,7 @@ export async function unlinkGoogleAction() {
   }
 
   const googleAccount = user.accounts.find(
-    (account) => account.provider === "google"
+    (account) => account.provider === "google",
   );
 
   if (!googleAccount) {
@@ -80,7 +81,7 @@ export async function unlinkGoogleAction() {
 
   if (!hasPassword && authMethodCount <= 1) {
     throw new Error(
-      "You must set a password before unlinking your Google account."
+      "You must set a password before unlinking your Google account.",
     );
   }
 
@@ -96,7 +97,7 @@ export async function unlinkGoogleAction() {
  */
 export async function setPasswordAction(
   _prevState: SetPasswordState,
-  formData: FormData
+  formData: FormData,
 ): Promise<SetPasswordState> {
   const session = await auth();
 
@@ -145,6 +146,12 @@ export async function verifyEmailCodeAction(code: string) {
   }
 
   const userId = session.user.id;
+
+  // await rateLimit({
+  //   key: `verify:${userId}`,
+  //   limit: 10,
+  //   windowMs: 10 * 60 * 1000, // 10 minutes
+  // });
 
   const record = await prisma.emailVerificationToken.findUnique({
     where: { userId },
@@ -204,46 +211,6 @@ function generate6DigitCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-// export async function resendVerificationCodeAction() {
-//   const session = await auth();
-
-//   if (!session?.user?.id || !session.user.email) {
-//     throw new Error("Unauthorized");
-//   }
-
-//   const userId = session.user.id;
-
-//   const existing = await prisma.emailVerificationToken.findUnique({
-//     where: { userId },
-//   });
-
-//   // Optional: simple cooldown (60s)
-//   if (existing && existing.createdAt > new Date(Date.now() - 60_000)) {
-//     throw new Error("Please wait before requesting another code.");
-//   }
-
-//   const code = generate6DigitCode();
-
-//   await prisma.emailVerificationToken.upsert({
-//     where: { userId },
-//     update: {
-//       code,
-//       attempts: 0,
-//       lockedUntil: null,
-//       expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 min
-//     },
-//     create: {
-//       userId,
-//       code,
-//       attempts: 0,
-//       expiresAt: new Date(Date.now() + 10 * 60 * 1000),
-//     },
-//   });
-
-//   // TEMP (until Nodemailer)
-//   console.log(`📧 Verification code for ${session.user.email}: ${code}`);
-// }
-
 export async function resendVerificationCodeAction() {
   const session = await auth();
 
@@ -253,6 +220,12 @@ export async function resendVerificationCodeAction() {
 
   const userId = session.user.id;
   const email = session.user.email;
+
+  // await rateLimit({
+  //   key: `resend:${userId}`,
+  //   limit: 3,
+  //   windowMs: 60 * 60 * 1000, // 1 hour
+  // });
 
   const existing = await prisma.emailVerificationToken.findUnique({
     where: { userId },
