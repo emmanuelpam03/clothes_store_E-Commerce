@@ -1,6 +1,5 @@
 "use server";
 
-
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
@@ -74,6 +73,8 @@ export async function createOrderAction(items: CartItem[]) {
           productId: product.id,
           quantity: item.quantity,
           price: product.price,
+          name: product.name, // ✅ snapshot
+          image: product.image ?? null, // ✅ snapshot (safe for now)
         };
       }),
     });
@@ -96,8 +97,29 @@ export async function getOrders() {
   // Add get orders logic here
 }
 
-export async function getOrder(id: string) {
-  // Add get order logic here
+export async function getOrderById(orderId: string) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
+
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: {
+      items: {
+        include: {
+          product: true,
+        },
+      },
+    },
+  });
+
+  if (!order || order.userId !== session.user.id) {
+    throw new Error("Order not found");
+  }
+
+  return order;
 }
 
 export async function updateOrderStatus() {

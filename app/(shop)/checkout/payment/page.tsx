@@ -12,8 +12,8 @@ type CartItem = {
 };
 
 const cart: CartItem[] = [
-  { productId: "abc123", quantity: 2 },
-  { productId: "xyz456", quantity: 1 },
+  { productId: "cml51rx230006psp7o1prfgdt", quantity: 2 },
+  // { productId: "xyz456", quantity: 1 },
 ];
 
 export default function PaymentPage() {
@@ -34,6 +34,7 @@ export default function PaymentPage() {
         <h1 className="text-2xl font-bold mb-6">Payment</h1>
 
         <div className="space-y-4">
+          
           {/* Payment on Delivery */}
           <button
             disabled={isPending}

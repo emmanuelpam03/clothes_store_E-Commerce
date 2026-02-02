@@ -81,6 +81,7 @@ model Product {
   name        String
   description String?
   price       Int      // store in cents
+  image       String?
   active      Boolean  @default(true)
 
   createdAt   DateTime @default(now())
@@ -128,6 +129,8 @@ model OrderItem {
 
   quantity  Int
   price     Int     // snapshot price at purchase time
+  image     String?
+  name      String?
 
   order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product   Product @relation(fields: [productId], references: [id])
