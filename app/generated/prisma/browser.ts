@@ -37,23 +37,3 @@ export type User = Prisma.UserModel
  * 
  */
 export type EmailVerificationToken = Prisma.EmailVerificationTokenModel
-/**
- * Model Product
- * 
- */
-export type Product = Prisma.ProductModel
-/**
- * Model Inventory
- * 
- */
-export type Inventory = Prisma.InventoryModel
-/**
- * Model Order
- * 
- */
-export type Order = Prisma.OrderModel
-/**
- * Model OrderItem
- * 
- */
-export type OrderItem = Prisma.OrderItemModel

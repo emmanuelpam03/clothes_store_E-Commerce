@@ -4,11 +4,9 @@ import { ArrowLeft, ChevronDown } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 import { product1, product2 } from "@/public/assets/images/images";
-import { useRouter } from "next/navigation";
 
 export default function Checkout() {
   const [activeStep, setActiveStep] = useState("INFORMATION");
-  const router = useRouter();
 
   const orderItems = [
     {
@@ -31,7 +29,7 @@ export default function Checkout() {
 
   const subtotal = orderItems.reduce(
     (sum, item) => sum + item.price * item.quantity,
-    0,
+    0
   );
 
   return (
@@ -144,11 +142,8 @@ export default function Checkout() {
 
             {/* Shipping Button */}
             <div className="flex md:justify-end">
-              <button
-                onClick={() => router.push("/checkout/payment")}
-                className="flex items-center justify-between w-full md:w-1/2 bg-neutral-200 hover:bg-neutral-300 px-6 py-4 text-sm font-medium text-black transition-colors cursor-pointer"
-              >
-                <span>Payment</span>
+              <button className="flex items-center justify-between w-full md:w-1/2 bg-neutral-200 hover:bg-neutral-300 px-6 py-4 text-sm font-medium text-black transition-colors cursor-pointer">
+                <span>Shipping</span>
                 <ArrowLeft className="h-5 w-5 rotate-180" />
               </button>
             </div>

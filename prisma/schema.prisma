@@ -54,7 +54,6 @@ model User {
   accounts      Account[]
   sessions      Session[]
   emailVerificationTokens EmailVerificationToken[]
-  orders        Order[]
 
   @@map("users")
 }
