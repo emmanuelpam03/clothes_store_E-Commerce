@@ -1,4 +1,5 @@
 import { getOrderById } from "@/app/actions/order.actions";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 
 type PageProps = {
@@ -49,6 +50,17 @@ export default async function OrderSuccessPage({ params }: PageProps) {
                 <p className="text-sm font-medium text-black">
                   {item.product.name}
                 </p>
+                {item.product.image && (
+                  <p className="text-sm font-medium text-black">
+                    <Image
+                      src={item.product.image}
+                      alt={item.product.name}
+                      width={50}
+                      height={50}
+                      className="w-12 h-16"
+                    />
+                  </p>
+                )}
                 <p className="text-xs text-neutral-500">
                   Quantity: {item.quantity}
                 </p>
