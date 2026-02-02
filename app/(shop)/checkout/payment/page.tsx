@@ -1,9 +1,23 @@
 "use client";
 
 import { ArrowLeft } from "lucide-react";
+import { createOrderAction } from "@/app/actions/order.actions";
+import { useTransition } from "react";
+import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
+type CartItem = {
+  productId: string;
+  quantity: number;
+};
+
+const cart: CartItem[] = [
+  { productId: "abc123", quantity: 2 },
+  { productId: "xyz456", quantity: 1 },
+];
+
 export default function PaymentPage() {
+  const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
   return (
@@ -22,13 +36,25 @@ export default function PaymentPage() {
         <div className="space-y-4">
           {/* Payment on Delivery */}
           <button
-            onClick={() => {
-              // TEMP: later this will create an order
-              alert("Payment on Delivery selected");
-            }}
-            className="w-full bg-black text-white px-6 py-4 text-sm font-medium cursor-pointer"
+            disabled={isPending}
+            onClick={() =>
+              startTransition(async () => {
+                try {
+                  const order = await createOrderAction(cart);
+                  toast.success("Order placed successfully");
+                  router.push(`/order/${order.id}`);
+                } catch (err) {
+                  toast.error(
+                    err instanceof Error
+                      ? err.message
+                      : "Failed to place order",
+                  );
+                }
+              })
+            }
+            className="w-full bg-black text-white px-6 py-4 text-sm font-medium"
           >
-            Pay on Delivery
+            {isPending ? "Processing..." : "Pay on Delivery"}
           </button>
 
           {/* Card (later Stripe) */}
