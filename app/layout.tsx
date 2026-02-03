@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Inter_Tight } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
+import { CartProvider } from "@/lib/cart";
 
 export const inter = Inter({
   subsets: ["latin"],
@@ -28,7 +29,7 @@ export default async function RootLayout({
   return (
     <html lang="en" className="no-scrollbar overflow-y-scroll">
       <body className={`${inter.variable} ${interTight.variable} antialiased`}>
-        {children}
+        <CartProvider>{children}</CartProvider>
         <Toaster richColors position="top-right" />
       </body>
     </html>

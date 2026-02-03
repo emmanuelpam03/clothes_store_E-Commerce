@@ -2,62 +2,64 @@
 
 import Image, { StaticImageData } from "next/image";
 import Link from "next/link";
-import {
-  product1,
-  product2,
-  product3,
-  product4,
-  product5,
-  product6,
-} from "@/public/assets/images/images";
+// import {
+//   product1,
+//   product2,
+//   product3,
+//   product4,
+//   product5,
+//   product6,
+// } from "@/public/assets/images/images";
 import { Search, Heart, ChevronDown, ChevronRight, X } from "lucide-react";
 import { useState } from "react";
 
 type Product = {
-  image: StaticImageData;
-  category: string;
+  id: string;
   name: string;
-  price: string;
+  description: string | null;
+  price: number;
+  image: string | null;
 };
 
-const PRODUCTS: Product[] = [
-  {
-    image: product1,
-    category: "Cotton T-Shirt",
-    name: "Basic Slim Fit T-Shirt",
-    price: "$199",
-  },
-  {
-    image: product2,
-    category: "Crewneck T-Shirt",
-    name: "Basic Heavy Weight T-Shirt",
-    price: "$199",
-  },
-  {
-    image: product3,
-    category: "Cotton T-Shirt",
-    name: "Full Sleeve Zipper",
-    price: "$199",
-  },
-  {
-    image: product4,
-    category: "Cotton T-Shirt",
-    name: "Full Sleeve Zipper",
-    price: "$199",
-  },
-  {
-    image: product5,
-    category: "Cotton T-Shirt",
-    name: "Full Sleeve Zipper",
-    price: "$199",
-  },
-  {
-    image: product6,
-    category: "Cotton T-Shirt",
-    name: "Basic Slim Fit T-Shirt",
-    price: "$199",
-  },
-];
+
+// const PRODUCTS: Product[] = [
+//   {
+//     image: product1,
+//     category: "Cotton T-Shirt",
+//     name: "Basic Slim Fit T-Shirt",
+//     price: "$199",
+//   },
+//   {
+//     image: product2,
+//     category: "Crewneck T-Shirt",
+//     name: "Basic Heavy Weight T-Shirt",
+//     price: "$199",
+//   },
+//   {
+//     image: product3,
+//     category: "Cotton T-Shirt",
+//     name: "Full Sleeve Zipper",
+//     price: "$199",
+//   },
+//   {
+//     image: product4,
+//     category: "Cotton T-Shirt",
+//     name: "Full Sleeve Zipper",
+//     price: "$199",
+//   },
+//   {
+//     image: product5,
+//     category: "Cotton T-Shirt",
+//     name: "Full Sleeve Zipper",
+//     price: "$199",
+//   },
+//   {
+//     image: product6,
+//     category: "Cotton T-Shirt",
+//     name: "Basic Slim Fit T-Shirt",
+//     price: "$199",
+//   },
+// ];
 
 const CATEGORIES = [
   "NEW",
@@ -70,7 +72,11 @@ const CATEGORIES = [
   "SHORTS",
 ];
 
-export default function ProductsPageComponent() {
+export default function ProductsPageComponent({
+  products,
+}: {
+  products: Product[];
+}) {
   const [favorites, setFavorites] = useState<Set<number>>(new Set());
   const [expandedFilters, setExpandedFilters] = useState<Set<string>>(
     new Set(["Category", "Price Range"])
@@ -660,11 +666,11 @@ export default function ProductsPageComponent() {
                 isMobileFiltersOpen ? "hidden md:grid" : "grid"
               } grid-cols-1 md:grid-cols-2 lg:grid-cols-3`}
             >
-              {PRODUCTS.map((product, i) => (
-                <Link key={i} href={`/products/${i}`}>
+              {products.map((product, i) => (
+                <Link key={i} href={`/products/${product.id}`}>
                   <div className="relative h-105 bg-white group">
                     <Image
-                      src={product.image}
+                      src={product.image || "/placeholder.png"}
                       alt={product.name}
                       fill
                       className="object-cover"
@@ -693,7 +699,7 @@ export default function ProductsPageComponent() {
 
                   <div className="mt-3 flex items-center justify-between text-sm text-black">
                     <div>
-                      <p className="text-neutral-500">{product.category}</p>
+                      <p className="text-neutral-500">{product.description ?? "product"}</p>
                       <p className="font-medium">{product.name}</p>
                     </div>
                     <p className="font-semibold">{product.price}</p>
