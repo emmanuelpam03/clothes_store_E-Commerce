@@ -1,17 +1,7 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from "react";
-
-export type CartItem = {
-  id: string;
-  title: string;
-  subtitle: string;
-  price: number;
-  image: string;
-  size: string;
-  color: string;
-  qty: number;
-};
+import { createContext, useContext, useState } from "react";
+import type { CartItem } from "./cart.types";
 
 type CartContextType = {
   items: CartItem[];
@@ -23,45 +13,38 @@ type CartContextType = {
 
 const CartContext = createContext<CartContextType | null>(null);
 
-export function CartProvider({ children }: { children: ReactNode }) {
+export function CartProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
 
-  function addItem(item: CartItem) {
+  const addItem = (item: CartItem) => {
     setItems((prev) => {
-      const existing = prev.find((i) => i.id === item.id);
+      const existing = prev.find((p) => p.id === item.id);
 
       if (existing) {
-        return prev.map((i) =>
-          i.id === item.id ? { ...i, qty: i.qty + item.qty } : i
+        return prev.map((p) =>
+          p.id === item.id ? { ...p, qty: p.qty + 1 } : p
         );
       }
 
       return [...prev, item];
     });
-  }
+  };
 
-  function updateQty(id: string, type: "inc" | "dec") {
+  const updateQty = (id: string, type: "inc" | "dec") => {
     setItems((prev) =>
-      prev
-        .map((item) =>
-          item.id === id
-            ? {
-                ...item,
-                qty: type === "inc" ? item.qty + 1 : item.qty - 1,
-              }
-            : item
-        )
-        .filter((item) => item.qty > 0)
+      prev.map((item) =>
+        item.id === id
+          ? { ...item, qty: Math.max(1, item.qty + (type === "inc" ? 1 : -1)) }
+          : item
+      )
     );
-  }
+  };
 
-  function removeItem(id: string) {
+  const removeItem = (id: string) => {
     setItems((prev) => prev.filter((item) => item.id !== id));
-  }
+  };
 
-  function clearCart() {
-    setItems([]);
-  }
+  const clearCart = () => setItems([]);
 
   return (
     <CartContext.Provider

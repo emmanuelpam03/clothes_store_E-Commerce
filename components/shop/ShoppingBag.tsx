@@ -45,7 +45,7 @@ export default function ShoppingBag() {
               <div key={item.id} className="flex gap-6 w-fit sm:w-[320px]">
                 <div>
                   <div className="relative w-[220px] h-[300px] border bg-white">
-                    <Image src={item.image} alt={item.title} fill className="object-cover" />
+                    <Image src={item.image ?? "/placeholder.png"} alt={item.title} fill className="object-cover" />
 
                     <button
                       onClick={(e) => toggleFavorite(item.id, e)}

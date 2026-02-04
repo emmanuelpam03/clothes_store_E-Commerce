@@ -2,16 +2,12 @@
 
 import Image, { StaticImageData } from "next/image";
 import Link from "next/link";
-// import {
-//   product1,
-//   product2,
-//   product3,
-//   product4,
-//   product5,
-//   product6,
-// } from "@/public/assets/images/images";
 import { Search, Heart, ChevronDown, ChevronRight, X } from "lucide-react";
 import { useState } from "react";
+import { addToCartAction } from "@/app/actions/cart.actions";
+import { useCart } from "@/lib/cart";
+import { useTransition } from "react";
+import { toast } from "sonner";
 
 type Product = {
   id: string;
@@ -20,7 +16,6 @@ type Product = {
   price: number;
   image: string | null;
 };
-
 
 // const PRODUCTS: Product[] = [
 //   {
@@ -81,6 +76,9 @@ export default function ProductsPageComponent({
   const [expandedFilters, setExpandedFilters] = useState<Set<string>>(
     new Set(["Category", "Price Range"])
   );
+
+  const { addItem } = useCart();
+  const [isPending, startTransition] = useTransition();
 
   // Add state for price range
   const [maxPrice, setMaxPrice] = useState(500);
@@ -692,14 +690,31 @@ export default function ProductsPageComponent({
                     </button>
 
                     {/* ADD */}
-                    <button className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white px-3 py-1 text-sm text-black cursor-pointer">
+                    <button
+                      disabled={isPending}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        startTransition(async () => {
+                          try {
+                            const item = await addToCartAction(product.id);
+                            addItem(item);
+                            toast.success("Added to cart");
+                          } catch (err) {
+                            toast.error("Failed to add to cart");
+                          }
+                        });
+                      }}
+                      className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white px-3 py-1 text-sm text-black cursor-pointer"
+                    >
                       +
                     </button>
                   </div>
 
                   <div className="mt-3 flex items-center justify-between text-sm text-black">
                     <div>
-                      <p className="text-neutral-500">{product.description ?? "product"}</p>
+                      <p className="text-neutral-500">
+                        {product.description ?? "product"}
+                      </p>
                       <p className="font-medium">{product.name}</p>
                     </div>
                     <p className="font-semibold">{product.price}</p>

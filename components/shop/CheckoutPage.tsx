@@ -53,7 +53,7 @@ export default function Checkout() {
 
             {items.map((item) => (
               <div key={item.id} className="flex gap-4 mb-4">
-                <Image src={item.image} alt={item.title} width={96} height={96} />
+                <Image src={item.image ?? "/placeholder.png"} alt={item.title} width={96} height={96} />
                 <div className="flex-1">
                   <p>{item.title}</p>
                   <p className="text-xs text-neutral-500">{item.subtitle}</p>
