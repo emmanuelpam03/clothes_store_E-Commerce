@@ -80,6 +80,21 @@ export default function ProductsPageComponent({
   const { addItem } = useCart();
   const [isPending, startTransition] = useTransition();
 
+  const handleAddToCart = async (product: any) => {
+    addItem({
+      id: product.id,
+      title: product.name,
+      subtitle: product.description ?? "",
+      price: product.price,
+      image: product.image ?? "/placeholder.png",
+      size: "L",
+      color: "#000000",
+      qty: 1,
+    });
+
+    await addToCartAction(product.id);
+  };
+
   // Add state for price range
   const [maxPrice, setMaxPrice] = useState(500);
 
@@ -696,15 +711,14 @@ export default function ProductsPageComponent({
                         e.preventDefault();
                         startTransition(async () => {
                           try {
-                            const item = await addToCartAction(product.id);
-                            addItem(item);
+                            await handleAddToCart(product);
                             toast.success("Added to cart");
-                          } catch (err) {
+                          } catch {
                             toast.error("Failed to add to cart");
                           }
                         });
                       }}
-                      className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white px-3 py-1 text-sm text-black cursor-pointer"
+                      className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white px-3 py-1 text-sm text-black"
                     >
                       +
                     </button>
