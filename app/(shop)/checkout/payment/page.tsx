@@ -5,7 +5,7 @@ import { createOrderAction } from "@/app/actions/order.actions";
 import { useTransition } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { useCart } from "@/lib/cart";
+import { useCart } from "@/lib/cart/cart";
 
 export default function PaymentPage() {
   const { items, clearCart } = useCart();
@@ -20,7 +20,10 @@ export default function PaymentPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-neutral-100">
       <div className="max-w-md w-full border p-8">
-        <button onClick={() => router.push("/checkout")} className="mb-6 flex gap-2">
+        <button
+          onClick={() => router.push("/checkout")}
+          className="mb-6 flex gap-2"
+        >
           <ArrowLeft /> Back
         </button>
 

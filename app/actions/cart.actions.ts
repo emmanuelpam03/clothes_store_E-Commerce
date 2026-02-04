@@ -2,7 +2,7 @@
 
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import type { CartItem as UICartItem } from "@/lib/cart.types";
+import type { CartItem as UICartItem } from "@/lib/cart/cart.types";
 
 /* =========================
    INTERNAL HELPER

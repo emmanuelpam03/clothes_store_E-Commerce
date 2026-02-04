@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { Inter, Inter_Tight } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
-import { CartProvider } from "@/lib/cart";
+import { CartProvider } from "@/lib/cart/cart";
+import { SessionProvider } from "next-auth/react";
+import CartAuthSync from "@/lib/cart/CartAuthSync";
 
 export const inter = Inter({
   subsets: ["latin"],
@@ -29,8 +31,13 @@ export default async function RootLayout({
   return (
     <html lang="en" className="no-scrollbar overflow-y-scroll">
       <body className={`${inter.variable} ${interTight.variable} antialiased`}>
-        <CartProvider>{children}</CartProvider>
-        <Toaster richColors position="top-right" />
+        <SessionProvider>
+          <CartProvider>
+            <CartAuthSync />
+            {children}
+          </CartProvider>
+          <Toaster richColors position="top-right" />
+        </SessionProvider>
       </body>
     </html>
   );

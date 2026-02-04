@@ -5,7 +5,7 @@ import Link from "next/link";
 import { Search, Heart, ChevronDown, ChevronRight, X } from "lucide-react";
 import { useState } from "react";
 import { addToCartAction } from "@/app/actions/cart.actions";
-import { useCart } from "@/lib/cart";
+import { useCart } from "@/lib/cart/cart";
 import { useTransition } from "react";
 import { toast } from "sonner";
 

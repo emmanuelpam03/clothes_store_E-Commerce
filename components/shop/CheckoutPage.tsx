@@ -4,7 +4,7 @@ import { ArrowLeft, ChevronDown } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useCart } from "@/lib/cart";
+import { useCart } from "@/lib/cart/cart";
 
 export default function Checkout() {
   const [activeStep] = useState("INFORMATION");
@@ -34,8 +34,14 @@ export default function Checkout() {
 
             <h2 className="text-sm font-semibold">SHIPPING ADDRESS</h2>
 
-            <input placeholder="First Name" className="w-full border px-4 py-3" />
-            <input placeholder="Last Name" className="w-full border px-4 py-3" />
+            <input
+              placeholder="First Name"
+              className="w-full border px-4 py-3"
+            />
+            <input
+              placeholder="Last Name"
+              className="w-full border px-4 py-3"
+            />
             <input placeholder="Address" className="w-full border px-4 py-3" />
 
             <button
@@ -53,7 +59,12 @@ export default function Checkout() {
 
             {items.map((item) => (
               <div key={item.id} className="flex gap-4 mb-4">
-                <Image src={item.image ?? "/placeholder.png"} alt={item.title} width={96} height={96} />
+                <Image
+                  src={item.image ?? "/placeholder.png"}
+                  alt={item.title}
+                  width={96}
+                  height={96}
+                />
                 <div className="flex-1">
                   <p>{item.title}</p>
                   <p className="text-xs text-neutral-500">{item.subtitle}</p>

@@ -21,66 +21,57 @@ export async function createOrderAction(items: CartItem[]) {
     throw new Error("Cart is empty");
   }
 
-  return await prisma.$transaction(async (tx) => {
-    // 1️⃣ Fetch products + inventory
-    const products = await tx.product.findMany({
-      where: {
-        id: { in: items.map((i) => i.productId) },
-        active: true,
-      },
+  return prisma.$transaction(async (tx) => {
+    // 1️⃣ Get cart with items
+    const cart = await tx.cart.findUnique({
+      where: { userId },
       include: {
-        inventory: true,
+        items: {
+          include: { product: { include: { inventory: true } } },
+        },
       },
     });
 
-    if (products.length !== items.length) {
-      throw new Error("One or more products are invalid or inactive");
+    if (!cart || cart.items.length === 0) {
+      throw new Error("Cart is empty");
     }
 
-    // 2️⃣ Validate + compute total
-    let total = 0;
-
-    for (const item of items) {
-      const product = products.find((p) => p.id === item.productId);
-
-      if (!product || !product.inventory) {
+    // 2️⃣ Validate inventory
+    for (const item of cart.items) {
+      if (!item.product.inventory) {
         throw new Error("Inventory missing");
       }
 
-      if (product.inventory.quantity < item.quantity) {
-        throw new Error(`Insufficient stock for ${product.name}`);
+      if (item.product.inventory.quantity < item.quantity) {
+        throw new Error(`Insufficient stock for ${item.product.name}`);
       }
-
-      total += product.price * item.quantity;
     }
 
     // 3️⃣ Create order
     const order = await tx.order.create({
       data: {
         userId,
-        total,
-        status: "PENDING",
+        total: cart.items.reduce(
+          (sum, i) => sum + i.product.price * i.quantity,
+          0
+        ),
       },
     });
 
-    // 4️⃣ Create order items
+    // 4️⃣ Create order items (snapshots)
     await tx.orderItem.createMany({
-      data: items.map((item) => {
-        const product = products.find((p) => p.id === item.productId)!;
-
-        return {
-          orderId: order.id,
-          productId: product.id,
-          quantity: item.quantity,
-          price: product.price,
-          name: product.name, // ✅ snapshot
-          image: product.image ?? null, // ✅ snapshot (safe for now)
-        };
-      }),
+      data: cart.items.map((item) => ({
+        orderId: order.id,
+        productId: item.productId,
+        quantity: item.quantity,
+        price: item.product.price,
+        name: item.product.name,
+        image: item.product.image,
+      })),
     });
 
     // 5️⃣ Decrement inventory
-    for (const item of items) {
+    for (const item of cart.items) {
       await tx.inventory.update({
         where: { productId: item.productId },
         data: {
@@ -88,6 +79,11 @@ export async function createOrderAction(items: CartItem[]) {
         },
       });
     }
+
+    // 6️⃣ Clear cart
+    await tx.cartItem.deleteMany({
+      where: { cartId: cart.id },
+    });
 
     return order;
   });

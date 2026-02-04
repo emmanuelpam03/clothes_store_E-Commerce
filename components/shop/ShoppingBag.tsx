@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { favouritesIcon } from "@/public/assets/images/images";
 import { Heart, XIcon } from "lucide-react";
-import { useCart } from "@/lib/cart";
+import { useCart } from "@/lib/cart/cart";
 
 export default function ShoppingBag() {
   const { items, updateQty, removeItem } = useCart();
@@ -32,7 +32,12 @@ export default function ShoppingBag() {
           <Link href="/cart">shopping bag</Link>
           <Link href="/favourites" className="flex items-center gap-2">
             <span className="bg-white p-3">
-              <Image src={favouritesIcon} alt="favourites" width={13} height={13} />
+              <Image
+                src={favouritesIcon}
+                alt="favourites"
+                width={13}
+                height={13}
+              />
             </span>
             <p>favourites</p>
           </Link>
@@ -45,7 +50,12 @@ export default function ShoppingBag() {
               <div key={item.id} className="flex gap-6 w-fit sm:w-[320px]">
                 <div>
                   <div className="relative w-[220px] h-[300px] border bg-white">
-                    <Image src={item.image ?? "/placeholder.png"} alt={item.title} fill className="object-cover" />
+                    <Image
+                      src={item.image ?? "/placeholder.png"}
+                      alt={item.title}
+                      fill
+                      className="object-cover"
+                    />
 
                     <button
                       onClick={(e) => toggleFavorite(item.id, e)}
