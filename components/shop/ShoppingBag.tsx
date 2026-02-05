@@ -2,14 +2,26 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
-import { favouritesIcon } from "@/public/assets/images/images";
+import { useState, useTransition, useOptimistic } from "react";
 import { Heart, XIcon } from "lucide-react";
+import { toast } from "sonner";
+
+import { favouritesIcon } from "@/public/assets/images/images";
 import { useCart } from "@/lib/cart/cart";
+import { removeFromCart } from "@/app/actions/cart.actions";
 
 export default function ShoppingBag() {
   const { items, updateQty, removeItem } = useCart();
+
   const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [pendingId, setPendingId] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  // 🔥 OPTIMISTIC STATE
+  const [optimisticItems, removeOptimistic] = useOptimistic(
+    items,
+    (state, removedId: string) => state.filter((item) => item.id !== removedId)
+  );
 
   const toggleFavorite = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -20,7 +32,10 @@ export default function ShoppingBag() {
     });
   };
 
-  const subtotal = items.reduce((acc, item) => acc + item.price * item.qty, 0);
+  const subtotal = optimisticItems.reduce(
+    (acc, item) => acc + item.price * item.qty,
+    0
+  );
   const shipping = subtotal > 0 ? 10 : 0;
   const total = subtotal + shipping;
 
@@ -30,6 +45,7 @@ export default function ShoppingBag() {
         {/* HEADER */}
         <div className="flex justify-center items-center gap-4 uppercase text-black text-xs mb-5">
           <Link href="/cart">shopping bag</Link>
+
           <Link href="/favourites" className="flex items-center gap-2">
             <span className="bg-white p-3">
               <Image
@@ -46,8 +62,9 @@ export default function ShoppingBag() {
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-16">
           {/* CART ITEMS */}
           <div className="flex flex-wrap gap-12 py-5 border-y border-neutral-300 justify-center">
-            {items.map((item) => (
+            {optimisticItems.map((item) => (
               <div key={item.id} className="flex gap-6 w-fit sm:w-[320px]">
+                {/* PRODUCT */}
                 <div>
                   <div className="relative w-[220px] h-[300px] border bg-white">
                     <Image
@@ -82,21 +99,50 @@ export default function ShoppingBag() {
                   </div>
                 </div>
 
+                {/* ACTIONS */}
                 <div className="flex flex-col items-center gap-4 text-xs">
-                  <XIcon
-                    className="text-neutral-400 cursor-pointer"
-                    onClick={() => removeItem(item.id)}
-                  />
+                  {/* DELETE */}
+                  {pendingId === item.id ? (
+                    <span className="text-red-600 text-sm">Deleting...</span>
+                  ) : (
+                    <button
+                      onClick={() =>
+                        startTransition(async () => {
+                          setPendingId(item.id);
 
+                          // 🔥 instant UI removal
+                          removeOptimistic(item.id);
+
+                          // sync real state
+                          removeItem(item.id);
+
+                          try {
+                            await removeFromCart(item.id);
+                            toast.success("Item removed");
+                          } catch {
+                            toast.error("Failed to remove item");
+                          } finally {
+                            setPendingId(null);
+                          }
+                        })
+                      }
+                    >
+                      <XIcon className="text-neutral-400 cursor-pointer" />
+                    </button>
+                  )}
+
+                  {/* SIZE */}
                   <div className="w-7 h-7 border flex items-center justify-center">
                     {item.size}
                   </div>
 
+                  {/* COLOR */}
                   <div
                     className="w-7 h-7 border"
                     style={{ backgroundColor: item.color }}
                   />
 
+                  {/* QTY */}
                   <div className="flex flex-col items-center">
                     <button onClick={() => updateQty(item.id, "inc")}>+</button>
                     <span>{item.qty}</span>

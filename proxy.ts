@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { notFound } from "next/navigation";
 
 export async function proxy(request: NextRequest) {
   const session = await auth();
@@ -36,7 +37,12 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(new URL("/", request.url));
     }
   }
-  
+
+  if (pathname.startsWith("/checkout") || pathname.startsWith("/order")) {
+    if (!validSession) {
+      return NextResponse.redirect(new URL("/404", request.url));
+    }
+  }
 
   return NextResponse.next();
 }
