@@ -17,7 +17,17 @@ const GAP = 32;
 const STEP = SLIDE_WIDTH + GAP;
 const DRAG_THRESHOLD = 80;
 
-export function NewCollectionHero() {
+type NewCollectionHeroProps = {
+  products: {
+    id: string;
+    name: string;
+    description: string | null;
+    price: number;
+    image: string | null;
+    active: boolean;
+  }[];
+};
+export function NewCollectionHero({ products }: NewCollectionHeroProps) {
   const [index, setIndex] = useState(0);
   const [dragStart, setDragStart] = useState<number | null>(null);
   const [dragOffset, setDragOffset] = useState(0);
@@ -41,8 +51,10 @@ export function NewCollectionHero() {
   // Responsive visible count for mobile/tablet slider
   useEffect(() => {
     const update = () => {
-      if (window.innerWidth < 640) setVisible(1); // Mobile
-      else if (window.innerWidth < 1024) setVisible(2); // Tablet
+      if (window.innerWidth < 640)
+        setVisible(1); // Mobile
+      else if (window.innerWidth < 1024)
+        setVisible(2); // Tablet
       else setVisible(1); // Desktop uses fixed width slider
     };
     update();
@@ -127,7 +139,7 @@ export function NewCollectionHero() {
                 }% + ${dragOffset}px))`,
               }}
             >
-              {SLIDES.map((img, i) => (
+              {products.map((product, i) => (
                 <Link
                   href="/"
                   key={i}
@@ -139,7 +151,7 @@ export function NewCollectionHero() {
                   }}
                 >
                   <Image
-                    src={img}
+                    src={product.image!}
                     alt={`slide-${i}`}
                     fill
                     className="object-cover"
@@ -267,14 +279,14 @@ export function NewCollectionHero() {
                   }px + ${dragOffset}px))`,
                 }}
               >
-                {SLIDES.map((img, i) => (
+                {products.map((product, i) => (
                   <Link
                     href="/"
                     key={i}
                     className="relative h-[450px] w-[345px] shrink-0 bg-white mr-8 last:mr-0 group"
                   >
                     <Image
-                      src={img}
+                      src={product.image!}
                       alt={`slide-${i}`}
                       fill
                       className="object-cover"

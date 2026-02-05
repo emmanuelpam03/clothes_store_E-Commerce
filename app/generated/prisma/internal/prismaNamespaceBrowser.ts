@@ -136,6 +136,7 @@ export type EmailVerificationTokenScalarFieldEnum = (typeof EmailVerificationTok
 export const ProductScalarFieldEnum = {
   id: 'id',
   name: 'name',
+  slug: 'slug',
   description: 'description',
   price: 'price',
   image: 'image',

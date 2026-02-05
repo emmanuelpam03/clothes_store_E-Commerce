@@ -44,31 +44,30 @@ enum Role {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime? @map("email_verified")
-  image         String?
-  role          Role      @default(USER)
-  password      String?
-  accounts      Account[]
-  sessions      Session[]
+  id                      String                   @id @default(cuid())
+  name                    String?
+  email                   String?                  @unique
+  emailVerified           DateTime?                @map("email_verified")
+  image                   String?
+  role                    Role                     @default(USER)
+  password                String?
+  accounts                Account[]
+  sessions                Session[]
   emailVerificationTokens EmailVerificationToken[]
-  orders        Order[]
-  carts Cart?
+  orders                  Order[]
+  carts                   Cart?
 
   @@map("users")
 }
 
-
 model EmailVerificationToken {
-  id          String   @id @default(cuid())
-  userId      String   @unique
-  code        String   // 6-digit numeric code (e.g. "483920")
+  id          String    @id @default(cuid())
+  userId      String    @unique
+  code        String // 6-digit numeric code (e.g. "483920")
   expiresAt   DateTime
-  attempts    Int      @default(0)
+  attempts    Int       @default(0)
   lockedUntil DateTime?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -76,32 +75,30 @@ model EmailVerificationToken {
   @@map("email_verification_tokens")
 }
 
-
 model Product {
-  id          String   @id @default(cuid())
+  id          String  @id @default(cuid())
   name        String
+  slug        String  @unique
   description String?
-  price       Int      // store in cents
+  price       Int // store in cents
   image       String?
-  active      Boolean  @default(true)
+  active      Boolean @default(true)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  inventory   Inventory?
-  orderItems  OrderItem[]
-  cartItems CartItem[]
+  inventory  Inventory?
+  orderItems OrderItem[]
+  cartItems  CartItem[]
 }
-
 
 model Inventory {
-  id        String   @id @default(cuid())
-  productId String   @unique
+  id        String @id @default(cuid())
+  productId String @unique
   quantity  Int
 
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
-
 
 enum OrderStatus {
   PENDING
@@ -111,51 +108,50 @@ enum OrderStatus {
 }
 
 model Order {
-  id        String       @id @default(cuid())
-  userId    String
-  status    OrderStatus  @default(PENDING)
-  total     Int          // computed at creation
+  id     String      @id @default(cuid())
+  userId String
+  status OrderStatus @default(PENDING)
+  total  Int // computed at creation
 
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  user      User         @relation(fields: [userId], references: [id])
-  items     OrderItem[]
+  user  User        @relation(fields: [userId], references: [id])
+  items OrderItem[]
 }
 
-
 model OrderItem {
-  id        String  @id @default(cuid())
+  id        String @id @default(cuid())
   orderId   String
   productId String
 
-  quantity  Int
-  price     Int     // snapshot price at purchase time
-  image     String?
-  name      String?
+  quantity Int
+  price    Int // snapshot price at purchase time
+  image    String?
+  name     String?
 
-  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product   Product @relation(fields: [productId], references: [id])
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
 }
 
 model Cart {
-  id        String     @id @default(cuid())
-  userId    String     @unique
-  updatedAt DateTime   @updatedAt
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  updatedAt DateTime @updatedAt
 
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items     CartItem[]
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items CartItem[]
 }
 
 model CartItem {
-  id        String  @id @default(cuid())
-  cartId   String
+  id        String @id @default(cuid())
+  cartId    String
   productId String
 
   quantity Int
 
-  cart     Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  product  Product  @relation(fields: [productId], references: [id])
+  cart    Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
 
   @@unique([cartId, productId])
 }

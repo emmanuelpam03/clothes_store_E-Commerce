@@ -1,52 +1,26 @@
 "use client";
 
-import Image, { StaticImageData } from "next/image";
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
-import {
-  whiteShirt1,
-  whiteShirt2,
-  whiteShirt3,
-  whiteShirt4,
-  whiteShirt5,
-} from "@/public/assets/images/images";
 import Link from "next/link";
 import { Heart } from "lucide-react";
 
-type Product = {
-  image: StaticImageData;
-  name: string;
-  price: string;
+// fallback image (IMPORTANT)
+import { whiteShirt1 } from "@/public/assets/images/images";
+
+type NewThisWeekProps = {
+  products: {
+    id: string;
+    name: string;
+    slug: string;
+    description: string | null;
+    price: number; // cents
+    image: string | null;
+    active: boolean;
+  }[];
 };
 
-const PRODUCTS: Product[] = [
-  {
-    image: whiteShirt1,
-    name: "Basic Slim Fit T-Shirt",
-    price: "$99",
-  },
-  {
-    image: whiteShirt2,
-    name: "Blurred Print T-Shirt",
-    price: "$99",
-  },
-  {
-    image: whiteShirt3,
-    name: "Full Sleeve Zipper",
-    price: "$99",
-  },
-  {
-    image: whiteShirt4,
-    name: "Crewneck T-Shirt",
-    price: "$99",
-  },
-  {
-    image: whiteShirt5,
-    name: "Crewneck T-Shirt",
-    price: "$99",
-  },
-];
-
-export function NewThisWeek() {
+export function NewThisWeek({ products }: NewThisWeekProps) {
   const trackRef = useRef<HTMLDivElement>(null);
 
   const [index, setIndex] = useState(0);
@@ -55,21 +29,17 @@ export function NewThisWeek() {
   const [dragOffset, setDragOffset] = useState(0);
   const [favorites, setFavorites] = useState<Set<number>>(new Set());
 
-  const toggleFavorite = (index: number, e: React.MouseEvent) => {
+  const toggleFavorite = (i: number, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setFavorites((prev) => {
       const next = new Set(prev);
-      if (next.has(index)) {
-        next.delete(index);
-      } else {
-        next.add(index);
-      }
+      next.has(i) ? next.delete(i) : next.add(i);
       return next;
     });
   };
 
-  // Responsive card count
+  // responsive cards
   useEffect(() => {
     const update = () => {
       if (window.innerWidth < 640) setVisible(1);
@@ -81,12 +51,11 @@ export function NewThisWeek() {
     return () => window.removeEventListener("resize", update);
   }, []);
 
-  const maxIndex = Math.max(PRODUCTS.length - visible, 0);
-
+  const maxIndex = Math.max(products.length - visible, 0);
   const next = () => setIndex((i) => Math.min(i + 1, maxIndex));
   const prev = () => setIndex((i) => Math.max(i - 1, 0));
 
-  // Drag logic
+  // drag logic
   const onStart = (x: number) => setDragStart(x);
   const onMove = (x: number) => {
     if (dragStart !== null) setDragOffset(x - dragStart);
@@ -103,14 +72,10 @@ export function NewThisWeek() {
       <div className="max-w-7xl mx-auto px-5">
         {/* HEADER */}
         <div className="mb-6 sm:mb-8 flex items-center justify-between">
-          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-black">
-            NEW <br className="hidden sm:block" /> THIS WEEK{" "}
-            <span className="text-sm font-bold text-blue-600">(50)</span>
+          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+            NEW <br className="hidden sm:block" /> THIS WEEK
           </h2>
-          <Link
-            href="/"
-            className="text-xs sm:text-sm text-black hover:underline"
-          >
+          <Link href="/shop" className="text-xs sm:text-sm hover:underline">
             See All
           </Link>
         </div>
@@ -135,27 +100,26 @@ export function NewThisWeek() {
               }% + ${dragOffset}px))`,
             }}
           >
-            {PRODUCTS.map((product, i) => (
+            {products.map((product, i) => (
               <Link
-                href={`/products/${i}`}
-                key={i}
-                className="shrink-0 pr-4 last:pr-0"
+                href={`/products/${product.slug}`}
+                key={product.id}
+                className="shrink-0 pr-4"
                 style={{ width: `${100 / visible}%` }}
               >
                 {/* CARD */}
-                <div className="relative h-[280px] sm:h-[320px] md:h-[360px] bg-white overflow-hidden group">
+                <div className="relative h-72 bg-white overflow-hidden group">
                   <Image
-                    src={product.image}
+                    src={product.image ?? whiteShirt1}
                     alt={product.name}
                     fill
                     className="object-cover"
                   />
 
-                  {/* FAVORITE BUTTON */}
+                  {/* FAVORITE */}
                   <button
                     onClick={(e) => toggleFavorite(i, e)}
-                    className="absolute top-4 right-4 p-2 rounded-full bg-white/80 hover:bg-white transition-colors z-10 cursor-pointer"
-                    aria-label="Add to favorites"
+                    className="absolute top-4 right-4 p-2 rounded-full bg-white/80"
                   >
                     <Heart
                       className={`h-5 w-5 ${
@@ -165,16 +129,13 @@ export function NewThisWeek() {
                       }`}
                     />
                   </button>
-
-                  {/* ADD */}
-                  <button className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white px-3 py-1 text-sm text-black cursor-pointer">
-                    +
-                  </button>
                 </div>
 
-                <div className="mt-3 text-xs sm:text-sm text-black">
+                <div className="mt-3 text-sm">
                   <p className="font-medium">{product.name}</p>
-                  <p className="font-semibold">{product.price}</p>
+                  <p className="font-semibold">
+                    ${(product.price / 100).toFixed(2)}
+                  </p>
                 </div>
               </Link>
             ))}
@@ -186,14 +147,14 @@ export function NewThisWeek() {
           <button
             onClick={prev}
             disabled={index === 0}
-            className="h-8 w-8 border disabled:opacity-30 disabled:cursor-default text-black cursor-pointer"
+            className="h-8 w-8 border disabled:opacity-30"
           >
             ←
           </button>
           <button
             onClick={next}
             disabled={index === maxIndex}
-            className="h-8 w-8 border disabled:opacity-30 disabled:cursor-default text-black cursor-pointer"
+            className="h-8 w-8 border disabled:opacity-30"
           >
             →
           </button>
