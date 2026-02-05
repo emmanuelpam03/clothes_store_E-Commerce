@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { CartProvider } from "@/lib/cart/cart";
 import { SessionProvider } from "next-auth/react";
 import CartAuthSync from "@/lib/cart/CartAuthSync";
+import { headers } from "next/headers";
 
 export const inter = Inter({
   subsets: ["latin"],
@@ -28,8 +29,12 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const reason = (await headers()).get("x-not-found-reason");
   return (
     <html lang="en" className="no-scrollbar overflow-y-scroll">
+      <head>
+        {reason && <meta name="x-not-found-reason" content={reason} />}
+      </head>
       <body className={`${inter.variable} ${interTight.variable} antialiased`}>
         <SessionProvider>
           <CartProvider>
