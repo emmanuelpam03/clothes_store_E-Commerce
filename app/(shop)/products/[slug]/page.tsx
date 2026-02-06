@@ -16,7 +16,7 @@ export default async function ProductDetailPage({
 
   return (
     <div>
-      <ProductInfo slug={slug} product={product} />
+      <ProductInfo product={product} />
     </div>
   );
 }

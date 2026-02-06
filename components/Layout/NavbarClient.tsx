@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useOptimistic } from "react";
 import { menuIcon, navArrow, heartIcon } from "@/public/assets/images/images";
 import { ShoppingBag, UserIcon, LogOut, UserStar } from "lucide-react";
 import { signOut } from "next-auth/react";
 import type { Session } from "next-auth";
 import RoleBadge from "../ui/role-badge";
+import { useCart } from "@/lib/cart/cart";
+import type { CartItem } from "@/lib/cart/cart.types";
 
 interface NavbarClientProps {
   session: Session | null;
@@ -17,6 +19,8 @@ export function NavbarClient({ session }: NavbarClientProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const { items } = useCart();
+  const [optimisticItems] = useOptimistic<CartItem[]>(items);
 
   const profileRef = useRef<HTMLDivElement | null>(null);
 
@@ -110,7 +114,7 @@ export function NavbarClient({ session }: NavbarClientProps) {
             <div className="relative flex h-10 w-10 -ml-1 items-center justify-center rounded-full border-4 border-black">
               <ShoppingBag className="text-black h-3 w-3" />
               <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-black text-white text-xs flex items-center justify-center">
-                0
+                {optimisticItems.length}
               </span>
             </div>
           </Link>
@@ -122,7 +126,7 @@ export function NavbarClient({ session }: NavbarClientProps) {
           >
             <ShoppingBag className="text-white h-4 w-4" />
             <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-white text-black text-xs flex items-center justify-center">
-              0
+              {optimisticItems.length}
             </span>
           </Link>
 

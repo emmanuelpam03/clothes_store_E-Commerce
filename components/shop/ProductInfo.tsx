@@ -32,7 +32,7 @@ const COLORS = [
 const SIZES = ["XS", "S", "M", "L", "XL", "2X"];
 
 type ProductInfoProps = {
-  slug: string;
+  // slug: string;
   product: {
     id: string;
     name: string;
@@ -43,7 +43,7 @@ type ProductInfoProps = {
   };
 };
 
-export default function ProductInfo({ slug, product }: ProductInfoProps) {
+export default function ProductInfo({ product }: ProductInfoProps) {
   const [activeImage, setActiveImage] = useState(0);
   const [activeSize, setActiveSize] = useState<string | null>(null);
   const [activeColor, setActiveColor] = useState<number | null>(null);
