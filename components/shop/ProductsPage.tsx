@@ -3,11 +3,15 @@
 import Image, { StaticImageData } from "next/image";
 import Link from "next/link";
 import { Search, Heart, ChevronDown, ChevronRight, X } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { addToCartAction } from "@/app/actions/cart.actions";
 import { useCart } from "@/lib/cart/cart";
 import { useTransition } from "react";
 import { toast } from "sonner";
+import {
+  toggleFavorite,
+  getUserFavorites,
+} from "@/app/actions/favorite.actions";
 
 type Product = {
   id: string;
@@ -16,45 +20,6 @@ type Product = {
   price: number;
   image: string | null;
 };
-
-// const PRODUCTS: Product[] = [
-//   {
-//     image: product1,
-//     category: "Cotton T-Shirt",
-//     name: "Basic Slim Fit T-Shirt",
-//     price: "$199",
-//   },
-//   {
-//     image: product2,
-//     category: "Crewneck T-Shirt",
-//     name: "Basic Heavy Weight T-Shirt",
-//     price: "$199",
-//   },
-//   {
-//     image: product3,
-//     category: "Cotton T-Shirt",
-//     name: "Full Sleeve Zipper",
-//     price: "$199",
-//   },
-//   {
-//     image: product4,
-//     category: "Cotton T-Shirt",
-//     name: "Full Sleeve Zipper",
-//     price: "$199",
-//   },
-//   {
-//     image: product5,
-//     category: "Cotton T-Shirt",
-//     name: "Full Sleeve Zipper",
-//     price: "$199",
-//   },
-//   {
-//     image: product6,
-//     category: "Cotton T-Shirt",
-//     name: "Basic Slim Fit T-Shirt",
-//     price: "$199",
-//   },
-// ];
 
 const CATEGORIES = [
   "NEW",
@@ -72,15 +37,27 @@ export default function ProductsPageComponent({
 }: {
   products: Product[];
 }) {
-  const [favorites, setFavorites] = useState<Set<number>>(new Set());
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [expandedFilters, setExpandedFilters] = useState<Set<string>>(
-    new Set(["Category", "Price Range"])
+    new Set(["Category", "Price Range"]),
   );
 
   const { addItem } = useCart();
   const [isPending, startTransition] = useTransition();
 
-  const handleAddToCart = async (product: any) => {
+  useEffect(() => {
+    const loadFavorites = async () => {
+      try {
+        const favorites = await getUserFavorites();
+        setFavoriteIds(favorites);
+      } catch (error) {
+        console.error("Failed to load favorites:", error);
+      }
+    };
+    loadFavorites();
+  }, []);
+
+  const handleAddToCart = async (product: Product) => {
     addItem({
       id: product.id,
       title: product.name,
@@ -101,17 +78,23 @@ export default function ProductsPageComponent({
   // Add state for mobile filters toggle
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
 
-  const toggleFavorite = (index: number, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setFavorites((prev) => {
-      const next = new Set(prev);
-      if (next.has(index)) {
-        next.delete(index);
-      } else {
-        next.add(index);
+  const handleToggleFavorite = (productId: string) => {
+    startTransition(async () => {
+      try {
+        await toggleFavorite(productId);
+        setFavoriteIds((prev) =>
+          prev.includes(productId)
+            ? prev.filter((id) => id !== productId)
+            : [...prev, productId],
+        );
+        toast.success(
+          favoriteIds.includes(productId)
+            ? "Removed from favorites"
+            : "Added to favorites",
+        );
+      } catch (error) {
+        toast.error("Failed to update favorite");
       }
-      return next;
     });
   };
 
@@ -379,7 +362,7 @@ export default function ProductsPageComponent({
                         >
                           {tag}
                         </button>
-                      )
+                      ),
                     )}
                   </div>
                 )}
@@ -627,7 +610,7 @@ export default function ProductsPageComponent({
                         >
                           {tag}
                         </button>
-                      )
+                      ),
                     )}
                   </div>
                 )}
@@ -691,13 +674,17 @@ export default function ProductsPageComponent({
 
                     {/* FAVORITE BUTTON */}
                     <button
-                      onClick={(e) => toggleFavorite(i, e)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleToggleFavorite(product.id);
+                      }}
                       className="absolute top-4 right-4 p-2 rounded-full bg-white/80 hover:bg-white transition-colors cursor-pointer z-10"
                       aria-label="Add to favorites"
                     >
                       <Heart
                         className={`h-5 w-5 ${
-                          favorites.has(i)
+                          favoriteIds.includes(product.id)
                             ? "fill-red-500 text-red-500"
                             : "text-black"
                         }`}
@@ -718,7 +705,7 @@ export default function ProductsPageComponent({
                           }
                         });
                       }}
-                      className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white px-3 py-1 text-sm text-black"
+                      className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white px-3 py-2 text-sm text-black cursor-pointer"
                     >
                       +
                     </button>

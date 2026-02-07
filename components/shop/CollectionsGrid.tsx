@@ -2,8 +2,13 @@
 
 import Image from "next/image";
 import { ChevronDown, Heart } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect, useTransition } from "react";
 import Link from "next/link";
+import {
+  toggleFavorite,
+  getUserFavorites,
+} from "@/app/actions/favorite.actions";
+import { toast } from "sonner";
 
 // fallback image
 import { whiteShirt1 } from "@/public/assets/images/images";
@@ -21,15 +26,44 @@ type CollectionsGridProps = {
 };
 
 export function CollectionsGrid({ products }: CollectionsGridProps) {
-  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+  const [isPending, startTransition] = useTransition();
 
-  const toggleFavorite = (id: string, e: React.MouseEvent) => {
+  // Load user favorites on mount
+  useEffect(() => {
+    const loadFavorites = async () => {
+      try {
+        const favs = await getUserFavorites();
+        setFavoriteIds(new Set(favs));
+      } catch (error) {
+        console.error("Failed to load favorites:", error);
+      }
+    };
+    loadFavorites();
+  }, []);
+
+  const handleToggleFavorite = (productId: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setFavorites((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
+
+    startTransition(async () => {
+      try {
+        const result = await toggleFavorite(productId);
+        setFavoriteIds((prev) => {
+          const next = new Set(prev);
+          if (result.isFavorited) {
+            next.add(productId);
+            toast.success("Added to favorites!");
+          } else {
+            next.delete(productId);
+            toast.success("Removed from favorites");
+          }
+          return next;
+        });
+      } catch (error) {
+        toast.error("Failed to update favorites");
+        console.error(error);
+      }
     });
   };
 
@@ -80,12 +114,13 @@ export function CollectionsGrid({ products }: CollectionsGridProps) {
 
                 {/* FAVORITE */}
                 <button
-                  onClick={(e) => toggleFavorite(product.id, e)}
+                  onClick={(e) => handleToggleFavorite(product.id, e)}
                   className="absolute top-4 right-4 p-2 rounded-full bg-white/80"
+                  disabled={isPending}
                 >
                   <Heart
                     className={`h-5 w-5 ${
-                      favorites.has(product.id)
+                      favoriteIds.has(product.id)
                         ? "fill-red-500 text-red-500"
                         : "text-black"
                     }`}

@@ -8,7 +8,12 @@ import {
 import { SearchIcon, Heart } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useTransition } from "react";
+import {
+  toggleFavorite,
+  getUserFavorites,
+} from "@/app/actions/favorite.actions";
+import { toast } from "sonner";
 
 const SLIDES = [whiteShirt1, blackShirt1, whiteShirt1, blackShirt1];
 
@@ -25,6 +30,7 @@ type NewCollectionHeroProps = {
     price: number;
     image: string | null;
     active: boolean;
+    slug: string;
   }[];
 };
 export function NewCollectionHero({ products }: NewCollectionHeroProps) {
@@ -32,19 +38,44 @@ export function NewCollectionHero({ products }: NewCollectionHeroProps) {
   const [dragStart, setDragStart] = useState<number | null>(null);
   const [dragOffset, setDragOffset] = useState(0);
   const [visible, setVisible] = useState(1); // Mobile: 1, Tablet: 2, Desktop: 1
-  const [favorites, setFavorites] = useState<Set<number>>(new Set());
+  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
+  const [isPending, startTransition] = useTransition();
 
-  const toggleFavorite = (index: number, e: React.MouseEvent) => {
+  // Load user favorites on mount
+  useEffect(() => {
+    const loadFavorites = async () => {
+      try {
+        const favs = await getUserFavorites();
+        setFavoriteIds(new Set(favs));
+      } catch (error) {
+        console.error("Failed to load favorites:", error);
+      }
+    };
+    loadFavorites();
+  }, []);
+
+  const handleToggleFavorite = (productId: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setFavorites((prev) => {
-      const next = new Set(prev);
-      if (next.has(index)) {
-        next.delete(index);
-      } else {
-        next.add(index);
+
+    startTransition(async () => {
+      try {
+        const result = await toggleFavorite(productId);
+        setFavoriteIds((prev) => {
+          const next = new Set(prev);
+          if (result.isFavorited) {
+            next.add(productId);
+            toast.success("Added to favorites!");
+          } else {
+            next.delete(productId);
+            toast.success("Removed from favorites");
+          }
+          return next;
+        });
+      } catch (error) {
+        toast.error("Failed to update favorites");
+        console.error(error);
       }
-      return next;
     });
   };
 
@@ -141,7 +172,7 @@ export function NewCollectionHero({ products }: NewCollectionHeroProps) {
             >
               {products.map((product, i) => (
                 <Link
-                  href="/"
+                  href={`/products/${product.slug}`}
                   key={i}
                   className="relative h-[350px] sm:h-[380px] md:h-[400px] shrink-0 bg-white group"
                   style={{
@@ -158,13 +189,14 @@ export function NewCollectionHero({ products }: NewCollectionHeroProps) {
                   />
                   {/* FAVORITE BUTTON */}
                   <button
-                    onClick={(e) => toggleFavorite(i, e)}
+                    onClick={(e) => handleToggleFavorite(product.id, e)}
                     className="absolute top-4 right-4 p-2 rounded-full bg-white/80 hover:bg-white transition-colors z-10 cursor-pointer"
                     aria-label="Add to favorites"
+                    disabled={isPending}
                   >
                     <Heart
                       className={`h-5 w-5 ${
-                        favorites.has(i)
+                        favoriteIds.has(product.id)
                           ? "fill-red-500 text-red-500"
                           : "text-black"
                       }`}
@@ -195,8 +227,10 @@ export function NewCollectionHero({ products }: NewCollectionHeroProps) {
 
           {/* BUTTON */}
           <button className="flex items-center gap-3 rounded bg-neutral-200 px-5 py-2 text-xs font-medium text-black cursor-pointer w-full justify-center sm:w-auto">
-            Go To Shop
-            <Image src={rightArrow} alt="arrow" width={16} height={16} />
+            <Link href="/products">
+              Go To Shop
+              <Image src={rightArrow} alt="arrow" width={16} height={16} />
+            </Link>
           </button>
         </div>
 
@@ -234,9 +268,11 @@ export function NewCollectionHero({ products }: NewCollectionHeroProps) {
 
             {/* BOTTOM */}
             <div className="flex items-center gap-6">
-              <button className="flex items-center gap-3 rounded bg-neutral-200 px-5 py-2 text-xs font-medium text-black cursor-pointer">
-                Go To Shop
-                <Image src={rightArrow} alt="arrow" width={16} height={16} />
+              <button className="flex items-center rounded bg-neutral-200 px-5 py-2 text-xs font-medium text-black cursor-pointer">
+                <Link href="/products" className="flex items-center gap-3">
+                  Go To Shop
+                  <Image src={rightArrow} alt="arrow" width={16} height={16} />
+                </Link>
               </button>
 
               <div className="flex gap-2">
@@ -281,7 +317,7 @@ export function NewCollectionHero({ products }: NewCollectionHeroProps) {
               >
                 {products.map((product, i) => (
                   <Link
-                    href="/"
+                    href={`/products/${product.slug}`}
                     key={i}
                     className="relative h-[450px] w-[345px] shrink-0 bg-white mr-8 last:mr-0 group"
                   >
@@ -293,13 +329,14 @@ export function NewCollectionHero({ products }: NewCollectionHeroProps) {
                     />
                     {/* FAVORITE BUTTON */}
                     <button
-                      onClick={(e) => toggleFavorite(i, e)}
+                      onClick={(e) => handleToggleFavorite(product.id, e)}
                       className="absolute top-4 right-4 p-2 rounded-full bg-white/80 hover:bg-white transition-colors z-10"
                       aria-label="Add to favorites"
+                      disabled={isPending}
                     >
                       <Heart
                         className={`h-5 w-5 ${
-                          favorites.has(i)
+                          favoriteIds.has(product.id)
                             ? "fill-red-500 text-red-500"
                             : "text-black"
                         }`}

@@ -1,10 +1,16 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useCart } from "@/lib/cart/cart";
 import { addToCartAction } from "@/app/actions/cart.actions";
+import { Heart } from "lucide-react";
+import { useTransition } from "react";
+import {
+  toggleFavorite,
+  getUserFavorites,
+} from "@/app/actions/favorite.actions";
 
 // fallback static images (safe)
 import {
@@ -45,7 +51,21 @@ export default function ProductInfo({ product }: ProductInfoProps) {
   const [activeSize, setActiveSize] = useState<string | null>(null);
   const [activeColor, setActiveColor] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFavorited, setIsFavorited] = useState(false);
   const { addItem } = useCart();
+  const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    const loadFavorites = async () => {
+      try {
+        const favorites = await getUserFavorites();
+        setIsFavorited(favorites.includes(product.id));
+      } catch (error) {
+        console.error("Failed to load favorites:", error);
+      }
+    };
+    loadFavorites();
+  }, [product.id]);
 
   const displayPrice = (product.price / 100).toFixed(2);
 
@@ -77,6 +97,20 @@ export default function ProductInfo({ product }: ProductInfoProps) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleToggleFavorite = () => {
+    startTransition(async () => {
+      try {
+        await toggleFavorite(product.id);
+        setIsFavorited((prev) => !prev);
+        toast.success(
+          isFavorited ? "Removed from favorites" : "Added to favorites",
+        );
+      } catch (error) {
+        toast.error("Failed to update favorite");
+      }
+    });
   };
 
   return (
@@ -123,9 +157,23 @@ export default function ProductInfo({ product }: ProductInfoProps) {
           {/* PRODUCT INFO */}
           <div className="border border-neutral-200 bg-[#f3f3f3] px-6 py-8 flex flex-col justify-between">
             <div>
-              <h1 className="text-black text-sm uppercase tracking-wide font-medium">
-                {product.name}
-              </h1>
+              <div className="flex items-start justify-between gap-4">
+                <h1 className="text-black text-sm uppercase tracking-wide font-medium">
+                  {product.name}
+                </h1>
+                <button
+                  onClick={handleToggleFavorite}
+                  disabled={isPending}
+                  className="flex-shrink-0 p-2 hover:bg-white transition-colors"
+                  aria-label="Add to favorites"
+                >
+                  <Heart
+                    className={`h-5 w-5 ${
+                      isFavorited ? "fill-red-500 text-red-500" : "text-black"
+                    }`}
+                  />
+                </button>
+              </div>
 
               <p className="mt-2 text-sm">${displayPrice}</p>
               <p className="text-xs text-neutral-500">MRP incl. of all taxes</p>
