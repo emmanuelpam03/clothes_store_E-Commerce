@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { useCart } from "@/lib/cart/cart";
 import { addToCartAction } from "@/app/actions/cart.actions";
@@ -9,7 +9,6 @@ import { Heart } from "lucide-react";
 import { useTransition } from "react";
 import {
   toggleFavorite,
-  getUserFavorites,
 } from "@/app/actions/favorite.actions";
 
 // fallback static images (safe)
@@ -44,28 +43,17 @@ type ProductInfoProps = {
     image: string | null;
     active: boolean;
   };
+  initialIsFavorited?: boolean;
 };
 
-export default function ProductInfo({ product }: ProductInfoProps) {
+export default function ProductInfo({ product, initialIsFavorited = false }: ProductInfoProps) {
   const [activeImage, setActiveImage] = useState(0);
   const [activeSize, setActiveSize] = useState<string | null>(null);
   const [activeColor, setActiveColor] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isFavorited, setIsFavorited] = useState(false);
+  const [isFavorited, setIsFavorited] = useState(initialIsFavorited);
   const { addItem } = useCart();
   const [isPending, startTransition] = useTransition();
-
-  useEffect(() => {
-    const loadFavorites = async () => {
-      try {
-        const favorites = await getUserFavorites();
-        setIsFavorited(favorites.includes(product.id));
-      } catch (error) {
-        console.error("Failed to load favorites:", error);
-      }
-    };
-    loadFavorites();
-  }, [product.id]);
 
   const displayPrice = (product.price / 100).toFixed(2);
 

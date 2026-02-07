@@ -3,14 +3,13 @@
 import Image, { StaticImageData } from "next/image";
 import Link from "next/link";
 import { Search, Heart, ChevronDown, ChevronRight, X } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { addToCartAction } from "@/app/actions/cart.actions";
 import { useCart } from "@/lib/cart/cart";
 import { useTransition } from "react";
 import { toast } from "sonner";
 import {
   toggleFavorite,
-  getUserFavorites,
 } from "@/app/actions/favorite.actions";
 
 type Product = {
@@ -34,28 +33,18 @@ const CATEGORIES = [
 
 export default function ProductsPageComponent({
   products,
+  initialFavoriteIds = [],
 }: {
   products: Product[];
+  initialFavoriteIds?: string[];
 }) {
-  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+  const [favoriteIds, setFavoriteIds] = useState<string[]>(initialFavoriteIds);
   const [expandedFilters, setExpandedFilters] = useState<Set<string>>(
     new Set(["Category", "Price Range"]),
   );
 
   const { addItem } = useCart();
   const [isPending, startTransition] = useTransition();
-
-  useEffect(() => {
-    const loadFavorites = async () => {
-      try {
-        const favorites = await getUserFavorites();
-        setFavoriteIds(favorites);
-      } catch (error) {
-        console.error("Failed to load favorites:", error);
-      }
-    };
-    loadFavorites();
-  }, []);
 
   const handleAddToCart = async (product: Product) => {
     addItem({

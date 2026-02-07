@@ -1,4 +1,5 @@
 import { getProductBySlug } from "@/app/actions/product.actions";
+import { getUserFavorites } from "@/app/actions/favorite.actions";
 import ProductInfo from "@/components/shop/ProductInfo";
 import { notFound } from "next/navigation";
 
@@ -14,9 +15,12 @@ export default async function ProductDetailPage({
     notFound();
   }
 
+  const favoriteIds = await getUserFavorites();
+  const isFavorited = favoriteIds.includes(product.id);
+
   return (
     <div>
-      <ProductInfo product={product} />
+      <ProductInfo product={product} initialIsFavorited={isFavorited} />
     </div>
   );
 }
