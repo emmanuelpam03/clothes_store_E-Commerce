@@ -2,6 +2,9 @@
 
 import Image from "next/image";
 import { useState } from "react";
+import { toast } from "sonner";
+import { useCart } from "@/lib/cart/cart";
+import { addToCartAction } from "@/app/actions/cart.actions";
 
 // fallback static images (safe)
 import {
@@ -12,13 +15,7 @@ import {
   product5,
 } from "@/public/assets/images/images";
 
-const FALLBACK_IMAGES = [
-  product1,
-  product2,
-  product3,
-  product4,
-  product5,
-];
+const FALLBACK_IMAGES = [product1, product2, product3, product4, product5];
 
 const COLORS = [
   "#e5e7eb",
@@ -47,8 +44,40 @@ export default function ProductInfo({ product }: ProductInfoProps) {
   const [activeImage, setActiveImage] = useState(0);
   const [activeSize, setActiveSize] = useState<string | null>(null);
   const [activeColor, setActiveColor] = useState<number | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const { addItem } = useCart();
 
   const displayPrice = (product.price / 100).toFixed(2);
+
+  const handleAddToCart = async () => {
+    if (!activeSize || activeColor === null) {
+      toast.error("Please select size and color");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await addToCartAction(product.id, 1);
+
+      addItem({
+        id: product.id,
+        title: product.name,
+        price: product.price / 100,
+        image: product.image,
+        subtitle: product.name,
+        size: activeSize,
+        color: COLORS[activeColor],
+        qty: 1,
+      });
+
+      toast.success("Added to cart!");
+    } catch (error) {
+      toast.error("Failed to add to cart");
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#f3f3f3] px-4 md:px-10 lg:flex lg:items-center lg:justify-center">
@@ -99,9 +128,7 @@ export default function ProductInfo({ product }: ProductInfoProps) {
               </h1>
 
               <p className="mt-2 text-sm">${displayPrice}</p>
-              <p className="text-xs text-neutral-500">
-                MRP incl. of all taxes
-              </p>
+              <p className="text-xs text-neutral-500">MRP incl. of all taxes</p>
 
               {product.description && (
                 <p className="mt-6 text-sm leading-relaxed text-neutral-700">
@@ -111,9 +138,7 @@ export default function ProductInfo({ product }: ProductInfoProps) {
 
               {/* COLOR */}
               <div className="mt-8">
-                <p className="mb-2 text-xs uppercase text-neutral-600">
-                  Color
-                </p>
+                <p className="mb-2 text-xs uppercase text-neutral-600">Color</p>
                 <div className="flex gap-2 flex-wrap">
                   {COLORS.map((color, i) => (
                     <button
@@ -133,9 +158,7 @@ export default function ProductInfo({ product }: ProductInfoProps) {
 
               {/* SIZE */}
               <div className="mt-8">
-                <p className="mb-2 text-xs uppercase text-neutral-600">
-                  Size
-                </p>
+                <p className="mb-2 text-xs uppercase text-neutral-600">Size</p>
                 <div className="flex gap-2 flex-wrap">
                   {SIZES.map((size) => (
                     <button
@@ -160,14 +183,16 @@ export default function ProductInfo({ product }: ProductInfoProps) {
 
             {/* ADD TO CART */}
             <button
-              disabled={!activeSize || activeColor === null}
+              onClick={handleAddToCart}
+              disabled={!activeSize || activeColor === null || isLoading}
               className="
-                mt-8 w-full bg-neutral-300 text-black py-3
+                mt-8 w-full bg-black text-white py-3
                 text-xs uppercase tracking-wide
-                disabled:opacity-60
+                disabled:opacity-60 disabled:cursor-not-allowed
+                hover:bg-neutral-800 transition
               "
             >
-              Add to cart
+              {isLoading ? "Adding..." : "Add to cart"}
             </button>
           </div>
         </div>
