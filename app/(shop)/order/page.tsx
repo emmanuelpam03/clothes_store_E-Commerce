@@ -3,6 +3,7 @@ import prisma from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import OrderPageCartClear from "@/components/shop/OrderPageCartClear";
 
 export default async function OrdersPage() {
   const session = await auth();
@@ -38,6 +39,7 @@ export default async function OrdersPage() {
 
   return (
     <div className="min-h-screen bg-neutral-100">
+      <OrderPageCartClear />
       <div className="max-w-7xl mx-auto px-6 py-12">
         <h1 className="text-4xl font-black mb-8">YOUR ORDERS</h1>
 

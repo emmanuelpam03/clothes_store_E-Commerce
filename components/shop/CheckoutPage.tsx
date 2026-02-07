@@ -26,7 +26,7 @@ export default function Checkout() {
   );
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const { items, clearCart } = useCart();
+  const { items } = useCart();
 
   const [formData, setFormData] = useState<FormData>({
     email: "",
@@ -114,7 +114,6 @@ export default function Checkout() {
       }));
 
       await createOrderAction(cartItems);
-      clearCart();
       toast.success("Order placed successfully! Pay on delivery.");
       router.push("/order");
     } catch (error) {
