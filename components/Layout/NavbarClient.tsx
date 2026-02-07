@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useRef, useState, useOptimistic } from "react";
 import { menuIcon, navArrow, heartIcon } from "@/public/assets/images/images";
-import { ShoppingBag, UserIcon, LogOut, UserStar } from "lucide-react";
+import { ShoppingBag, UserIcon, LogOut, UserStar, ListOrderedIcon } from "lucide-react";
 import { signOut } from "next-auth/react";
 import type { Session } from "next-auth";
 import RoleBadge from "../ui/role-badge";
@@ -13,9 +13,10 @@ import type { CartItem } from "@/lib/cart/cart.types";
 
 interface NavbarClientProps {
   session: Session | null;
+  favoriteCount?: number;
 }
 
-export function NavbarClient({ session }: NavbarClientProps) {
+export function NavbarClient({ session, favoriteCount = 0 }: NavbarClientProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -98,9 +99,12 @@ export function NavbarClient({ session }: NavbarClientProps) {
         <div className="flex items-center gap-3 sm:gap-5">
           <Link
             href="/favorites"
-            className="rounded-full p-3 bg-black text-white"
+            className="relative flex rounded-full p-3 bg-black text-white"
           >
             <Image src={heartIcon} alt="heart" width={18} height={18} />
+            <span className="absolute -top-1 -right-1 h-5 w-5 min-w-4 rounded-full bg-red-600 text-white text-xs flex items-center justify-center font-medium">
+              {favoriteCount > 99 ? "99+" : favoriteCount}
+            </span>
           </Link>
 
           {/* CART (Desktop) */}
@@ -113,7 +117,7 @@ export function NavbarClient({ session }: NavbarClientProps) {
             </span>
             <div className="relative flex h-10 w-10 -ml-1 items-center justify-center rounded-full border-4 border-black">
               <ShoppingBag className="text-black h-3 w-3" />
-              <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-black text-white text-xs flex items-center justify-center">
+              <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full bg-red-600 text-white text-xs flex items-center justify-center">
                 {optimisticItems.length}
               </span>
             </div>
@@ -183,6 +187,14 @@ export function NavbarClient({ session }: NavbarClientProps) {
                   >
                     <UserIcon className="h-4 w-4" />
                     Profile
+                  </Link>
+                  <Link
+                    href="/order"
+                    onClick={() => setIsProfileOpen(false)}
+                    className="flex items-center gap-2 px-4 py-3 text-sm text-gray-900 hover:bg-gray-100"
+                  >
+                    <ListOrderedIcon className="h-4 w-4" />
+                    Orders
                   </Link>
 
                   <button

@@ -8,16 +8,20 @@ export async function Navbar() {
   const session = await auth();
 
   let user = null;
+  let favoriteCount = 0;
   if (session?.user?.id) {
-    user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { name: true, email: true, image: true, role: true },
-    });
+    [user, favoriteCount] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { name: true, email: true, image: true, role: true },
+      }),
+      prisma.favorite.count({ where: { userId: session.user.id } }),
+    ]);
   }
 
   const updatedSession = session
     ? { ...session, user: { ...session.user, ...user } }
     : null;
 
-  return <NavbarClient session={updatedSession} />;
+  return <NavbarClient session={updatedSession} favoriteCount={favoriteCount} />;
 }
