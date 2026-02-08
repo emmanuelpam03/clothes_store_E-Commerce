@@ -59,3 +59,20 @@ export async function getUserFavorites() {
 
   return favorites.map((fav) => fav.productId);
 }
+
+export async function mergeGuestFavoritesAction(productIds: string[]) {
+  const session = await auth();
+  if (!session?.user?.id) return;
+
+  const userId = session.user.id;
+
+  for (const productId of productIds) {
+    await prisma.favorite.upsert({
+      where: {
+        userId_productId: { userId, productId },
+      },
+      update: {},
+      create: { userId, productId },
+    });
+  }
+}

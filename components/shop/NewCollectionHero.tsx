@@ -8,11 +8,8 @@ import {
 import { SearchIcon, Heart } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect, useTransition } from "react";
-import {
-  toggleFavorite,
-  getUserFavorites,
-} from "@/app/actions/favorite.actions";
+import { useState, useEffect } from "react";
+import { useFavorites } from "@/lib/favorites/useFavorites";
 import { toast } from "sonner";
 
 const SLIDES = [whiteShirt1, blackShirt1, whiteShirt1, blackShirt1];
@@ -38,45 +35,19 @@ export function NewCollectionHero({ products }: NewCollectionHeroProps) {
   const [dragStart, setDragStart] = useState<number | null>(null);
   const [dragOffset, setDragOffset] = useState(0);
   const [visible, setVisible] = useState(1); // Mobile: 1, Tablet: 2, Desktop: 1
-  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
-  const [isPending, startTransition] = useTransition();
+  const { isFavorited, toggleFavorite, isLoading: isPending } = useFavorites();
 
-  // Load user favorites on mount
-  useEffect(() => {
-    const loadFavorites = async () => {
-      try {
-        const favs = await getUserFavorites();
-        setFavoriteIds(new Set(favs));
-      } catch (error) {
-        console.error("Failed to load favorites:", error);
-      }
-    };
-    loadFavorites();
-  }, []);
-
-  const handleToggleFavorite = (productId: string, e: React.MouseEvent) => {
+  const handleToggleFavorite = async (productId: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
-    startTransition(async () => {
-      try {
-        const result = await toggleFavorite(productId);
-        setFavoriteIds((prev) => {
-          const next = new Set(prev);
-          if (result.isFavorited) {
-            next.add(productId);
-            toast.success("Added to favorites!");
-          } else {
-            next.delete(productId);
-            toast.success("Removed from favorites");
-          }
-          return next;
-        });
-      } catch (error) {
-        toast.error("Failed to update favorites");
-        console.error(error);
-      }
-    });
+    try {
+      const result = await toggleFavorite(productId);
+      toast.success(result.isFavorited ? "Added to favorites!" : "Removed from favorites");
+    } catch (error) {
+      toast.error("Failed to update favorites");
+      console.error(error);
+    }
   };
 
   // Responsive visible count for mobile/tablet slider
@@ -196,7 +167,7 @@ export function NewCollectionHero({ products }: NewCollectionHeroProps) {
                   >
                     <Heart
                       className={`h-5 w-5 ${
-                        favoriteIds.has(product.id)
+                        isFavorited(product.id)
                           ? "fill-red-500 text-red-500"
                           : "text-black"
                       }`}
@@ -336,7 +307,7 @@ export function NewCollectionHero({ products }: NewCollectionHeroProps) {
                     >
                       <Heart
                         className={`h-5 w-5 ${
-                          favoriteIds.has(product.id)
+                          isFavorited(product.id)
                             ? "fill-red-500 text-red-500"
                             : "text-black"
                         }`}

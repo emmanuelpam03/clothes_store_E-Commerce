@@ -5,15 +5,19 @@ import Link from "next/link";
 import { useState, useTransition, useOptimistic } from "react";
 import { Heart, XIcon } from "lucide-react";
 import { toast } from "sonner";
+import { useSession } from "next-auth/react";
 
 import { favouritesIcon } from "@/public/assets/images/images";
 import { useCart } from "@/lib/cart/cart";
 import { removeFromCart } from "@/app/actions/cart.actions";
+import { useFavorites } from "@/lib/favorites/useFavorites";
 
 export default function ShoppingBag() {
   const { items, updateQty, removeItem } = useCart();
+  const { status } = useSession();
+  const isLoggedIn = status === "authenticated";
+  const { isFavorited, toggleFavorite } = useFavorites();
 
-  const [favorites, setFavorites] = useState<Set<string>>(new Set());
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -23,13 +27,13 @@ export default function ShoppingBag() {
     (state, removedId: string) => state.filter((item) => item.id !== removedId),
   );
 
-  const toggleFavorite = (id: string, e: React.MouseEvent) => {
+  const handleToggleFavorite = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setFavorites((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
+    try {
+      await toggleFavorite(id);
+    } catch {
+      // ignore
+    }
   };
 
   const subtotal = optimisticItems.reduce(
@@ -46,7 +50,7 @@ export default function ShoppingBag() {
         <div className="flex justify-center items-center gap-4 uppercase text-black text-xs mb-5">
           <Link href="/cart">shopping bag</Link>
 
-          <Link href="/favourites" className="flex items-center gap-2">
+          <Link href="/favorites" className="flex items-center gap-2">
             <span className="bg-white p-3">
               <Image
                 src={favouritesIcon}
@@ -93,14 +97,14 @@ export default function ShoppingBag() {
                       />
 
                       <button
-                        onClick={(e) => toggleFavorite(item.id, e)}
+                        onClick={(e) => handleToggleFavorite(item.id, e)}
                         className="absolute bottom-3 right-3 bg-white p-2 rounded-full shadow-md"
                       >
                         <Heart
                           width={16}
                           height={16}
                           className={
-                            favorites.has(item.id)
+                            isFavorited(item.id)
                               ? "fill-red-500 text-red-500"
                               : "text-black"
                           }
@@ -133,17 +137,20 @@ export default function ShoppingBag() {
                             // 🔥 instant UI removal
                             removeOptimistic(item.id);
 
-                            // sync real state
+                            // sync local state (works for both guest and logged-in)
                             removeItem(item.id);
 
-                            try {
-                              await removeFromCart(item.id);
+                            if (isLoggedIn) {
+                              try {
+                                await removeFromCart(item.id);
+                                toast.success("Item removed");
+                              } catch {
+                                toast.error("Failed to remove item");
+                              }
+                            } else {
                               toast.success("Item removed");
-                            } catch {
-                              toast.error("Failed to remove item");
-                            } finally {
-                              setPendingId(null);
                             }
+                            setPendingId(null);
                           })
                         }
                       >

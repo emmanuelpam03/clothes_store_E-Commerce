@@ -1,13 +1,12 @@
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { redirect } from "next/navigation";
 import FavoritesClient from "@/components/shop/FavoritesClient";
 
 export default async function FavoritesPage() {
   const session = await auth();
 
   if (!session?.user?.id) {
-    redirect("/login");
+    return <FavoritesClient isGuest />;
   }
 
   const favorites = await prisma.favorite.findMany({

@@ -3,36 +3,62 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Heart, Trash2 } from "lucide-react";
-import { useState, useTransition } from "react";
-import { toggleFavorite } from "@/app/actions/favorite.actions";
+import { useState, useEffect } from "react";
+import { useFavorites } from "@/lib/favorites/useFavorites";
 import { toast } from "sonner";
 
-type FavoritesClientProps = {
-  products: {
-    id: string;
-    name: string;
-    slug: string;
-    price: number;
-    image: string | null;
-    description: string | null;
-  }[];
+type Product = {
+  id: string;
+  name: string;
+  slug: string;
+  price: number;
+  image: string | null;
+  description: string | null;
 };
 
-export default function FavoritesClient({ products }: FavoritesClientProps) {
-  const [items, setItems] = useState(products);
-  const [isPending, startTransition] = useTransition();
+type FavoritesClientProps = {
+  products?: Product[];
+  isGuest?: boolean;
+};
 
-  const handleRemoveFavorite = (productId: string) => {
-    startTransition(async () => {
-      try {
-        await toggleFavorite(productId);
-        setItems((prev) => prev.filter((item) => item.id !== productId));
-        toast.success("Removed from favorites");
-      } catch (error) {
-        toast.error("Failed to remove from favorites");
-        console.error(error);
-      }
-    });
+export default function FavoritesClient({
+  products: initialProducts = [],
+  isGuest = false,
+}: FavoritesClientProps) {
+  const [items, setItems] = useState<Product[]>(initialProducts);
+  const { toggleFavorite, getGuestFavoriteIds, isLoading } = useFavorites();
+
+  // Sync when server-provided products change (logged-in users)
+  useEffect(() => {
+    if (!isGuest && initialProducts.length > 0) {
+      setItems(initialProducts);
+    }
+  }, [isGuest, initialProducts]);
+
+  // For guests, load products from API based on localStorage IDs
+  useEffect(() => {
+    if (!isGuest) return;
+    const ids = getGuestFavoriteIds();
+    if (ids.length === 0) {
+      setItems([]);
+      return;
+    }
+    fetch(`/api/products?ids=${ids.join(",")}`)
+      .then((res) => res.json())
+      .then((products: Product[]) => setItems(products))
+      .catch(console.error);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isGuest]);
+
+  const handleRemoveFavorite = async (productId: string) => {
+    try {
+      await toggleFavorite(productId);
+      setItems((prev) => prev.filter((item) => item.id !== productId));
+      toast.success("Removed from favorites");
+    } catch (error) {
+      toast.error("Failed to remove from favorites");
+      console.error(error);
+    }
   };
 
   return (
@@ -114,7 +140,7 @@ export default function FavoritesClient({ products }: FavoritesClientProps) {
                       </Link>
                       <button
                         onClick={() => handleRemoveFavorite(product.id)}
-                        disabled={isPending}
+                        disabled={isLoading}
                         className="px-4 py-3 border border-neutral-300 text-black hover:bg-red-50 hover:border-red-300 transition disabled:opacity-50"
                         title="Remove from favorites"
                       >

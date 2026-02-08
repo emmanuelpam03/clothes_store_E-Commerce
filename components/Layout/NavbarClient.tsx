@@ -10,18 +10,23 @@ import type { Session } from "next-auth";
 import RoleBadge from "../ui/role-badge";
 import { useCart } from "@/lib/cart/cart";
 import type { CartItem } from "@/lib/cart/cart.types";
+import { useFavorites } from "@/lib/favorites/useFavorites";
 
 interface NavbarClientProps {
   session: Session | null;
   favoriteCount?: number;
 }
 
-export function NavbarClient({ session, favoriteCount = 0 }: NavbarClientProps) {
+export function NavbarClient({ session }: NavbarClientProps) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const { items } = useCart();
   const [optimisticItems] = useOptimistic<CartItem[]>(items);
+  const { favoriteIds } = useFavorites();
+
+  // Always use context (reactive) - favoriteCount prop is only for initial SSR
+  const displayFavoriteCount = favoriteIds.size;
 
   const profileRef = useRef<HTMLDivElement | null>(null);
 
@@ -103,7 +108,7 @@ export function NavbarClient({ session, favoriteCount = 0 }: NavbarClientProps) 
           >
             <Image src={heartIcon} alt="heart" width={18} height={18} />
             <span className="absolute -top-1 -right-1 h-5 w-5 min-w-4 rounded-full bg-red-600 text-white text-xs flex items-center justify-center font-medium">
-              {favoriteCount > 99 ? "99+" : favoriteCount}
+              {displayFavoriteCount > 99 ? "99+" : displayFavoriteCount}
             </span>
           </Link>
 

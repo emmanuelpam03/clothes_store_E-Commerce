@@ -6,10 +6,8 @@ import { toast } from "sonner";
 import { useCart } from "@/lib/cart/cart";
 import { addToCartAction } from "@/app/actions/cart.actions";
 import { Heart } from "lucide-react";
-import { useTransition } from "react";
-import {
-  toggleFavorite,
-} from "@/app/actions/favorite.actions";
+import { useSession } from "next-auth/react";
+import { useFavorites } from "@/lib/favorites/useFavorites";
 
 // fallback static images (safe)
 import {
@@ -34,7 +32,6 @@ const COLORS = [
 const SIZES = ["XS", "S", "M", "L", "XL", "2X"];
 
 type ProductInfoProps = {
-  // slug: string;
   product: {
     id: string;
     name: string;
@@ -43,17 +40,17 @@ type ProductInfoProps = {
     image: string | null;
     active: boolean;
   };
-  initialIsFavorited?: boolean;
 };
 
-export default function ProductInfo({ product, initialIsFavorited = false }: ProductInfoProps) {
+export default function ProductInfo({ product }: ProductInfoProps) {
   const [activeImage, setActiveImage] = useState(0);
   const [activeSize, setActiveSize] = useState<string | null>(null);
   const [activeColor, setActiveColor] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isFavorited, setIsFavorited] = useState(initialIsFavorited);
   const { addItem } = useCart();
-  const [isPending, startTransition] = useTransition();
+  const { status } = useSession();
+  const isLoggedIn = status === "authenticated";
+  const { isFavorited, toggleFavorite, isLoading: isPending } = useFavorites();
 
   const displayPrice = (product.price / 100).toFixed(2);
 
@@ -63,21 +60,23 @@ export default function ProductInfo({ product, initialIsFavorited = false }: Pro
       return;
     }
 
+    const cartItem = {
+      id: product.id,
+      title: product.name,
+      price: product.price / 100,
+      image: product.image,
+      subtitle: product.name,
+      size: activeSize,
+      color: COLORS[activeColor],
+      qty: 1,
+    };
+
     setIsLoading(true);
     try {
-      await addToCartAction(product.id, 1);
-
-      addItem({
-        id: product.id,
-        title: product.name,
-        price: product.price / 100,
-        image: product.image,
-        subtitle: product.name,
-        size: activeSize,
-        color: COLORS[activeColor],
-        qty: 1,
-      });
-
+      if (isLoggedIn) {
+        await addToCartAction(product.id, 1);
+      }
+      addItem(cartItem);
       toast.success("Added to cart!");
     } catch (error) {
       toast.error("Failed to add to cart");
@@ -87,18 +86,13 @@ export default function ProductInfo({ product, initialIsFavorited = false }: Pro
     }
   };
 
-  const handleToggleFavorite = () => {
-    startTransition(async () => {
-      try {
-        await toggleFavorite(product.id);
-        setIsFavorited((prev) => !prev);
-        toast.success(
-          isFavorited ? "Removed from favorites" : "Added to favorites",
-        );
-      } catch (error) {
-        toast.error("Failed to update favorite");
-      }
-    });
+  const handleToggleFavorite = async () => {
+    try {
+      const result = await toggleFavorite(product.id);
+      toast.success(result.isFavorited ? "Added to favorites" : "Removed from favorites");
+    } catch {
+      toast.error("Failed to update favorite");
+    }
   };
 
   return (
@@ -157,7 +151,7 @@ export default function ProductInfo({ product, initialIsFavorited = false }: Pro
                 >
                   <Heart
                     className={`h-5 w-5 ${
-                      isFavorited ? "fill-red-500 text-red-500" : "text-black"
+                      isFavorited(product.id) ? "fill-red-500 text-red-500" : "text-black"
                     }`}
                   />
                 </button>

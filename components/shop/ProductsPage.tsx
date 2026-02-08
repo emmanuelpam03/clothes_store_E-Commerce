@@ -6,11 +6,9 @@ import { Search, Heart, ChevronDown, ChevronRight, X } from "lucide-react";
 import { useState } from "react";
 import { addToCartAction } from "@/app/actions/cart.actions";
 import { useCart } from "@/lib/cart/cart";
-import { useTransition } from "react";
+import { useSession } from "next-auth/react";
 import { toast } from "sonner";
-import {
-  toggleFavorite,
-} from "@/app/actions/favorite.actions";
+import { useFavorites } from "@/lib/favorites/useFavorites";
 
 type Product = {
   id: string;
@@ -33,32 +31,38 @@ const CATEGORIES = [
 
 export default function ProductsPageComponent({
   products,
-  initialFavoriteIds = [],
 }: {
   products: Product[];
-  initialFavoriteIds?: string[];
 }) {
-  const [favoriteIds, setFavoriteIds] = useState<string[]>(initialFavoriteIds);
   const [expandedFilters, setExpandedFilters] = useState<Set<string>>(
     new Set(["Category", "Price Range"]),
   );
 
   const { addItem } = useCart();
-  const [isPending, startTransition] = useTransition();
+  const { status } = useSession();
+  const isLoggedIn = status === "authenticated";
+  const { isFavorited, toggleFavorite, isLoading: isPending } = useFavorites();
 
   const handleAddToCart = async (product: Product) => {
-    addItem({
+    const cartItem = {
       id: product.id,
       title: product.name,
       subtitle: product.description ?? "",
-      price: product.price,
+      price: product.price / 100,
       image: product.image ?? "/placeholder.png",
       size: "L",
       color: "#000000",
       qty: 1,
-    });
-
-    await addToCartAction(product.id);
+    };
+    addItem(cartItem);
+    try {
+      if (isLoggedIn) {
+        await addToCartAction(product.id);
+      }
+      toast.success("Added to cart");
+    } catch {
+      toast.error("Failed to add to cart");
+    }
   };
 
   // Add state for price range
@@ -67,24 +71,13 @@ export default function ProductsPageComponent({
   // Add state for mobile filters toggle
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
 
-  const handleToggleFavorite = (productId: string) => {
-    startTransition(async () => {
-      try {
-        await toggleFavorite(productId);
-        setFavoriteIds((prev) =>
-          prev.includes(productId)
-            ? prev.filter((id) => id !== productId)
-            : [...prev, productId],
-        );
-        toast.success(
-          favoriteIds.includes(productId)
-            ? "Removed from favorites"
-            : "Added to favorites",
-        );
-      } catch (error) {
-        toast.error("Failed to update favorite");
-      }
-    });
+  const handleToggleFavorite = async (productId: string) => {
+    try {
+      const result = await toggleFavorite(productId);
+      toast.success(result.isFavorited ? "Added to favorites" : "Removed from favorites");
+    } catch (error) {
+      toast.error("Failed to update favorite");
+    }
   };
 
   const toggleFilter = (filterName: string) => {
@@ -673,7 +666,7 @@ export default function ProductsPageComponent({
                     >
                       <Heart
                         className={`h-5 w-5 ${
-                          favoriteIds.includes(product.id)
+                          isFavorited(product.id)
                             ? "fill-red-500 text-red-500"
                             : "text-black"
                         }`}
@@ -685,14 +678,7 @@ export default function ProductsPageComponent({
                       disabled={isPending}
                       onClick={(e) => {
                         e.preventDefault();
-                        startTransition(async () => {
-                          try {
-                            await handleAddToCart(product);
-                            toast.success("Added to cart");
-                          } catch {
-                            toast.error("Failed to add to cart");
-                          }
-                        });
+                        void handleAddToCart(product);
                       }}
                       className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white px-3 py-2 text-sm text-black cursor-pointer"
                     >

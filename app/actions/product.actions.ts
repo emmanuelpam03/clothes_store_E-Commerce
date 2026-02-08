@@ -18,6 +18,21 @@ export async function getProducts() {
   });
 }
 
+export async function getProductsByIds(ids: string[]) {
+  if (ids.length === 0) return [];
+  return prisma.product.findMany({
+    where: { id: { in: ids } },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      description: true,
+      price: true,
+      image: true,
+    },
+  });
+}
+
 export async function getProductBySlug(slug: string) {
   return prisma.product.findFirst({
     where: { slug },

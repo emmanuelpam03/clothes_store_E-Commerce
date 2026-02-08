@@ -3,6 +3,7 @@ import { Inter, Inter_Tight } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/sonner";
 import { CartProvider } from "@/lib/cart/cart";
+import { FavoritesProvider } from "@/lib/favorites/FavoritesProvider";
 import { SessionProvider } from "next-auth/react";
 import CartAuthSync from "@/lib/cart/CartAuthSync";
 import { headers } from "next/headers";
@@ -38,8 +39,10 @@ export default async function RootLayout({
       <body className={`${inter.variable} ${interTight.variable} antialiased`}>
         <SessionProvider>
           <CartProvider>
-            <CartAuthSync />
-            {children}
+            <FavoritesProvider>
+              <CartAuthSync />
+              {children}
+            </FavoritesProvider>
           </CartProvider>
           <Toaster richColors position="top-right" />
         </SessionProvider>
