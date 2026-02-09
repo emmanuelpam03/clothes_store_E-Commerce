@@ -5,7 +5,7 @@ export default function ProductInfoSkeleton() {
         <div className="grid gap-10 lg:grid-cols-[420px_70px_380px] items-center">
           {/* IMAGE */}
           <div className="flex gap-6 lg:col-span-2">
-            <div className="relative bg-white border w-full md:w-[420px] aspect-[4/5] animate-pulse" />
+            <div className="relative bg-white border w-full md:w-[420px] aspect-4/5 animate-pulse" />
 
             <div className="flex md:flex-col gap-3">
               {Array.from({ length: 5 }).map((_, i) => (

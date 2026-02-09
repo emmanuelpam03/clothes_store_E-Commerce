@@ -108,7 +108,7 @@ export default function ProductInfo({ product }: ProductInfoProps) {
           {/* IMAGE + THUMBNAILS */}
           <div className="flex flex-col md:flex-row gap-6 lg:col-span-2">
             {/* MAIN IMAGE */}
-            <div className="relative bg-white border border-neutral-200 w-full md:w-[420px] aspect-[4/5]">
+            <div className="relative bg-white border border-neutral-200 w-full md:w-[420px] aspect-4/5">
               <Image
                 src={product.image ?? FALLBACK_IMAGES[activeImage]}
                 alt={product.name}

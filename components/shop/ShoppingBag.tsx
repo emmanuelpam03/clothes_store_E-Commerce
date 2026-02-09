@@ -24,14 +24,14 @@ export default function ShoppingBag() {
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  // ✅ prevent empty flash
+  // prevent empty flash
   const [isHydrated, setIsHydrated] = useState(false);
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsHydrated(true);
   }, []);
 
-  // 🔥 OPTIMISTIC STATE (remove only)
+  // OPTIMISTIC STATE (remove only)
   const [optimisticItems, removeOptimistic] = useOptimistic(
     items,
     (state, removedId: string) => state.filter((item) => item.id !== removedId),
@@ -46,7 +46,7 @@ export default function ShoppingBag() {
     }
   };
 
-  // ✅ OPTIMISTIC QTY UPDATE + DB SYNC
+  // OPTIMISTIC QTY UPDATE + DB SYNC
   const handleQtyChange = async (
     id: string,
     type: "inc" | "dec",
@@ -77,7 +77,7 @@ export default function ShoppingBag() {
   const shipping = subtotal > 0 ? 10 : 0;
   const total = subtotal + shipping;
 
-  // ⛔ block render until hydrated (prevents empty flash)
+  // block render until hydrated (prevents empty flash)
   if (!isHydrated) {
     return null;
   }
@@ -157,7 +157,7 @@ export default function ShoppingBag() {
                       </p>
                       <div className="flex justify-between mt-1">
                         <p className="text-xs text-black">{item.subtitle}</p>
-                        <p>${item.price}</p>
+                        <p>${item.price / 100}</p>
                       </div>
                     </div>
                   </div>
@@ -235,7 +235,7 @@ export default function ShoppingBag() {
               <div className="space-y-4 text-sm">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span>${subtotal}</span>
+                  <span>${subtotal / 100}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Shipping</span>
@@ -245,7 +245,7 @@ export default function ShoppingBag() {
 
               <div className="border-t mt-6 pt-6 flex justify-between font-medium">
                 <span>Total</span>
-                <span>${total}</span>
+                <span>${total / 100}</span>
               </div>
 
               <Link href="/checkout">

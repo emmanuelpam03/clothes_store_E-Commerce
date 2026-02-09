@@ -340,7 +340,7 @@ export default function Checkout() {
               {items.map((item) => (
                 <div key={item.id} className="flex gap-4 pb-4 border-b">
                   {item.image && (
-                    <div className="relative w-20 h-20 flex-shrink-0">
+                    <div className="relative w-20 h-20 shrink-0">
                       <Image
                         src={item.image}
                         alt={item.title}
