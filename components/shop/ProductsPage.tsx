@@ -1,18 +1,20 @@
 "use client";
 
-import Image, { StaticImageData } from "next/image";
+import Image from "next/image";
 import Link from "next/link";
 import { Search, Heart, ChevronDown, ChevronRight, X } from "lucide-react";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { addToCartAction } from "@/app/actions/cart.actions";
 import { useCart } from "@/lib/cart/cart";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import { useFavorites } from "@/lib/favorites/useFavorites";
+import ProductsGridSkeleton from "./skeleton/ProductsGridSkeleton";
 
 type Product = {
   id: string;
   name: string;
+  slug: string;
   description: string | null;
   price: number;
   image: string | null;
@@ -74,7 +76,9 @@ export default function ProductsPageComponent({
   const handleToggleFavorite = async (productId: string) => {
     try {
       const result = await toggleFavorite(productId);
-      toast.success(result.isFavorited ? "Added to favorites" : "Removed from favorites");
+      toast.success(
+        result.isFavorited ? "Added to favorites" : "Removed from favorites",
+      );
     } catch (error) {
       toast.error("Failed to update favorite");
     }
@@ -639,65 +643,71 @@ export default function ProductsPageComponent({
             </aside>
 
             {/* PRODUCTS GRID - Adjusts columns based on available space */}
-            <div
-              className={`flex-1 grid gap-8 ${
-                isMobileFiltersOpen ? "hidden md:grid" : "grid"
-              } grid-cols-1 md:grid-cols-2 lg:grid-cols-3`}
+            <Suspense
+              fallback={
+                <ProductsGridSkeleton count={6} />
+              }
             >
-              {products.map((product, i) => (
-                <Link key={i} href={`/products/${product.id}`}>
-                  <div className="relative h-105 bg-white group">
-                    <Image
-                      src={product.image || "/placeholder.png"}
-                      alt={product.name}
-                      fill
-                      className="object-cover"
-                    />
-
-                    {/* FAVORITE BUTTON */}
-                    <button
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleToggleFavorite(product.id);
-                      }}
-                      className="absolute top-4 right-4 p-2 rounded-full bg-white/80 hover:bg-white transition-colors cursor-pointer z-10"
-                      aria-label="Add to favorites"
-                    >
-                      <Heart
-                        className={`h-5 w-5 ${
-                          isFavorited(product.id)
-                            ? "fill-red-500 text-red-500"
-                            : "text-black"
-                        }`}
+              <div
+                className={`flex-1 grid gap-8 ${
+                  isMobileFiltersOpen ? "hidden md:grid" : "grid"
+                } grid-cols-1 md:grid-cols-2 lg:grid-cols-3`}
+              >
+                {products.map((product, i) => (
+                  <Link key={i} href={`/products/${product.slug}`}>
+                    <div className="relative h-105 bg-white group">
+                      <Image
+                        src={product.image || "/placeholder.png"}
+                        alt={product.name}
+                        fill
+                        className="object-cover"
                       />
-                    </button>
 
-                    {/* ADD */}
-                    <button
-                      disabled={isPending}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        void handleAddToCart(product);
-                      }}
-                      className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white px-3 py-2 text-sm text-black cursor-pointer"
-                    >
-                      +
-                    </button>
-                  </div>
+                      {/* FAVORITE BUTTON */}
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleToggleFavorite(product.id);
+                        }}
+                        className="absolute top-4 right-4 p-2 rounded-full bg-white/80 hover:bg-white transition-colors cursor-pointer z-10"
+                        aria-label="Add to favorites"
+                      >
+                        <Heart
+                          className={`h-5 w-5 ${
+                            isFavorited(product.id)
+                              ? "fill-red-500 text-red-500"
+                              : "text-black"
+                          }`}
+                        />
+                      </button>
 
-                  <div className="mt-3 flex items-center justify-between text-sm text-black">
-                    <div>
-                      <p className="text-neutral-500">
-                        {product.description ?? "product"}
-                      </p>
-                      <p className="font-medium">{product.name}</p>
+                      {/* ADD */}
+                      <button
+                        disabled={isPending}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          void handleAddToCart(product);
+                        }}
+                        className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white px-3 py-2 text-sm text-black cursor-pointer"
+                      >
+                        +
+                      </button>
                     </div>
-                    <p className="font-semibold">{product.price}</p>
-                  </div>
-                </Link>
-              ))}
-            </div>
+
+                    <div className="mt-3 flex items-center justify-between text-sm text-black">
+                      <div>
+                        <p className="text-neutral-500">
+                          {product.description ?? "product"}
+                        </p>
+                        <p className="font-medium">{product.name}</p>
+                      </div>
+                      <p className="font-semibold">{product.price}</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </Suspense>
           </div>
         </div>
       </div>

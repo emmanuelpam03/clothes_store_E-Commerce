@@ -146,7 +146,7 @@ export default function ProductInfo({ product }: ProductInfoProps) {
                 <button
                   onClick={handleToggleFavorite}
                   disabled={isPending}
-                  className="flex-shrink-0 p-2 hover:bg-white transition-colors"
+                  className="shrink-0 p-2 hover:bg-white transition-colors"
                   aria-label="Add to favorites"
                 >
                   <Heart

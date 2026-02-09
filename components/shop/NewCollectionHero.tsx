@@ -8,9 +8,10 @@ import {
 import { SearchIcon, Heart } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useFavorites } from "@/lib/favorites/useFavorites";
 import { toast } from "sonner";
+import NewCollectionHeroSkeleton from "./skeleton/NewCollectionHeroSkeleton";
 
 const SLIDES = [whiteShirt1, blackShirt1, whiteShirt1, blackShirt1];
 
@@ -37,13 +38,18 @@ export function NewCollectionHero({ products }: NewCollectionHeroProps) {
   const [visible, setVisible] = useState(1); // Mobile: 1, Tablet: 2, Desktop: 1
   const { isFavorited, toggleFavorite, isLoading: isPending } = useFavorites();
 
-  const handleToggleFavorite = async (productId: string, e: React.MouseEvent) => {
+  const handleToggleFavorite = async (
+    productId: string,
+    e: React.MouseEvent,
+  ) => {
     e.preventDefault();
     e.stopPropagation();
 
     try {
       const result = await toggleFavorite(productId);
-      toast.success(result.isFavorited ? "Added to favorites!" : "Removed from favorites");
+      toast.success(
+        result.isFavorited ? "Added to favorites!" : "Removed from favorites",
+      );
     } catch (error) {
       toast.error("Failed to update favorites");
       console.error(error);
@@ -123,60 +129,62 @@ export function NewCollectionHero({ products }: NewCollectionHeroProps) {
           </div>
 
           {/* SLIDER - Mobile & Tablet */}
-          <div
-            className="relative overflow-hidden -mx-5 px-5"
-            onMouseDown={(e) => onStart(e.clientX)}
-            onMouseMove={(e) => onMove(e.clientX)}
-            onMouseUp={onEnd}
-            onMouseLeave={onEnd}
-            onTouchStart={(e) => onStart(e.touches[0].clientX)}
-            onTouchMove={(e) => onMove(e.touches[0].clientX)}
-            onTouchEnd={onEnd}
-          >
+          <Suspense fallback={<NewCollectionHeroSkeleton />}>
             <div
-              className="flex transition-transform duration-500 ease-out gap-4"
-              style={{
-                transform: `translateX(calc(-${
-                  index * (100 / visible)
-                }% + ${dragOffset}px))`,
-              }}
+              className="relative overflow-hidden -mx-5 px-5"
+              onMouseDown={(e) => onStart(e.clientX)}
+              onMouseMove={(e) => onMove(e.clientX)}
+              onMouseUp={onEnd}
+              onMouseLeave={onEnd}
+              onTouchStart={(e) => onStart(e.touches[0].clientX)}
+              onTouchMove={(e) => onMove(e.touches[0].clientX)}
+              onTouchEnd={onEnd}
             >
-              {products.map((product, i) => (
-                <Link
-                  href={`/products/${product.slug}`}
-                  key={i}
-                  className="relative h-[350px] sm:h-[380px] md:h-[400px] shrink-0 bg-white group"
-                  style={{
-                    width: `calc((100% - ${
-                      (visible - 1) * 16
-                    }px) / ${visible})`,
-                  }}
-                >
-                  <Image
-                    src={product.image!}
-                    alt={`slide-${i}`}
-                    fill
-                    className="object-cover"
-                  />
-                  {/* FAVORITE BUTTON */}
-                  <button
-                    onClick={(e) => handleToggleFavorite(product.id, e)}
-                    className="absolute top-4 right-4 p-2 rounded-full bg-white/80 hover:bg-white transition-colors z-10 cursor-pointer"
-                    aria-label="Add to favorites"
-                    disabled={isPending}
+              <div
+                className="flex transition-transform duration-500 ease-out gap-4"
+                style={{
+                  transform: `translateX(calc(-${
+                    index * (100 / visible)
+                  }% + ${dragOffset}px))`,
+                }}
+              >
+                {products.map((product, i) => (
+                  <Link
+                    href={`/products/${product.slug}`}
+                    key={i}
+                    className="relative h-[350px] sm:h-[380px] md:h-[400px] shrink-0 bg-white group"
+                    style={{
+                      width: `calc((100% - ${
+                        (visible - 1) * 16
+                      }px) / ${visible})`,
+                    }}
                   >
-                    <Heart
-                      className={`h-5 w-5 ${
-                        isFavorited(product.id)
-                          ? "fill-red-500 text-red-500"
-                          : "text-black"
-                      }`}
+                    <Image
+                      src={product.image!}
+                      alt={`slide-${i}`}
+                      fill
+                      className="object-cover"
                     />
-                  </button>
-                </Link>
-              ))}
+                    {/* FAVORITE BUTTON */}
+                    <button
+                      onClick={(e) => handleToggleFavorite(product.id, e)}
+                      className="absolute top-4 right-4 p-2 rounded-full bg-white/80 hover:bg-white transition-colors z-10 cursor-pointer"
+                      aria-label="Add to favorites"
+                      disabled={isPending}
+                    >
+                      <Heart
+                        className={`h-5 w-5 ${
+                          isFavorited(product.id)
+                            ? "fill-red-500 text-red-500"
+                            : "text-black"
+                        }`}
+                      />
+                    </button>
+                  </Link>
+                ))}
+              </div>
             </div>
-          </div>
+          </Suspense>
 
           {/* SLIDER CONTROLS - Mobile & Tablet */}
           <div className="flex justify-center gap-2">
@@ -206,6 +214,7 @@ export function NewCollectionHero({ products }: NewCollectionHeroProps) {
         </div>
 
         {/* Desktop: Grid Layout */}
+
         <div className="hidden lg:grid grid-cols-12 gap-8">
           {/* LEFT COLUMN */}
           <div className="col-span-5 flex flex-col justify-between">
@@ -268,56 +277,57 @@ export function NewCollectionHero({ products }: NewCollectionHeroProps) {
             <div />
 
             {/* SLIDER */}
-            <div
-              className="relative overflow-hidden"
-              onMouseDown={(e) => onStart(e.clientX)}
-              onMouseMove={(e) => onMove(e.clientX)}
-              onMouseUp={onEnd}
-              onMouseLeave={onEnd}
-              onTouchStart={(e) => onStart(e.touches[0].clientX)}
-              onTouchMove={(e) => onMove(e.touches[0].clientX)}
-              onTouchEnd={onEnd}
-            >
+            <Suspense fallback={<NewCollectionHeroSkeleton />}>
               <div
-                className="flex transition-transform duration-500 ease-out"
-                style={{
-                  transform: `translateX(calc(-${
-                    index * STEP
-                  }px + ${dragOffset}px))`,
-                }}
+                className="relative overflow-hidden"
+                onMouseDown={(e) => onStart(e.clientX)}
+                onMouseMove={(e) => onMove(e.clientX)}
+                onMouseUp={onEnd}
+                onMouseLeave={onEnd}
+                onTouchStart={(e) => onStart(e.touches[0].clientX)}
+                onTouchMove={(e) => onMove(e.touches[0].clientX)}
+                onTouchEnd={onEnd}
               >
-                {products.map((product, i) => (
-                  <Link
-                    href={`/products/${product.slug}`}
-                    key={i}
-                    className="relative h-[450px] w-[345px] shrink-0 bg-white mr-8 last:mr-0 group"
-                  >
-                    <Image
-                      src={product.image!}
-                      alt={`slide-${i}`}
-                      fill
-                      className="object-cover"
-                    />
-                    {/* FAVORITE BUTTON */}
-                    <button
-                      onClick={(e) => handleToggleFavorite(product.id, e)}
-                      className="absolute top-4 right-4 p-2 rounded-full bg-white/80 hover:bg-white transition-colors z-10"
-                      aria-label="Add to favorites"
-                      disabled={isPending}
+                <div
+                  className="flex transition-transform duration-500 ease-out"
+                  style={{
+                    transform: `translateX(calc(-${
+                      index * STEP
+                    }px + ${dragOffset}px))`,
+                  }}
+                >
+                  {products.map((product, i) => (
+                    <Link
+                      href={`/products/${product.slug}`}
+                      key={i}
+                      className="relative h-[450px] w-[345px] shrink-0 bg-white mr-8 last:mr-0 group"
                     >
-                      <Heart
-                        className={`h-5 w-5 ${
-                          isFavorited(product.id)
-                            ? "fill-red-500 text-red-500"
-                            : "text-black"
-                        }`}
+                      <Image
+                        src={product.image!}
+                        alt={`slide-${i}`}
+                        fill
+                        className="object-cover"
                       />
-                    </button>
-                  </Link>
-                ))}
+                      {/* FAVORITE BUTTON */}
+                      <button
+                        onClick={(e) => handleToggleFavorite(product.id, e)}
+                        className="absolute top-4 right-4 p-2 rounded-full bg-white/80 hover:bg-white transition-colors z-10"
+                        aria-label="Add to favorites"
+                        disabled={isPending}
+                      >
+                        <Heart
+                          className={`h-5 w-5 ${
+                            isFavorited(product.id)
+                              ? "fill-red-500 text-red-500"
+                              : "text-black"
+                          }`}
+                        />
+                      </button>
+                    </Link>
+                  ))}
+                </div>
               </div>
-            </div>
-
+            </Suspense>
             <div />
           </div>
         </div>

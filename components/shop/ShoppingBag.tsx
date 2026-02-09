@@ -2,14 +2,17 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useTransition, useOptimistic } from "react";
+import { useState, useTransition, useOptimistic, useEffect } from "react";
 import { Heart, XIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 
 import { favouritesIcon } from "@/public/assets/images/images";
 import { useCart } from "@/lib/cart/cart";
-import { removeFromCart } from "@/app/actions/cart.actions";
+import {
+  removeFromCart,
+  updateCartQtyAction,
+} from "@/app/actions/cart.actions";
 import { useFavorites } from "@/lib/favorites/useFavorites";
 
 export default function ShoppingBag() {
@@ -21,7 +24,14 @@ export default function ShoppingBag() {
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  // 🔥 OPTIMISTIC STATE
+  // ✅ prevent empty flash
+  const [isHydrated, setIsHydrated] = useState(false);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setIsHydrated(true);
+  }, []);
+
+  // 🔥 OPTIMISTIC STATE (remove only)
   const [optimisticItems, removeOptimistic] = useOptimistic(
     items,
     (state, removedId: string) => state.filter((item) => item.id !== removedId),
@@ -36,12 +46,41 @@ export default function ShoppingBag() {
     }
   };
 
+  // ✅ OPTIMISTIC QTY UPDATE + DB SYNC
+  const handleQtyChange = async (
+    id: string,
+    type: "inc" | "dec",
+    currentQty: number,
+  ) => {
+    const nextQty = type === "inc" ? currentQty + 1 : currentQty - 1;
+    if (nextQty < 1) return;
+
+    // optimistic UI
+    updateQty(id, type);
+
+    if (!isLoggedIn) return;
+
+    try {
+      await updateCartQtyAction(id, nextQty);
+      toast.success("Quantity updated");
+    } catch {
+      // rollback
+      updateQty(id, type === "inc" ? "dec" : "inc");
+      toast.error("Failed to update quantity");
+    }
+  };
+
   const subtotal = optimisticItems.reduce(
     (acc, item) => acc + item.price * item.qty,
     0,
   );
   const shipping = subtotal > 0 ? 10 : 0;
   const total = subtotal + shipping;
+
+  // ⛔ block render until hydrated (prevents empty flash)
+  if (!isHydrated) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-[#f7f7f7]">
@@ -63,7 +102,7 @@ export default function ShoppingBag() {
           </Link>
         </div>
 
-        {/* EMPTY CART STATE */}
+        {/* EMPTY CART */}
         {optimisticItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20">
             <div className="text-center">
@@ -134,10 +173,7 @@ export default function ShoppingBag() {
                           startTransition(async () => {
                             setPendingId(item.id);
 
-                            // 🔥 instant UI removal
                             removeOptimistic(item.id);
-
-                            // sync local state (works for both guest and logged-in)
                             removeItem(item.id);
 
                             if (isLoggedIn) {
@@ -171,11 +207,19 @@ export default function ShoppingBag() {
 
                     {/* QTY */}
                     <div className="flex flex-col items-center">
-                      <button onClick={() => updateQty(item.id, "inc")}>
+                      <button
+                        onClick={() =>
+                          handleQtyChange(item.id, "inc", item.qty)
+                        }
+                      >
                         +
                       </button>
                       <span>{item.qty}</span>
-                      <button onClick={() => updateQty(item.id, "dec")}>
+                      <button
+                        onClick={() =>
+                          handleQtyChange(item.id, "dec", item.qty)
+                        }
+                      >
                         -
                       </button>
                     </div>

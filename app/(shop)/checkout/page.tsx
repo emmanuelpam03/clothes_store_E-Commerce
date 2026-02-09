@@ -12,7 +12,9 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (items.length === 0) {
-      toast.error("Your cart is empty. Please add items to proceed to checkout.");
+      toast.error(
+        "Your cart is empty. Please add items to proceed to checkout.",
+      );
       router.replace("/cart");
     }
   }, [items.length, router]);

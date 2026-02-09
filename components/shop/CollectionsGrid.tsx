@@ -2,13 +2,14 @@
 
 import Image from "next/image";
 import { ChevronDown, Heart } from "lucide-react";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useFavorites } from "@/lib/favorites/useFavorites";
 import { toast } from "sonner";
 
 // fallback image
 import { whiteShirt1 } from "@/public/assets/images/images";
+import { CollectionsGridSkeleton } from "./skeleton/CollectionsGridSkeleton";
 
 type CollectionsGridProps = {
   products: {
@@ -25,13 +26,18 @@ type CollectionsGridProps = {
 export function CollectionsGrid({ products }: CollectionsGridProps) {
   const { isFavorited, toggleFavorite, isLoading: isPending } = useFavorites();
 
-  const handleToggleFavorite = async (productId: string, e: React.MouseEvent) => {
+  const handleToggleFavorite = async (
+    productId: string,
+    e: React.MouseEvent,
+  ) => {
     e.preventDefault();
     e.stopPropagation();
 
     try {
       const result = await toggleFavorite(productId);
-      toast.success(result.isFavorited ? "Added to favorites!" : "Removed from favorites");
+      toast.success(
+        result.isFavorited ? "Added to favorites!" : "Removed from favorites",
+      );
     } catch (error) {
       toast.error("Failed to update favorites");
       console.error(error);
@@ -67,53 +73,55 @@ export function CollectionsGrid({ products }: CollectionsGridProps) {
         </div>
 
         {/* GRID */}
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-          {products.map((product) => (
-            <Link
-              href={`/products/${product.slug}`}
-              key={product.id}
-              className="w-full"
-            >
-              {/* IMAGE */}
-              <div className="relative h-80 md:h-[520px] bg-white group">
-                <Image
-                  src={product.image ?? whiteShirt1}
-                  alt={product.name}
-                  fill
-                  className="object-cover"
-                />
-
-                {/* FAVORITE */}
-                <button
-                  onClick={(e) => handleToggleFavorite(product.id, e)}
-                  className="absolute top-4 right-4 p-2 rounded-full bg-white/80"
-                  disabled={isPending}
-                >
-                  <Heart
-                    className={`h-5 w-5 ${
-                      isFavorited(product.id)
-                        ? "fill-red-500 text-red-500"
-                        : "text-black"
-                    }`}
+        <Suspense fallback={<CollectionsGridSkeleton />}>
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+            {products.map((product) => (
+              <Link
+                href={`/products/${product.slug}`}
+                key={product.id}
+                className="w-full"
+              >
+                {/* IMAGE */}
+                <div className="relative h-80 md:h-[520px] bg-white group">
+                  <Image
+                    src={product.image ?? whiteShirt1}
+                    alt={product.name}
+                    fill
+                    className="object-cover"
                   />
-                </button>
 
-                {/* ADD */}
-                <button className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white px-3 py-1 text-sm">
-                  +
-                </button>
-              </div>
+                  {/* FAVORITE */}
+                  <button
+                    onClick={(e) => handleToggleFavorite(product.id, e)}
+                    className="absolute top-4 right-4 p-2 rounded-full bg-white/80"
+                    disabled={isPending}
+                  >
+                    <Heart
+                      className={`h-5 w-5 ${
+                        isFavorited(product.id)
+                          ? "fill-red-500 text-red-500"
+                          : "text-black"
+                      }`}
+                    />
+                  </button>
 
-              {/* META */}
-              <div className="mt-4 flex justify-between text-sm">
-                <p className="font-medium">{product.name}</p>
-                <p className="font-semibold">
-                  ${(product.price / 100).toFixed(2)}
-                </p>
-              </div>
-            </Link>
-          ))}
-        </div>
+                  {/* ADD */}
+                  <button className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white px-3 py-1 text-sm">
+                    +
+                  </button>
+                </div>
+
+                {/* META */}
+                <div className="mt-4 flex justify-between text-sm">
+                  <p className="font-medium">{product.name}</p>
+                  <p className="font-semibold">
+                    ${(product.price / 100).toFixed(2)}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </Suspense>
 
         {/* MORE */}
         <div className="mt-16 flex flex-col items-center text-sm text-neutral-500">

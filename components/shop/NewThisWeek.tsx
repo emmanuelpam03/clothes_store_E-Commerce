@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Heart } from "lucide-react";
 import { useFavorites } from "@/lib/favorites/useFavorites";
@@ -9,6 +9,7 @@ import { toast } from "sonner";
 
 // fallback image (IMPORTANT)
 import { whiteShirt1 } from "@/public/assets/images/images";
+import { NewThisWeekSkeleton } from "./skeleton/NewThisWeekSkeleton";
 
 type NewThisWeekProps = {
   products: {
@@ -31,13 +32,18 @@ export function NewThisWeek({ products }: NewThisWeekProps) {
   const [dragOffset, setDragOffset] = useState(0);
   const { isFavorited, toggleFavorite, isLoading: isPending } = useFavorites();
 
-  const handleToggleFavorite = async (productId: string, e: React.MouseEvent) => {
+  const handleToggleFavorite = async (
+    productId: string,
+    e: React.MouseEvent,
+  ) => {
     e.preventDefault();
     e.stopPropagation();
 
     try {
       const result = await toggleFavorite(productId);
-      toast.success(result.isFavorited ? "Added to favorites!" : "Removed from favorites");
+      toast.success(
+        result.isFavorited ? "Added to favorites!" : "Removed from favorites",
+      );
     } catch (error) {
       toast.error("Failed to update favorites");
       console.error(error);
@@ -80,73 +86,75 @@ export function NewThisWeek({ products }: NewThisWeekProps) {
           <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
             NEW <br className="hidden sm:block" /> THIS WEEK
           </h2>
-          <Link href="/shop" className="text-xs sm:text-sm hover:underline">
+          <Link href="/products" className="text-xs sm:text-sm hover:underline">
             See All
           </Link>
         </div>
 
         {/* SLIDER */}
-        <div
-          className="relative overflow-hidden"
-          onMouseDown={(e) => onStart(e.clientX)}
-          onMouseMove={(e) => onMove(e.clientX)}
-          onMouseUp={onEnd}
-          onMouseLeave={onEnd}
-          onTouchStart={(e) => onStart(e.touches[0].clientX)}
-          onTouchMove={(e) => onMove(e.touches[0].clientX)}
-          onTouchEnd={onEnd}
-        >
+        <Suspense fallback={<NewThisWeekSkeleton />}>
           <div
-            ref={trackRef}
-            className="flex transition-transform duration-500 ease-out"
-            style={{
-              transform: `translateX(calc(-${
-                index * (100 / visible)
-              }% + ${dragOffset}px))`,
-            }}
+            className="relative overflow-hidden"
+            onMouseDown={(e) => onStart(e.clientX)}
+            onMouseMove={(e) => onMove(e.clientX)}
+            onMouseUp={onEnd}
+            onMouseLeave={onEnd}
+            onTouchStart={(e) => onStart(e.touches[0].clientX)}
+            onTouchMove={(e) => onMove(e.touches[0].clientX)}
+            onTouchEnd={onEnd}
           >
-            {products.map((product, i) => (
-              <Link
-                href={`/products/${product.slug}`}
-                key={product.id}
-                className="shrink-0 pr-4"
-                style={{ width: `${100 / visible}%` }}
-              >
-                {/* CARD */}
-                <div className="relative h-72 bg-white overflow-hidden group">
-                  <Image
-                    src={product.image ?? whiteShirt1}
-                    alt={product.name}
-                    fill
-                    className="object-cover"
-                  />
-
-                  {/* FAVORITE */}
-                  <button
-                    onClick={(e) => handleToggleFavorite(product.id, e)}
-                    className="absolute top-4 right-4 p-2 rounded-full bg-white/80"
-                    disabled={isPending}
-                  >
-                    <Heart
-                      className={`h-5 w-5 ${
-                        isFavorited(product.id)
-                          ? "fill-red-500 text-red-500"
-                          : "text-black"
-                      }`}
+            <div
+              ref={trackRef}
+              className="flex transition-transform duration-500 ease-out"
+              style={{
+                transform: `translateX(calc(-${
+                  index * (100 / visible)
+                }% + ${dragOffset}px))`,
+              }}
+            >
+              {products.map((product, i) => (
+                <Link
+                  href={`/products/${product.slug}`}
+                  key={product.id}
+                  className="shrink-0 pr-4"
+                  style={{ width: `${100 / visible}%` }}
+                >
+                  {/* CARD */}
+                  <div className="relative h-72 bg-white overflow-hidden group">
+                    <Image
+                      src={product.image ?? whiteShirt1}
+                      alt={product.name}
+                      fill
+                      className="object-cover"
                     />
-                  </button>
-                </div>
 
-                <div className="mt-3 text-sm">
-                  <p className="font-medium">{product.name}</p>
-                  <p className="font-semibold">
-                    ${(product.price / 100).toFixed(2)}
-                  </p>
-                </div>
-              </Link>
-            ))}
+                    {/* FAVORITE */}
+                    <button
+                      onClick={(e) => handleToggleFavorite(product.id, e)}
+                      className="absolute top-4 right-4 p-2 rounded-full bg-white/80"
+                      disabled={isPending}
+                    >
+                      <Heart
+                        className={`h-5 w-5 ${
+                          isFavorited(product.id)
+                            ? "fill-red-500 text-red-500"
+                            : "text-black"
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  <div className="mt-3 text-sm">
+                    <p className="font-medium">{product.name}</p>
+                    <p className="font-semibold">
+                      ${(product.price / 100).toFixed(2)}
+                    </p>
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
-        </div>
+        </Suspense>
 
         {/* CONTROLS */}
         <div className="mt-6 flex justify-center gap-2">

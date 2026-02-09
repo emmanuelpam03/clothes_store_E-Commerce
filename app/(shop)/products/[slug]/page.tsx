@@ -1,6 +1,8 @@
 import { getProductBySlug } from "@/app/actions/product.actions";
 import ProductInfo from "@/components/shop/ProductInfo";
+import ProductInfoSkeleton from "@/components/shop/skeleton/ProductInfoSkeleton";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 
 export default async function ProductDetailPage({
   params,
@@ -16,7 +18,9 @@ export default async function ProductDetailPage({
 
   return (
     <div>
-      <ProductInfo product={product} />
+      <Suspense fallback={<ProductInfoSkeleton />}>
+        <ProductInfo product={product} />
+      </Suspense>
     </div>
   );
 }

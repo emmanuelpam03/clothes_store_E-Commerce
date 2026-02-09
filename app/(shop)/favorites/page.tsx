@@ -1,6 +1,8 @@
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import FavoritesClient from "@/components/shop/FavoritesClient";
+import { Suspense } from "react";
+import FavoritesSkeleton from "@/components/shop/skeleton/FavoritesSkeleton";
 
 export default async function FavoritesPage() {
   const session = await auth();
@@ -28,5 +30,9 @@ export default async function FavoritesPage() {
 
   const products = favorites.map((fav) => fav.product);
 
-  return <FavoritesClient products={products} />;
+  return (
+    <Suspense fallback={<FavoritesSkeleton />}>
+      <FavoritesClient products={products} />
+    </Suspense>
+  );
 }
