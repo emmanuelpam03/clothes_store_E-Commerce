@@ -1,10 +1,21 @@
 "use server";
 import prisma from "@/lib/prisma";
+// import { unstable_noStore as noStore } from "next/cache";
 
-export async function getProducts() {
-  // Add get products logic here
+export async function getProducts(query?: string) {
+  // noStore();
   return prisma.product.findMany({
-    where: { active: true },
+    where: {
+      active: true,
+      ...(query
+        ? {
+            name: {
+              contains: query,
+              mode: "insensitive",
+            },
+          }
+        : {}),
+    },
     select: {
       id: true,
       name: true,
@@ -12,7 +23,6 @@ export async function getProducts() {
       description: true,
       price: true,
       image: true,
-      active: true,
     },
     orderBy: { createdAt: "desc" },
   });

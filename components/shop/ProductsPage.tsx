@@ -10,6 +10,8 @@ import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import { useFavorites } from "@/lib/favorites/useFavorites";
 import ProductsGridSkeleton from "./skeleton/ProductsGridSkeleton";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useTransition, useEffect } from "react";
 
 type Product = {
   id: string;
@@ -33,17 +35,49 @@ const CATEGORIES = [
 
 export default function ProductsPageComponent({
   products,
+  query,
 }: {
   products: Product[];
+  query: string;
 }) {
   const [expandedFilters, setExpandedFilters] = useState<Set<string>>(
     new Set(["Category", "Price Range"]),
   );
 
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const currentQuery = searchParams.get("q") ?? "";
+  const [inputValue, setInputValue] = useState(currentQuery);
+  const [, startTransition] = useTransition();
+
+  useEffect(() => {
+    setInputValue(currentQuery);
+  }, [currentQuery]);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      startTransition(() => {
+        if (!inputValue.trim()) {
+          router.replace("/products", { scroll: false });
+        } else {
+          router.replace(`/products?q=${encodeURIComponent(inputValue)}`, {
+            scroll: false,
+          });
+        }
+      });
+    }, 500); // debounce
+
+    return () => clearTimeout(timeout);
+  }, [inputValue, router]);
+
   const { addItem } = useCart();
   const { status } = useSession();
   const isLoggedIn = status === "authenticated";
-  const { isFavorited, toggleFavorite, isLoading: isPending } = useFavorites();
+  const {
+    isFavorited,
+    toggleFavorite,
+    isLoading: isFavoritePending,
+  } = useFavorites();
 
   const handleAddToCart = async (product: Product) => {
     const cartItem = {
@@ -124,6 +158,8 @@ export default function ProductsPageComponent({
           <div className="flex w-full max-w-md items-center gap-3 rounded bg-neutral-200 px-4 py-2 text-sm text-black">
             <Search size={16} />
             <input
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
               placeholder="Search"
               className="w-full bg-transparent outline-none placeholder:text-neutral-500"
             />
@@ -643,71 +679,95 @@ export default function ProductsPageComponent({
             </aside>
 
             {/* PRODUCTS GRID - Adjusts columns based on available space */}
-            <Suspense
-              fallback={
-                <ProductsGridSkeleton count={6} />
-              }
-            >
-              <div
-                className={`flex-1 grid gap-8 ${
-                  isMobileFiltersOpen ? "hidden md:grid" : "grid"
-                } grid-cols-1 md:grid-cols-2 lg:grid-cols-3`}
-              >
-                {products.map((product, i) => (
-                  <Link key={i} href={`/products/${product.slug}`}>
-                    <div className="relative h-105 bg-white group">
-                      <Image
-                        src={product.image || "/placeholder.png"}
-                        alt={product.name}
-                        fill
-                        className="object-cover"
-                      />
-
-                      {/* FAVORITE BUTTON */}
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleToggleFavorite(product.id);
-                        }}
-                        className="absolute top-4 right-4 p-2 rounded-full bg-white/80 hover:bg-white transition-colors cursor-pointer z-10"
-                        aria-label="Add to favorites"
-                      >
-                        <Heart
-                          className={`h-5 w-5 ${
-                            isFavorited(product.id)
-                              ? "fill-red-500 text-red-500"
-                              : "text-black"
-                          }`}
-                        />
-                      </button>
-
-                      {/* ADD */}
-                      <button
-                        disabled={isPending}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          void handleAddToCart(product);
-                        }}
-                        className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white px-3 py-2 text-sm text-black cursor-pointer"
-                      >
-                        +
-                      </button>
+            <div className="flex-1 flex flex-col">
+              <Suspense fallback={<ProductsGridSkeleton count={6} />}>
+                {/* NO RESULTS */}
+                {query && products.length === 0 ? (
+                  <div className="flex flex-1 items-center justify-center min-h-[400px]">
+                    <div className="text-center">
+                      <p className="text-xl font-semibold text-black">
+                        No results found
+                      </p>
+                      <p className="mt-2 text-sm text-neutral-500">
+                        We couldn’t find anything for{" "}
+                        <span className="font-medium">“{query}”</span>
+                      </p>
                     </div>
+                  </div>
+                ) : (
+                  <>
+                    {/* SEARCH INFO — NOW ALWAYS ON TOP */}
+                    {query && (
+                      <p className="mb-6 text-sm text-neutral-600">
+                        Showing results for{" "}
+                        <span className="font-semibold">“{query}”</span>
+                      </p>
+                    )}
 
-                    <div className="mt-3 flex items-center justify-between text-sm text-black">
-                      <div>
-                        <p className="text-neutral-500">
-                          {product.description ?? "product"}
-                        </p>
-                        <p className="font-medium">{product.name}</p>
-                      </div>
-                      <p className="font-semibold">{product.price}</p>
+                    {/* GRID */}
+                    <div
+                      className={`grid gap-8 ${
+                        isMobileFiltersOpen ? "hidden md:grid" : "grid"
+                      } grid-cols-1 md:grid-cols-2 lg:grid-cols-3`}
+                    >
+                      {products.map((product, i) => (
+                        <Link key={i} href={`/products/${product.slug}`}>
+                          {/* product card */}
+                          <div className="relative h-105 bg-white group">
+                            <Image
+                              src={product.image || "/placeholder.png"}
+                              alt={product.name}
+                              fill
+                              className="object-cover"
+                            />
+
+                            {/* FAVORITE BUTTON */}
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleToggleFavorite(product.id);
+                              }}
+                              className="absolute top-4 right-4 p-2 rounded-full bg-white/80 hover:bg-white transition-colors z-10"
+                            >
+                              <Heart
+                                className={`h-5 w-5 ${
+                                  isFavorited(product.id)
+                                    ? "fill-red-500 text-red-500"
+                                    : "text-black"
+                                }`}
+                              />
+                            </button>
+
+                            {/* ADD */}
+                            <button
+                              disabled={isFavoritePending}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                void handleAddToCart(product);
+                              }}
+                              className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white px-3 py-2 text-sm text-black"
+                            >
+                              +
+                            </button>
+                          </div>
+
+                          <div className="mt-3 flex items-center justify-between text-sm text-black">
+                            <div>
+                              <p className="text-neutral-500">
+                                {product.description ?? "product"}
+                              </p>
+                              <p className="font-medium">{product.name}</p>
+                            </div>
+                            <p className="font-semibold">{product.price}</p>
+                          </div>
+                        </Link>
+                      ))}
                     </div>
-                  </Link>
-                ))}
-              </div>
-            </Suspense>
+                  </>
+                )}
+              </Suspense>
+            </div>
           </div>
         </div>
       </div>
