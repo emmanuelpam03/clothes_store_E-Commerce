@@ -48,7 +48,14 @@ export default function ProductsPageComponent({
   const searchParams = useSearchParams();
   const currentQuery = searchParams.get("q") ?? "";
   const [inputValue, setInputValue] = useState(currentQuery);
-  const [, startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition();
+
+  // suggestions
+  const suggestions = products
+    .slice(0, 5)
+    .map((p) => ({ id: p.id, name: p.name }));
+
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   useEffect(() => {
     setInputValue(currentQuery);
@@ -113,6 +120,7 @@ export default function ProductsPageComponent({
       toast.success(
         result.isFavorited ? "Added to favorites" : "Removed from favorites",
       );
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       toast.error("Failed to update favorite");
     }
@@ -155,14 +163,27 @@ export default function ProductsPageComponent({
         {/* SEARCH + CATEGORIES */}
         <div className="mt-6 flex flex-wrap items-center gap-4">
           {/* SEARCH */}
-          <div className="flex w-full max-w-md items-center gap-3 rounded bg-neutral-200 px-4 py-2 text-sm text-black">
-            <Search size={16} />
-            <input
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Search"
-              className="w-full bg-transparent outline-none placeholder:text-neutral-500"
-            />
+          <div className="relative flex w-full max-w-md">
+            <div className="flex items-center gap-3 rounded bg-neutral-200 px-4 py-2 text-sm text-black">
+              <Search size={16} />
+              <input
+                id="product-search"
+                value={inputValue}
+                onChange={(e) => {
+                  setInputValue(e.target.value);
+                  setShowSuggestions(true);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Escape") {
+                    setInputValue("");
+                    setShowSuggestions(false);
+                    router.replace("/products", { scroll: false });
+                  }
+                }}
+                placeholder="Search"
+                className="w-full bg-transparent outline-none placeholder:text-neutral-500"
+              />
+            </div>
           </div>
 
           {/* CATEGORY PILLS - Hidden on mobile when filters are open */}
@@ -181,6 +202,27 @@ export default function ProductsPageComponent({
             ))}
           </div>
         </div>
+
+        {/* SUGGESTIONs */}
+        {showSuggestions && inputValue && suggestions.length > 0 && (
+          <div className="absolute z-30 mt-1 w-auto rounded bg-white shadow border">
+            {suggestions.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => {
+                  setInputValue(s.name);
+                  setShowSuggestions(false);
+                  router.replace(`/products?q=${encodeURIComponent(s.name)}`, {
+                    scroll: false,
+                  });
+                }}
+                className="block w-full px-4 py-2 text-left text-sm hover:bg-neutral-100"
+              >
+                {s.name}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* MOBILE FILTERS TOGGLE BUTTON */}
         <div className="mt-6 md:hidden">
@@ -683,7 +725,7 @@ export default function ProductsPageComponent({
               <Suspense fallback={<ProductsGridSkeleton count={6} />}>
                 {/* NO RESULTS */}
                 {query && products.length === 0 ? (
-                  <div className="flex flex-1 items-center justify-center min-h-[400px]">
+                  <div className="flex flex-1 justify-center min-h-[400px]">
                     <div className="text-center">
                       <p className="text-xl font-semibold text-black">
                         No results found
@@ -697,18 +739,28 @@ export default function ProductsPageComponent({
                 ) : (
                   <>
                     {/* SEARCH INFO — NOW ALWAYS ON TOP */}
+                    {/* STICKY SEARCH HEADER */}
                     {query && (
-                      <p className="mb-6 text-sm text-neutral-600">
-                        Showing results for{" "}
-                        <span className="font-semibold">“{query}”</span>
-                      </p>
+                      <div className="sticky top-16 md:top-24 z-20 bg-neutral-200 pb-4 items-center justify-between gap-2 rounded text-white px-4 py-3 mb-6">
+                        <p className="text-sm text-neutral-900">
+                          Showing results for{" "}
+                          <span className="font-semibold">“{query}”</span>
+                          <span className="ml-2 text-neutral-900">
+                            ({products.length} item
+                            {products.length !== 1 ? "s" : ""} found)
+                          </span>
+                        </p>
+                      </div>
                     )}
 
                     {/* GRID */}
                     <div
-                      className={`grid gap-8 ${
-                        isMobileFiltersOpen ? "hidden md:grid" : "grid"
-                      } grid-cols-1 md:grid-cols-2 lg:grid-cols-3`}
+                      className={`
+                      grid gap-8 transition-opacity duration-300
+                      ${isPending ? "opacity-40" : "opacity-100"}
+                      ${isMobileFiltersOpen ? "hidden md:grid" : "grid"}
+                      grid-cols-1 md:grid-cols-2 lg:grid-cols-3
+                    `}
                     >
                       {products.map((product, i) => (
                         <Link key={i} href={`/products/${product.slug}`}>
