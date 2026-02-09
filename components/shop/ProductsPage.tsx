@@ -38,7 +38,7 @@ export default function ProductsPageComponent({
   query,
 }: {
   products: Product[];
-  query: string;
+  query: string | undefined;
 }) {
   const [expandedFilters, setExpandedFilters] = useState<Set<string>>(
     new Set(["Category", "Price Range"]),
@@ -725,7 +725,7 @@ export default function ProductsPageComponent({
               <Suspense fallback={<ProductsGridSkeleton count={6} />}>
                 {/* NO RESULTS */}
                 {query && products.length === 0 ? (
-                  <div className="flex flex-1 justify-center min-h-[400px]">
+                  <div className="flex flex-1 justify-center min-h-100px">
                     <div className="text-center">
                       <p className="text-xl font-semibold text-black">
                         No results found

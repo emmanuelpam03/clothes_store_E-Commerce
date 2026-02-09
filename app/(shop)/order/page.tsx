@@ -104,7 +104,7 @@ export default async function OrdersPage() {
                   {order.items.map((item) => (
                     <div key={item.id} className="flex gap-4 p-4 bg-neutral-50">
                       {item.image && (
-                        <div className="relative w-20 h-20 flex-shrink-0">
+                        <div className="relative w-20 h-20 shrink-0">
                           <Image
                             src={item.image}
                             alt={item.name || "Product"}
