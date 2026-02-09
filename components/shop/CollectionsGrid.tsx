@@ -1,9 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { ChevronDown, Heart } from "lucide-react";
-import { Suspense, useState } from "react";
 import Link from "next/link";
+import { ChevronDown, ChevronUp, Heart } from "lucide-react";
+import { Suspense, useState } from "react";
 import { useFavorites } from "@/lib/favorites/useFavorites";
 import { toast } from "sonner";
 
@@ -11,20 +11,29 @@ import { toast } from "sonner";
 import { whiteShirt1 } from "@/public/assets/images/images";
 import { CollectionsGridSkeleton } from "./skeleton/CollectionsGridSkeleton";
 
-type CollectionsGridProps = {
-  products: {
-    id: string;
-    name: string;
-    slug: string;
-    description: string | null;
-    price: number; // cents
-    image: string | null;
-    active: boolean;
-  }[];
+type Product = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  price: number; // cents
+  image: string | null;
+  active: boolean;
 };
 
-export function CollectionsGrid({ products }: CollectionsGridProps) {
+type CollectionsGridProps = {
+  products?: Product[];
+};
+
+export function CollectionsGrid({ products = [] }: CollectionsGridProps) {
   const { isFavorited, toggleFavorite, isLoading: isPending } = useFavorites();
+
+  // show products in batches of 6
+  const BATCH_SIZE = 6;
+  const [visibleCount, setVisibleCount] = useState(BATCH_SIZE);
+
+  const visibleProducts = products.slice(0, visibleCount);
+  const hasMore = visibleCount < products.length;
 
   const handleToggleFavorite = async (
     productId: string,
@@ -36,11 +45,12 @@ export function CollectionsGrid({ products }: CollectionsGridProps) {
     try {
       const result = await toggleFavorite(productId);
       toast.success(
-        result.isFavorited ? "Added to favorites!" : "Removed from favorites",
+        result.isFavorited
+          ? "Added to favorites!"
+          : "Removed from favorites",
       );
-    } catch (error) {
+    } catch {
       toast.error("Failed to update favorites");
-      console.error(error);
     }
   };
 
@@ -75,58 +85,81 @@ export function CollectionsGrid({ products }: CollectionsGridProps) {
         {/* GRID */}
         <Suspense fallback={<CollectionsGridSkeleton />}>
           <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {products.map((product) => (
-              <Link
-                href={`/products/${product.slug}`}
+            {visibleProducts.map((product) => (
+              <div
                 key={product.id}
-                className="w-full"
+                className="animate-[fadeInUp_0.35s_ease-out]"
               >
-                {/* IMAGE */}
-                <div className="relative h-80 md:h-[520px] bg-white group">
-                  <Image
-                    src={product.image ?? whiteShirt1}
-                    alt={product.name}
-                    fill
-                    className="object-cover"
-                  />
-
-                  {/* FAVORITE */}
-                  <button
-                    onClick={(e) => handleToggleFavorite(product.id, e)}
-                    className="absolute top-4 right-4 p-2 rounded-full bg-white/80"
-                    disabled={isPending}
-                  >
-                    <Heart
-                      className={`h-5 w-5 ${
-                        isFavorited(product.id)
-                          ? "fill-red-500 text-red-500"
-                          : "text-black"
-                      }`}
+                <Link
+                  href={`/products/${product.slug}`}
+                  className="w-full"
+                >
+                  {/* IMAGE */}
+                  <div className="relative h-80 md:h-[520px] bg-white group">
+                    <Image
+                      src={product.image ?? whiteShirt1}
+                      alt={product.name}
+                      fill
+                      className="object-cover"
                     />
-                  </button>
 
-                  {/* ADD */}
-                  <button className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white px-3 py-1 text-sm">
-                    +
-                  </button>
-                </div>
+                    {/* FAVORITE */}
+                    <button
+                      onClick={(e) =>
+                        handleToggleFavorite(product.id, e)
+                      }
+                      className="absolute top-4 right-4 p-2 rounded-full bg-white/80"
+                      disabled={isPending}
+                    >
+                      <Heart
+                        className={`h-5 w-5 ${
+                          isFavorited(product.id)
+                            ? "fill-red-500 text-red-500"
+                            : "text-black"
+                        }`}
+                      />
+                    </button>
 
-                {/* META */}
-                <div className="mt-4 flex justify-between text-sm">
-                  <p className="font-medium">{product.name}</p>
-                  <p className="font-semibold">
-                    ${(product.price / 100).toFixed(2)}
-                  </p>
-                </div>
-              </Link>
+                    {/* ADD */}
+                    <button className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white px-3 py-1 text-sm">
+                      +
+                    </button>
+                  </div>
+
+                  {/* META */}
+                  <div className="mt-4 flex justify-between text-sm">
+                    <p className="font-medium">{product.name}</p>
+                    <p className="font-semibold">
+                      ${(product.price / 100).toFixed(2)}
+                    </p>
+                  </div>
+                </Link>
+              </div>
             ))}
           </div>
         </Suspense>
 
-        {/* MORE */}
+        {/* MORE / LESS */}
         <div className="mt-16 flex flex-col items-center text-sm text-neutral-500">
-          <span>More</span>
-          <ChevronDown className="w-12 h-7 text-black" />
+          {hasMore ? (
+            <button
+              onClick={() =>
+                setVisibleCount((prev) => prev + BATCH_SIZE)
+              }
+              className="flex flex-col items-center rounded-full px-6 py-3 hover:text-black transition"
+            >
+              <span>More</span>
+              <ChevronDown className="w-12 h-7 text-black" />
+            </button>
+          ) : products.length > BATCH_SIZE ? (
+            <button
+              onClick={() => setVisibleCount(BATCH_SIZE)}
+              className="flex flex-col items-center rounded-full px-6 py-3 hover:text-black transition"
+            >
+              <span>Less</span>
+              <ChevronUp className="w-12 h-7 text-black" />
+            </button>
+          ) : null}
         </div>
       </div>
     </section>

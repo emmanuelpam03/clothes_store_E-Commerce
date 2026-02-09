@@ -7,8 +7,8 @@ import { getProducts } from "../actions/product.actions";
 
 export default async function ShopPage() {
   const products = await getProducts();
-  const newProducts = products.slice(0, 6);
-  const NewThisWeekProducts = products.slice(-9);
+  const NewThisWeekProducts = products.slice(-6);
+  const newProducts = products.slice(0, 9);
   return (
     <>
       <NewCollectionHero products={newProducts} />
