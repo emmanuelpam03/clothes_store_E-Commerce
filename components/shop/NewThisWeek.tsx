@@ -19,7 +19,7 @@ type NewThisWeekProps = {
     description: string | null;
     price: number; // cents
     image: string | null;
-    active: boolean;
+    // active: boolean;
   }[];
 };
 

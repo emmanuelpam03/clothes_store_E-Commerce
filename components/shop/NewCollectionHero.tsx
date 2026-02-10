@@ -12,6 +12,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useFavorites } from "@/lib/favorites/useFavorites";
 import { toast } from "sonner";
 import NewCollectionHeroSkeleton from "./skeleton/NewCollectionHeroSkeleton";
+import { useRouter } from "next/navigation";
 
 const SLIDES = [whiteShirt1, blackShirt1, whiteShirt1, blackShirt1];
 
@@ -27,7 +28,7 @@ type NewCollectionHeroProps = {
     description: string | null;
     price: number;
     image: string | null;
-    active: boolean;
+    // active: boolean;
     slug: string;
   }[];
 };
@@ -37,6 +38,15 @@ export function NewCollectionHero({ products }: NewCollectionHeroProps) {
   const [dragOffset, setDragOffset] = useState(0);
   const [visible, setVisible] = useState(1); // Mobile: 1, Tablet: 2, Desktop: 1
   const { isFavorited, toggleFavorite, isLoading: isPending } = useFavorites();
+
+  const [value, setValue] = useState("");
+  const router = useRouter();
+
+  const submit = () => {
+    const q = value.trim();
+    if (!q) return;
+    router.push(`/products?q=${encodeURIComponent(q)}`);
+  };
 
   const handleToggleFavorite = async (
     productId: string,
@@ -113,7 +123,10 @@ export function NewCollectionHero({ products }: NewCollectionHeroProps) {
             <SearchIcon size={14} />
             <input
               type="text"
-              placeholder="Search"
+              value={value}
+              onChange={(e) => setValue(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && submit()}
+              placeholder="Search products"
               className="text-black outline-none border-none w-full bg-transparent"
             />
           </div>
@@ -152,7 +165,7 @@ export function NewCollectionHero({ products }: NewCollectionHeroProps) {
                   <Link
                     href={`/products/${product.slug}`}
                     key={i}
-                    className="relative h-[350px] sm:h-[380px] md:h-[400px] shrink-0 bg-white group"
+                    className="relative h-87.5 sm:h-95 md:h-100 shrink-0 bg-white group"
                     style={{
                       width: `calc((100% - ${
                         (visible - 1) * 16
@@ -230,7 +243,10 @@ export function NewCollectionHero({ products }: NewCollectionHeroProps) {
                 <SearchIcon size={14} />
                 <input
                   type="text"
-                  placeholder="Search"
+                  value={value}
+                  onChange={(e) => setValue(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && submit()}
+                  placeholder="Search products"
                   className="text-black outline-none border-none w-full bg-transparent"
                 />
               </div>
@@ -300,7 +316,7 @@ export function NewCollectionHero({ products }: NewCollectionHeroProps) {
                     <Link
                       href={`/products/${product.slug}`}
                       key={i}
-                      className="relative h-[450px] w-[345px] shrink-0 bg-white mr-8 last:mr-0 group"
+                      className="relative h-112.5 w-86.25 shrink-0 bg-white mr-8 last:mr-0 group"
                     >
                       <Image
                         src={product.image!}

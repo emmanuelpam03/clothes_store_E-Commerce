@@ -9,6 +9,7 @@ export default async function ShopPage() {
   const products = await getProducts();
   const NewThisWeekProducts = products.slice(-6);
   const newProducts = products.slice(0, 9);
+  
   return (
     <>
       <NewCollectionHero products={newProducts} />
