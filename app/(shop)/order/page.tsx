@@ -99,6 +99,11 @@ export default async function OrdersPage() {
                 </div>
 
                 {/* ORDER ITEMS */}
+                <Link href={`/order/${order.id}`}>
+                  <p className="text-sm text-blue-600 hover:underline">
+                    View Details
+                  </p>
+                </Link>
                 <div className="space-y-4 mb-6">
                   <p className="text-sm font-semibold">Items</p>
                   {order.items.map((item) => (

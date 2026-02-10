@@ -38,8 +38,8 @@ export function NewCollectionHero({ products }: NewCollectionHeroProps) {
   const [dragOffset, setDragOffset] = useState(0);
   const [visible, setVisible] = useState(1); // Mobile: 1, Tablet: 2, Desktop: 1
   const { isFavorited, toggleFavorite, isLoading: isPending } = useFavorites();
-
   const [value, setValue] = useState("");
+
   const router = useRouter();
 
   const submit = () => {
