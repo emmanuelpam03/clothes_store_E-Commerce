@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import OrderPageCartClear from "@/components/shop/OrderPageCartClear";
+import { getOrders } from "@/app/actions/order.actions";
 
 export default async function OrdersPage() {
   const session = await auth();
@@ -12,15 +13,7 @@ export default async function OrdersPage() {
     redirect("/login");
   }
 
-  const orders = await prisma.order.findMany({
-    where: { userId: session.user.id },
-    include: {
-      items: {
-        include: { product: true },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const orders = await getOrders();
 
   const getStatusColor = (status: string) => {
     switch (status) {

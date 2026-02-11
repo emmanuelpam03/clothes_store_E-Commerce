@@ -1,4 +1,5 @@
 import { getOrderById } from "@/app/actions/order.actions";
+import CancelOrderButton from "@/components/shop/cancelOrderButton";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 
@@ -22,6 +23,11 @@ export default async function OrderSuccessPage({ params }: PageProps) {
   return (
     <div className="min-h-screen bg-neutral-100 px-6 py-12">
       <div className="mx-auto max-w-3xl bg-white border-2 border-neutral-300 p-8">
+        {order.status === "CANCELLED" && (
+          <div className="bg-red-100 text-red-800 p-4 mb-6 text-center">
+            This order has been cancelled.
+          </div>
+        )}
         <h1 className="text-3xl font-black text-black mb-2">Order Confirmed</h1>
 
         <p className="text-sm text-neutral-600 mb-8">
@@ -79,6 +85,13 @@ export default async function OrderSuccessPage({ params }: PageProps) {
             ${(order.total / 100).toFixed(2)}
           </span>
         </div>
+
+        {/* Cancel Order Button */}
+        {order.status === "PENDING" && (
+          <div className="mt-6">
+            <CancelOrderButton orderId={order.id} status={order.status} />
+          </div>
+        )}
       </div>
     </div>
   );

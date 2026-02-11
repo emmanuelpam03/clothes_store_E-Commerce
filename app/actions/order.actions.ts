@@ -1,5 +1,7 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
+
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 
@@ -93,7 +95,22 @@ export async function createOrderAction(items: CartItem[]) {
 }
 
 export async function getOrders() {
-  // Add get orders logic here
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
+
+  const orders = await prisma.order.findMany({
+    where: { userId: session.user.id },
+    include: {
+      items: {
+        include: { product: true },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+  return orders;
 }
 
 export async function getOrderById(orderId: string) {
@@ -123,4 +140,44 @@ export async function getOrderById(orderId: string) {
 
 export async function updateOrderStatus() {
   // Add update order status logic here
+}
+
+export async function cancelOrder(orderId: string) {
+  // Add cancel order logic here
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
+
+  // get the order
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+  });
+
+  if (!order) {
+    throw new Error("Order not found");
+  }
+
+  // check if the order belongs to the user
+  if (order.userId !== session.user.id) {
+    throw new Error("Forbidden");
+  }
+
+  // check if order is already paid for or is aleady shipped
+  if (order.status !== "PENDING") {
+    throw new Error(
+      "Cannot cancel a paid order or an order that is already shipped",
+    );
+  }
+
+  // update the order status
+  const updatedOrder = await prisma.order.update({
+    where: { id: order.id },
+    data: { status: "CANCELLED" },
+  });
+
+  revalidatePath("/order");
+
+  return updatedOrder;
 }
