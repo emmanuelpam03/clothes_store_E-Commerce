@@ -2,37 +2,66 @@
 import prisma from "@/lib/prisma";
 import { unstable_noStore as noStore } from "next/cache";
 
-export async function getProducts(query?: string) {
+export async function getProducts(query?: string, filter?: string) {
   noStore();
+
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
   return prisma.product.findMany({
     where: {
       active: true,
-      ...(query
+      // select: {
+      //   id: true,
+      // name: true,
+      //   slug: true,
+      //   description: true,
+      //   price: true,
+      //   image: true,
+      // },
+      ...(query && {
+        OR: [
+          {
+            name: {
+              contains: query,
+              mode: "insensitive",
+            },
+          },
+          {
+            description: {
+              contains: query,
+              mode: "insensitive",
+            },
+          },
+        ],
+      }),
+
+      ...(filter && filter !== "new" && filter !== "best-sellers"
         ? {
-            OR: [
-              {
-                name: {
-                  contains: query,
-                  mode: "insensitive",
-                },
-              },
-              {
-                description: {
-                  contains: query,
-                  mode: "insensitive",
-                },
-              },
-            ],
+            category: {
+              slug: filter,
+            },
+          }
+        : {}),
+
+      ...(filter === "new"
+        ? {
+            createdAt: {
+              gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+            },
+          }
+        : {}),
+
+      ...(filter === "best-sellers"
+        ? {
+            orderItems: {
+              some: {}, // only products that have sales
+            },
           }
         : {}),
     },
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      description: true,
-      price: true,
-      image: true,
+    include: {
+      category: true,
     },
     orderBy: { createdAt: "desc" },
   });
@@ -91,4 +120,22 @@ export async function updateProduct() {
 
 export async function deleteProduct() {
   // Add delete product logic here
+}
+
+export async function createDefaultCategories() {
+  const categories = [
+    { name: "Shirts", slug: "shirts" },
+    { name: "T-Shirts", slug: "t-shirts" },
+    { name: "Polo Shirts", slug: "polo-shirts" },
+    { name: "Jeans", slug: "jeans" },
+    { name: "Jackets", slug: "jackets" },
+    { name: "Shorts", slug: "shorts" },
+  ];
+
+  await prisma.category.createMany({
+    data: categories,
+    skipDuplicates: true,
+  });
+
+  return { success: true };
 }

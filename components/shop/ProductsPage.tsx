@@ -12,6 +12,7 @@ import { useFavorites } from "@/lib/favorites/useFavorites";
 import ProductsGridSkeleton from "./skeleton/ProductsGridSkeleton";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTransition, useEffect } from "react";
+import { createDefaultCategories } from "@/app/actions/product.actions";
 
 type Product = {
   id: string;
@@ -22,23 +23,27 @@ type Product = {
   image: string | null;
 };
 
-const CATEGORIES = [
-  "NEW",
-  "BEST SELLERS",
-  "SHIRTS",
-  "T-SHIRTS",
-  "POLO SHIRTS",
-  "JEANS",
-  "JACKETS",
-  "SHORTS",
+type Category = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
+const FILTERS = [
+  { label: "NEW", value: "new" },
+  { label: "BEST SELLERS", value: "best-sellers" },
 ];
 
 export default function ProductsPageComponent({
   products,
   query,
+  filter,
+  categories,
 }: {
   products: Product[];
   query: string | undefined;
+  filter: string | undefined;
+  categories: Category[];
 }) {
   const [expandedFilters, setExpandedFilters] = useState<Set<string>>(
     new Set(["Category", "Price Range"]),
@@ -149,6 +154,18 @@ export default function ProductsPageComponent({
     setIsMobileFiltersOpen(!isMobileFiltersOpen);
   };
 
+  // handle seed
+  // function handleSeed() {
+  //   startTransition(async () => {
+  //     try {
+  //       await createDefaultCategories();
+  //       toast.success("Categories added successfully");
+  //     } catch (error) {
+  //       toast.error("Failed to add categories");
+  //     }
+  //   });
+  // }
+
   return (
     <section className="w-full bg-neutral-100 py-16">
       <div className="mx-auto max-w-7xl px-6">
@@ -184,6 +201,13 @@ export default function ProductsPageComponent({
                 className="w-full bg-transparent outline-none placeholder:text-neutral-500"
               />
             </div>
+            {/* <button
+                onClick={handleSeed}
+                disabled={isPending}
+                className="px-4 py-2 bg-black text-white text-sm rounded hover:bg-neutral-800 transition"
+              >
+                {isPending ? "Adding..." : "Add Default Categories"}
+              </button> */}
           </div>
 
           {/* CATEGORY PILLS - Hidden on mobile when filters are open */}
@@ -192,12 +216,59 @@ export default function ProductsPageComponent({
               isMobileFiltersOpen ? "hidden" : "hidden md:flex"
             }`}
           >
-            {CATEGORIES.map((cat) => (
+            {/* NEW & BEST SELLERS */}
+            {FILTERS.map((item) => (
               <button
-                key={cat}
-                className="rounded border border-neutral-300 px-3 py-1 text-xs tracking-wide text-black hover:bg-black hover:text-white"
+                key={item.value}
+                onClick={() => {
+                  const params = new URLSearchParams();
+                  if (query) params.set("q", query);
+
+                  if (filter === item.value) {
+                    params.delete("filter");
+                  } else {
+                    params.set("filter", item.value);
+                  }
+
+                  router.replace(`/products?${params.toString()}`, {
+                    scroll: false,
+                  });
+                }}
+                className={`rounded border px-3 py-1 text-xs tracking-wide ${
+                  filter === item.value
+                    ? "bg-black text-white"
+                    : "border-neutral-300 text-black hover:bg-black hover:text-white"
+                }`}
               >
-                {cat}
+                {item.label}
+              </button>
+            ))}
+
+            {/* DATABASE CATEGORIES */}
+            {categories.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => {
+                  const params = new URLSearchParams();
+                  if (query) params.set("q", query);
+
+                  if (filter === cat.slug) {
+                    params.delete("filter");
+                  } else {
+                    params.set("filter", cat.slug);
+                  }
+
+                  router.replace(`/products?${params.toString()}`, {
+                    scroll: false,
+                  });
+                }}
+                className={`rounded border px-3 py-1 text-xs tracking-wide ${
+                  filter === cat.slug
+                    ? "bg-black text-white"
+                    : "border-neutral-300 text-black hover:bg-black hover:text-white"
+                }`}
+              >
+                {cat.name}
               </button>
             ))}
           </div>
@@ -291,10 +362,31 @@ export default function ProductsPageComponent({
                 </button>
                 {isExpanded("Category") && (
                   <div className="mt-4 space-y-2 text-sm text-black">
-                    {CATEGORIES.map((cat) => (
-                      <label key={cat} className="flex items-center gap-2">
-                        <input type="checkbox" />
-                        {cat}
+                    {FILTERS.map((item) => (
+                      <label
+                        key={item.value}
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={filter === item.value}
+                          onChange={() => {
+                            const params = new URLSearchParams();
+
+                            if (query) params.set("q", query);
+
+                            if (filter === item.value) {
+                              params.delete("filter");
+                            } else {
+                              params.set("filter", item.value);
+                            }
+
+                            router.replace(`/products?${params.toString()}`, {
+                              scroll: false,
+                            });
+                          }}
+                        />
+                        {item.label}
                       </label>
                     ))}
                   </div>
@@ -539,10 +631,31 @@ export default function ProductsPageComponent({
                 </button>
                 {isExpanded("Category") && (
                   <div className="mt-4 space-y-2 text-sm text-black">
-                    {CATEGORIES.map((cat) => (
-                      <label key={cat} className="flex items-center gap-2">
-                        <input type="checkbox" />
-                        {cat}
+                    {FILTERS.map((item) => (
+                      <label
+                        key={item.value}
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={filter === item.value}
+                          onChange={() => {
+                            const params = new URLSearchParams();
+
+                            if (query) params.set("q", query);
+
+                            if (filter === item.value) {
+                              params.delete("filter");
+                            } else {
+                              params.set("filter", item.value);
+                            }
+
+                            router.replace(`/products?${params.toString()}`, {
+                              scroll: false,
+                            });
+                          }}
+                        />
+                        {item.label}
                       </label>
                     ))}
                   </div>
