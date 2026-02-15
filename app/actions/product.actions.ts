@@ -47,7 +47,8 @@ export async function getProducts(query?: string, filter?: string) {
       ...(filter === "new"
         ? {
             createdAt: {
-              gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+              gte: thirtyDaysAgo
+              // new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
             },
           }
         : {}),
