@@ -30,8 +30,9 @@ type Category = {
 };
 
 const FILTERS = [
-  { label: "NEW", value: "new" },
-  { label: "BEST SELLERS", value: "best-sellers" },
+  { label: "FEATURED", slug: "featured" },
+  { label: "NEW", slug: "new" },
+  { label: "BEST SELLERS", slug: "best-sellers" },
 ];
 
 export default function ProductsPageComponent({
@@ -219,15 +220,15 @@ export default function ProductsPageComponent({
             {/* NEW & BEST SELLERS */}
             {FILTERS.map((item) => (
               <button
-                key={item.value}
+                key={item.slug}
                 onClick={() => {
                   const params = new URLSearchParams();
                   if (query) params.set("q", query);
 
-                  if (filter === item.value) {
+                  if (filter === item.slug) {
                     params.delete("filter");
                   } else {
-                    params.set("filter", item.value);
+                    params.set("filter", item.slug);
                   }
 
                   router.replace(`/products?${params.toString()}`, {
@@ -235,7 +236,7 @@ export default function ProductsPageComponent({
                   });
                 }}
                 className={`rounded border px-3 py-1 text-xs tracking-wide ${
-                  filter === item.value
+                  filter === item.slug
                     ? "bg-black text-white"
                     : "border-neutral-300 text-black hover:bg-black hover:text-white"
                 }`}
@@ -364,21 +365,21 @@ export default function ProductsPageComponent({
                   <div className="mt-4 space-y-2 text-sm text-black">
                     {FILTERS.map((item) => (
                       <label
-                        key={item.value}
+                        key={item.slug}
                         className="flex items-center gap-2 cursor-pointer"
                       >
                         <input
                           type="checkbox"
-                          checked={filter === item.value}
+                          checked={filter === item.slug}
                           onChange={() => {
                             const params = new URLSearchParams();
 
                             if (query) params.set("q", query);
 
-                            if (filter === item.value) {
+                            if (filter === item.slug) {
                               params.delete("filter");
                             } else {
-                              params.set("filter", item.value);
+                              params.set("filter", item.slug);
                             }
 
                             router.replace(`/products?${params.toString()}`, {
@@ -633,21 +634,21 @@ export default function ProductsPageComponent({
                   <div className="mt-4 space-y-2 text-sm text-black">
                     {FILTERS.map((item) => (
                       <label
-                        key={item.value}
+                        key={item.slug}
                         className="flex items-center gap-2 cursor-pointer"
                       >
                         <input
                           type="checkbox"
-                          checked={filter === item.value}
+                          checked={filter === item.slug}
                           onChange={() => {
                             const params = new URLSearchParams();
 
                             if (query) params.set("q", query);
 
-                            if (filter === item.value) {
+                            if (filter === item.slug) {
                               params.delete("filter");
                             } else {
-                              params.set("filter", item.value);
+                              params.set("filter", item.slug);
                             }
 
                             router.replace(`/products?${params.toString()}`, {

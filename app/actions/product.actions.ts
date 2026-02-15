@@ -11,14 +11,7 @@ export async function getProducts(query?: string, filter?: string) {
   return prisma.product.findMany({
     where: {
       active: true,
-      // select: {
-      //   id: true,
-      // name: true,
-      //   slug: true,
-      //   description: true,
-      //   price: true,
-      //   image: true,
-      // },
+
       ...(query && {
         OR: [
           {
@@ -36,35 +29,41 @@ export async function getProducts(query?: string, filter?: string) {
         ],
       }),
 
-      ...(filter && filter !== "new" && filter !== "best-sellers"
-        ? {
-            category: {
-              slug: filter,
-            },
-          }
-        : {}),
-
-      ...(filter === "new"
-        ? {
-            createdAt: {
-              gte: thirtyDaysAgo
-              // new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-            },
-          }
-        : {}),
-
-      ...(filter === "best-sellers"
-        ? {
-            orderItems: {
-              some: {}, // only products that have sales
-            },
-          }
-        : {}),
+      ...(filter === "featured"
+        ? { isFeatured: true }
+        : filter === "new"
+          ? {
+              createdAt: {
+                gte: thirtyDaysAgo,
+              },
+            }
+          : filter === "best-sellers"
+            ? {
+                orderItems: {
+                  some: {},
+                },
+              }
+            : filter
+              ? {
+                  category: {
+                    slug: filter,
+                  },
+                }
+              : {}),
     },
+
     include: {
       category: true,
     },
-    orderBy: { createdAt: "desc" },
+
+    orderBy:
+      filter === "best-sellers"
+        ? {
+            orderItems: {
+              _count: "desc", // sort best sellers by sales volume
+            },
+          }
+        : { createdAt: "desc" },
   });
 }
 
