@@ -1095,8 +1095,11 @@ export default function ProductsPageComponent({
                       grid-cols-1 md:grid-cols-2 lg:grid-cols-3
                     `}
                     >
-                      {filteredProducts.map((product, i) => (
-                        <Link key={i} href={`/products/${product.slug}`}>
+                      {filteredProducts.map((product) => (
+                        <Link
+                          key={product.id}
+                          href={`/products/${product.slug}`}
+                        >
                           {/* product card */}
                           <div className="relative h-105 bg-white group">
                             <Image
