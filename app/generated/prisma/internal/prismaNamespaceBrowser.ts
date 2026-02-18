@@ -144,6 +144,10 @@ export const ProductScalarFieldEnum = {
   image: 'image',
   active: 'active',
   isFeatured: 'isFeatured',
+  sizes: 'sizes',
+  colors: 'colors',
+  tags: 'tags',
+  collection: 'collection',
   categoryId: 'categoryId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'

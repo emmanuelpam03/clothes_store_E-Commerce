@@ -12,7 +12,7 @@ import { useFavorites } from "@/lib/favorites/useFavorites";
 import ProductsGridSkeleton from "./skeleton/ProductsGridSkeleton";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTransition, useEffect } from "react";
-import { createDefaultCategories } from "@/app/actions/product.actions";
+// import { createDefaultCategories } from "@/app/actions/product.actions";
 
 type Product = {
   id: string;
@@ -21,6 +21,13 @@ type Product = {
   description: string | null;
   price: number;
   image: string | null;
+  sizes?: string[];
+  colors?: string[];
+  tags?: string[];
+  collection?: string | null;
+  inventory?: {
+    quantity: number;
+  } | null;
 };
 
 type Category = {
@@ -120,6 +127,19 @@ export default function ProductsPageComponent({
   // Add state for mobile filters toggle
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
 
+  // Filter states
+  const [selectedSizes, setSelectedSizes] = useState<Set<string>>(new Set());
+  const [selectedColors, setSelectedColors] = useState<Set<string>>(new Set());
+  const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
+  const [selectedCollections, setSelectedCollections] = useState<Set<string>>(
+    new Set(),
+  );
+  const [selectedRatings, setSelectedRatings] = useState<Set<number>>(
+    new Set(),
+  );
+  const [showInStock, setShowInStock] = useState(false);
+  const [showOutOfStock, setShowOutOfStock] = useState(false);
+
   const handleToggleFavorite = async (productId: string) => {
     try {
       const result = await toggleFavorite(productId);
@@ -131,6 +151,51 @@ export default function ProductsPageComponent({
       toast.error("Failed to update favorite");
     }
   };
+
+  // Filter products based on selected filters
+  const filteredProducts = products.filter((product) => {
+    // Size filter
+    if (selectedSizes.size > 0) {
+      const hasMatchingSize = product.sizes?.some((size) =>
+        selectedSizes.has(size),
+      );
+      if (!hasMatchingSize) return false;
+    }
+
+    // Color filter
+    if (selectedColors.size > 0) {
+      const hasMatchingColor = product.colors?.some((color) =>
+        selectedColors.has(color),
+      );
+      if (!hasMatchingColor) return false;
+    }
+
+    // Tags filter
+    if (selectedTags.size > 0) {
+      const hasMatchingTag = product.tags?.some((tag) => selectedTags.has(tag));
+      if (!hasMatchingTag) return false;
+    }
+
+    // Collection filter
+    if (selectedCollections.size > 0) {
+      if (!product.collection || !selectedCollections.has(product.collection)) {
+        return false;
+      }
+    }
+
+    // Price filter
+    const productPrice = product.price / 100; // Convert cents to dollars
+    if (productPrice > maxPrice) return false;
+
+    // Availability filter
+    if (showInStock || showOutOfStock) {
+      const inStock = (product.inventory?.quantity ?? 0) > 0;
+      if (showInStock && !inStock) return false;
+      if (showOutOfStock && inStock) return false;
+    }
+
+    return true;
+  });
 
   const toggleFilter = (filterName: string) => {
     setExpandedFilters((prev) => {
@@ -153,6 +218,67 @@ export default function ProductsPageComponent({
   // Toggle mobile filters
   const toggleMobileFilters = () => {
     setIsMobileFiltersOpen(!isMobileFiltersOpen);
+  };
+
+  // Helper functions to toggle filters
+  const toggleSize = (size: string) => {
+    setSelectedSizes((prev) => {
+      const next = new Set(prev);
+      if (next.has(size)) {
+        next.delete(size);
+      } else {
+        next.add(size);
+      }
+      return next;
+    });
+  };
+
+  const toggleColor = (color: string) => {
+    setSelectedColors((prev) => {
+      const next = new Set(prev);
+      if (next.has(color)) {
+        next.delete(color);
+      } else {
+        next.add(color);
+      }
+      return next;
+    });
+  };
+
+  const toggleTag = (tag: string) => {
+    setSelectedTags((prev) => {
+      const next = new Set(prev);
+      if (next.has(tag)) {
+        next.delete(tag);
+      } else {
+        next.add(tag);
+      }
+      return next;
+    });
+  };
+
+  const toggleCollection = (collection: string) => {
+    setSelectedCollections((prev) => {
+      const next = new Set(prev);
+      if (next.has(collection)) {
+        next.delete(collection);
+      } else {
+        next.add(collection);
+      }
+      return next;
+    });
+  };
+
+  const toggleRating = (rating: number) => {
+    setSelectedRatings((prev) => {
+      const next = new Set(prev);
+      if (next.has(rating)) {
+        next.delete(rating);
+      } else {
+        next.add(rating);
+      }
+      return next;
+    });
   };
 
   // handle seed
@@ -323,7 +449,12 @@ export default function ProductsPageComponent({
                   {["XS", "S", "M", "L", "XL", "2X"].map((size) => (
                     <button
                       key={size}
-                      className="h-9 w-9 border text-xs text-black hover:bg-black hover:text-white"
+                      onClick={() => toggleSize(size)}
+                      className={`h-9 w-9 border text-xs transition-colors ${
+                        selectedSizes.has(size)
+                          ? "bg-black text-white"
+                          : "text-black hover:bg-black hover:text-white"
+                      }`}
                     >
                       {size}
                     </button>
@@ -337,13 +468,38 @@ export default function ProductsPageComponent({
                   Availability
                 </h3>
                 <div className="space-y-2 text-sm text-black">
-                  <label className="flex items-center gap-2">
-                    <input type="checkbox" />
-                    Availability <span className="text-blue-600">(450)</span>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={showInStock}
+                      onChange={(e) => setShowInStock(e.target.checked)}
+                    />
+                    In Stock{" "}
+                    <span className="text-blue-600">
+                      (
+                      {
+                        products.filter((p) => (p.inventory?.quantity ?? 0) > 0)
+                          .length
+                      }
+                      )
+                    </span>
                   </label>
-                  <label className="flex items-center gap-2">
-                    <input type="checkbox" />
-                    Out of Stock <span className="text-blue-600">(18)</span>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={showOutOfStock}
+                      onChange={(e) => setShowOutOfStock(e.target.checked)}
+                    />
+                    Out of Stock{" "}
+                    <span className="text-blue-600">
+                      (
+                      {
+                        products.filter(
+                          (p) => (p.inventory?.quantity ?? 0) === 0,
+                        ).length
+                      }
+                      )
+                    </span>
                   </label>
                 </div>
               </div>
@@ -515,7 +671,12 @@ export default function ProductsPageComponent({
                       (tag) => (
                         <button
                           key={tag}
-                          className="rounded border border-neutral-300 px-2 py-1 text-xs text-black hover:bg-black hover:text-white"
+                          onClick={() => toggleTag(tag)}
+                          className={`rounded border border-neutral-300 px-2 py-1 text-xs transition-colors ${
+                            selectedTags.has(tag)
+                              ? "bg-black text-white"
+                              : "text-black hover:bg-black hover:text-white"
+                          }`}
                         >
                           {tag}
                         </button>
@@ -541,8 +702,15 @@ export default function ProductsPageComponent({
                 {isExpanded("Ratings") && (
                   <div className="mt-4 space-y-2 text-sm text-black">
                     {[5, 4, 3, 2, 1].map((rating) => (
-                      <label key={rating} className="flex items-center gap-2">
-                        <input type="checkbox" />
+                      <label
+                        key={rating}
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedRatings.has(rating)}
+                          onChange={() => toggleRating(rating)}
+                        />
                         <div className="flex">
                           {[...Array(5)].map((_, i) => (
                             <span
@@ -592,7 +760,12 @@ export default function ProductsPageComponent({
                   {["XS", "S", "M", "L", "XL", "2X"].map((size) => (
                     <button
                       key={size}
-                      className="h-9 w-9 border text-xs text-black hover:bg-black hover:text-white"
+                      onClick={() => toggleSize(size)}
+                      className={`h-9 w-9 border text-xs transition-colors ${
+                        selectedSizes.has(size)
+                          ? "bg-black text-white"
+                          : "text-black hover:bg-black hover:text-white"
+                      }`}
                     >
                       {size}
                     </button>
@@ -606,13 +779,38 @@ export default function ProductsPageComponent({
                   Availability
                 </h3>
                 <div className="space-y-2 text-sm text-black">
-                  <label className="flex items-center gap-2">
-                    <input type="checkbox" />
-                    Availability <span className="text-blue-600">(450)</span>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={showInStock}
+                      onChange={(e) => setShowInStock(e.target.checked)}
+                    />
+                    In Stock{" "}
+                    <span className="text-blue-600">
+                      (
+                      {
+                        products.filter((p) => (p.inventory?.quantity ?? 0) > 0)
+                          .length
+                      }
+                      )
+                    </span>
                   </label>
-                  <label className="flex items-center gap-2">
-                    <input type="checkbox" />
-                    Out of Stock <span className="text-blue-600">(18)</span>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={showOutOfStock}
+                      onChange={(e) => setShowOutOfStock(e.target.checked)}
+                    />
+                    Out of Stock{" "}
+                    <span className="text-blue-600">
+                      (
+                      {
+                        products.filter(
+                          (p) => (p.inventory?.quantity ?? 0) === 0,
+                        ).length
+                      }
+                      )
+                    </span>
                   </label>
                 </div>
               </div>
@@ -688,7 +886,12 @@ export default function ProductsPageComponent({
                     ].map((color) => (
                       <button
                         key={color.name}
-                        className={`h-8 w-8 rounded ${color.color} border hover:scale-110 transition-transform`}
+                        onClick={() => toggleColor(color.name)}
+                        className={`h-8 w-8 rounded ${color.color} border hover:scale-110 transition-transform ${
+                          selectedColors.has(color.name)
+                            ? "ring-2 ring-offset-2 ring-black"
+                            : ""
+                        }`}
                         title={color.name}
                       />
                     ))}
@@ -755,9 +958,13 @@ export default function ProductsPageComponent({
                     ].map((collection) => (
                       <label
                         key={collection}
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-2 cursor-pointer"
                       >
-                        <input type="checkbox" />
+                        <input
+                          type="checkbox"
+                          checked={selectedCollections.has(collection)}
+                          onChange={() => toggleCollection(collection)}
+                        />
                         {collection}
                       </label>
                     ))}
@@ -784,7 +991,12 @@ export default function ProductsPageComponent({
                       (tag) => (
                         <button
                           key={tag}
-                          className="rounded border border-neutral-300 px-2 py-1 text-xs text-black hover:bg-black hover:text-white"
+                          onClick={() => toggleTag(tag)}
+                          className={`rounded border px-2 py-1 text-xs transition-colors ${
+                            selectedTags.has(tag)
+                              ? "bg-black text-white border-black"
+                              : "border-neutral-300 text-black hover:bg-black hover:text-white"
+                          }`}
                         >
                           {tag}
                         </button>
@@ -810,8 +1022,15 @@ export default function ProductsPageComponent({
                 {isExpanded("Ratings") && (
                   <div className="mt-4 space-y-2 text-sm text-black">
                     {[5, 4, 3, 2, 1].map((rating) => (
-                      <label key={rating} className="flex items-center gap-2">
-                        <input type="checkbox" />
+                      <label
+                        key={rating}
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedRatings.has(rating)}
+                          onChange={() => toggleRating(rating)}
+                        />
                         <div className="flex">
                           {[...Array(5)].map((_, i) => (
                             <span
@@ -838,7 +1057,7 @@ export default function ProductsPageComponent({
             <div className="flex-1 flex flex-col">
               <Suspense fallback={<ProductsGridSkeleton count={6} />}>
                 {/* NO RESULTS */}
-                {query && products.length === 0 ? (
+                {filteredProducts.length === 0 ? (
                   <div className="flex flex-1 justify-center min-h-100px">
                     <div className="text-center">
                       <p className="text-xl font-semibold text-black">
@@ -860,8 +1079,8 @@ export default function ProductsPageComponent({
                           Showing results for{" "}
                           <span className="font-semibold">“{query}”</span>
                           <span className="ml-2 text-neutral-900">
-                            ({products.length} item
-                            {products.length !== 1 ? "s" : ""} found)
+                            ({filteredProducts.length} item
+                            {filteredProducts.length !== 1 ? "s" : ""} found)
                           </span>
                         </p>
                       </div>
@@ -876,7 +1095,7 @@ export default function ProductsPageComponent({
                       grid-cols-1 md:grid-cols-2 lg:grid-cols-3
                     `}
                     >
-                      {products.map((product, i) => (
+                      {filteredProducts.map((product, i) => (
                         <Link key={i} href={`/products/${product.slug}`}>
                           {/* product card */}
                           <div className="relative h-105 bg-white group">

@@ -54,6 +54,7 @@ export async function getProducts(query?: string, filter?: string) {
 
     include: {
       category: true,
+      inventory: true,
     },
 
     orderBy:
@@ -78,6 +79,11 @@ export async function getProductsByIds(ids: string[]) {
       description: true,
       price: true,
       image: true,
+      sizes: true,
+      colors: true,
+      tags: true,
+      collection: true,
+      inventory: true,
     },
   });
 }
@@ -85,14 +91,8 @@ export async function getProductsByIds(ids: string[]) {
 export async function getProductBySlug(slug: string) {
   return prisma.product.findFirst({
     where: { slug },
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      description: true,
-      price: true,
-      image: true,
-      active: true,
+    include: {
+      inventory: true,
     },
   });
 }

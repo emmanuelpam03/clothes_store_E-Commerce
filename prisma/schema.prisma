@@ -86,6 +86,12 @@ model Product {
   active      Boolean @default(true)
   isFeatured  Boolean @default(false)
 
+  // Filter fields
+  sizes       String[] @default([])
+  colors      String[] @default([])
+  tags        String[] @default([])
+  collection  String?
+
   categoryId  String?
   category    Category? @relation(fields: [categoryId], references: [id])
 
