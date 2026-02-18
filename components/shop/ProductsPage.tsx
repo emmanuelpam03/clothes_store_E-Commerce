@@ -188,11 +188,15 @@ export default function ProductsPageComponent({
     if (productPrice > maxPrice) return false;
 
     // Availability filter
-    if (showInStock || showOutOfStock) {
+    // Only filter when exactly one option is selected, not both
+    if (showInStock && !showOutOfStock) {
       const inStock = (product.inventory?.quantity ?? 0) > 0;
-      if (showInStock && !inStock) return false;
-      if (showOutOfStock && inStock) return false;
+      if (!inStock) return false;
+    } else if (showOutOfStock && !showInStock) {
+      const inStock = (product.inventory?.quantity ?? 0) > 0;
+      if (inStock) return false;
     }
+    // If both or neither are selected, don't filter by availability (show all)
 
     return true;
   });
