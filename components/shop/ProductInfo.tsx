@@ -47,7 +47,7 @@ export default function ProductInfo({ product }: ProductInfoProps) {
   const [activeSize, setActiveSize] = useState<string | null>(null);
   const [activeColor, setActiveColor] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const { addItem, hydrateFromDb } = useCart();
+  const { addItem } = useCart();
   const { status } = useSession();
   const isLoggedIn = status === "authenticated";
   const { isFavorited, toggleFavorite, isLoading: isPending } = useFavorites();

@@ -24,6 +24,10 @@ export default function CartAuthSync() {
       localStorage.getItem("guest-cart") ?? "[]",
     ) as CartItem[];
 
+    // Filter out malformed items from older cart versions
+    const validGuestCart = guestCart.filter(
+      (item) => item.id && item.productId && typeof item.qty === "number",
+    );
     (async () => {
       if (guestCart.length > 0) {
         await mergeGuestCartAction(guestCart);

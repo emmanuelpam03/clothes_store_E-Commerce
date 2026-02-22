@@ -114,10 +114,57 @@ export async function updateCartItemAction(
   cartItemId: string,
   updates: { size?: string; color?: string },
 ) {
+  const userId = await getUserId();
+
+  // Load the target item with its cart to verify ownership
+  const targetItem = await prisma.cartItem.findUnique({
+    where: { id: cartItemId },
+    include: { cart: true },
+  });
+
+  if (!targetItem) {
+    throw new Error("Cart item not found");
+  }
+
+  // Verify ownership
+  if (targetItem.cart.userId !== userId) {
+    throw new Error("Unauthorized");
+  }
+
+  // If updating size or color, check for conflicts
+  if (updates.size || updates.color) {
+    const newSize = updates.size ?? targetItem.size;
+    const newColor = updates.color ?? targetItem.color;
+
+    // Check if an item with the new size/color combination already exists
+    const existingItem = await prisma.cartItem.findFirst({
+      where: {
+        cartId: targetItem.cartId,
+        productId: targetItem.productId,
+        size: newSize,
+        color: newColor,
+        id: { not: cartItemId }, // Exclude the current item
+      },
+    });
+
+    if (existingItem) {
+      // Merge: add current item's quantity to existing item, then delete current
+      await prisma.cartItem.update({
+        where: { id: existingItem.id },
+        data: { quantity: existingItem.quantity + targetItem.quantity },
+      });
+
+      await prisma.cartItem.delete({
+        where: { id: cartItemId },
+      });
+
+      return; // Operation complete
+    }
+  }
+
+  // No conflict, safe to update
   await prisma.cartItem.update({
-    where: {
-      id: cartItemId,
-    },
+    where: { id: cartItemId },
     data: updates,
   });
 }

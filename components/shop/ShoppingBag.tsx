@@ -2,7 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useTransition, useOptimistic, useEffect } from "react";
+import {
+  useState,
+  useTransition,
+  useOptimistic,
+  useEffect,
+  useMemo,
+} from "react";
 import { Heart, XIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
@@ -82,13 +88,21 @@ export default function ShoppingBag() {
     setIsHydrated(true);
   }, []);
 
+  // Memoize unique product IDs to track when to refetch product data
+  const uniqueProductIds = useMemo(
+    () => Array.from(new Set(items.map((item) => item.productId))),
+    [items],
+  );
+
   // Fetch product data for sizes and colors
   useEffect(() => {
-    if (items.length === 0) return;
+    if (uniqueProductIds.length === 0) {
+      setProductsData(new Map());
+      return;
+    }
 
     const fetchProductData = async () => {
-      const productIds = items.map((item) => item.productId);
-      const products = await getProductsByIds(productIds);
+      const products = await getProductsByIds(uniqueProductIds);
 
       const dataMap = new Map<string, ProductData>();
       products.forEach((p) => {
@@ -102,7 +116,7 @@ export default function ShoppingBag() {
     };
 
     fetchProductData();
-  }, [items.length]);
+  }, [uniqueProductIds]);
 
   // OPTIMISTIC STATE (remove only)
   const [optimisticItems, removeOptimistic] = useOptimistic(
@@ -149,6 +163,9 @@ export default function ShoppingBag() {
     field: "size" | "color",
     value: string,
   ) => {
+    const item = items.find((i) => i.id === id);
+    const previousValue = item?.[field];
+
     // optimistic UI
     updateItem(id, { [field]: value });
 
@@ -160,11 +177,13 @@ export default function ShoppingBag() {
         `${field.charAt(0).toUpperCase() + field.slice(1)} updated`,
       );
     } catch {
-      // could rollback here if needed
+      // rollback on failure
+      if (previousValue !== undefined) {
+        updateItem(id, { [field]: previousValue });
+      }
       toast.error(`Failed to update ${field}`);
     }
   };
-
   const subtotal = optimisticItems.reduce(
     (acc, item) => acc + item.price * item.qty,
     0,
