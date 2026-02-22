@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart/cart";
+import { config } from "@/constants/config";
 import { createOrderAction } from "@/app/actions/order.actions";
 import { toast } from "sonner";
 
@@ -43,7 +44,7 @@ export default function Checkout() {
   const [errors, setErrors] = useState<Partial<FormData>>({});
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
-  const shipping = 500; // $5.00 in cents
+  const shipping = config.shippingCostCents;
   const total = subtotal + shipping;
 
   const handleInputChange = (

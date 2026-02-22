@@ -15,6 +15,7 @@ import { useSession } from "next-auth/react";
 
 import { favouritesIcon } from "@/public/assets/images/images";
 import { useCart } from "@/lib/cart/cart";
+import { config } from "@/constants/config";
 import {
   removeFromCart,
   updateCartQtyAction,
@@ -187,7 +188,7 @@ export default function ShoppingBag() {
     (acc, item) => acc + item.price * item.qty,
     0,
   );
-  const shipping = subtotal > 0 ? 1000 : 0; // $10.00 in cents
+  const shipping = subtotal > 0 ? config.shippingCostCents : 0;
   const total = subtotal + shipping;
 
   // block render until hydrated (prevents empty flash)
