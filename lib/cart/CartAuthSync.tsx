@@ -31,9 +31,8 @@ export default function CartAuthSync() {
     (async () => {
       if (validGuestCart.length > 0) {
         await mergeGuestCartAction(validGuestCart);
-        localStorage.removeItem("guest-cart");
       }
-
+      localStorage.removeItem("guest-cart");
       // Discard guest favorites on login - they stay local-only and never go to DB
       localStorage.removeItem(GUEST_FAVORITES_KEY);
 
