@@ -38,14 +38,22 @@ const DEFAULT_COLORS = Object.keys(COLOR_MAP);
  * otherwise defaults to a neutral gray.
  */
 const getColorValue = (color: string): string => {
-  // Check if color exists in COLOR_MAP
-  if (COLOR_MAP[color]) {
-    return COLOR_MAP[color];
+  // Normalize input: trim whitespace and convert to lowercase for lookup
+  const normalizedColor = color.trim();
+
+  // Check if color exists in COLOR_MAP (case-insensitive lookup)
+  const colorMapEntry = Object.entries(COLOR_MAP).find(
+    ([key]) => key.toLowerCase() === normalizedColor.toLowerCase(),
+  );
+
+  if (colorMapEntry) {
+    return colorMapEntry[1];
   }
 
-  // Check if it's a valid hex color (starts with #)
-  if (color.startsWith("#")) {
-    return color;
+  // Check if it's a valid hex color (3 or 6 digit hex code)
+  const hexColorRegex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
+  if (hexColorRegex.test(normalizedColor)) {
+    return normalizedColor;
   }
 
   // Default to neutral gray for invalid colors
