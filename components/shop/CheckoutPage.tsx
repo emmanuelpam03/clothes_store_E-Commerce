@@ -43,7 +43,7 @@ export default function Checkout() {
   const [errors, setErrors] = useState<Partial<FormData>>({});
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
-  const shipping = 5;
+  const shipping = 500; // $5.00 in cents
   const total = subtotal + shipping;
 
   const handleInputChange = (
@@ -355,7 +355,7 @@ export default function Checkout() {
                       {item.subtitle} x {item.qty}
                     </p>
                     <p className="text-sm mt-2">
-                      ${(item.price * item.qty).toFixed(2)}
+                      ${((item.price * item.qty) / 100).toFixed(2)}
                     </p>
                   </div>
                 </div>
@@ -365,15 +365,15 @@ export default function Checkout() {
             <div className="space-y-2 border-t pt-4">
               <div className="flex justify-between text-sm">
                 <span>Subtotal</span>
-                <span>${subtotal.toFixed(2)}</span>
+                <span>${(subtotal / 100).toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span>Shipping</span>
-                <span>${shipping.toFixed(2)}</span>
+                <span>${(shipping / 100).toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-base font-bold border-t pt-4 mt-4">
                 <span>Total</span>
-                <span>${total.toFixed(2)}</span>
+                <span>${(total / 100).toFixed(2)}</span>
               </div>
             </div>
           </div>

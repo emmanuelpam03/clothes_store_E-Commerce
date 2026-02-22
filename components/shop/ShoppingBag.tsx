@@ -187,7 +187,7 @@ export default function ShoppingBag() {
     (acc, item) => acc + item.price * item.qty,
     0,
   );
-  const shipping = subtotal > 0 ? 10 : 0;
+  const shipping = subtotal > 0 ? 1000 : 0; // $10.00 in cents
   const total = subtotal + shipping;
 
   // block render until hydrated (prevents empty flash)
