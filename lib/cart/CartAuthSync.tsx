@@ -29,8 +29,8 @@ export default function CartAuthSync() {
       (item) => item.id && item.productId && typeof item.qty === "number",
     );
     (async () => {
-      if (guestCart.length > 0) {
-        await mergeGuestCartAction(guestCart);
+      if (validGuestCart.length > 0) {
+        await mergeGuestCartAction(validGuestCart);
         localStorage.removeItem("guest-cart");
       }
 
