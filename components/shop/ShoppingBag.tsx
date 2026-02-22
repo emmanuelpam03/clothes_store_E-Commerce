@@ -97,7 +97,6 @@ export default function ShoppingBag() {
   // Fetch product data for sizes and colors
   useEffect(() => {
     if (uniqueProductIds.length === 0) {
-      setProductsData(new Map());
       return;
     }
 
