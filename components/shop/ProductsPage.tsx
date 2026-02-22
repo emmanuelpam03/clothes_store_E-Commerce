@@ -474,9 +474,13 @@ export default function ProductsPageComponent({
                 <div className="space-y-2 text-sm text-black">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
+                      className="cursor-pointer"
                       type="checkbox"
                       checked={showInStock}
-                      onChange={(e) => setShowInStock(e.target.checked)}
+                      onChange={(e) => {
+                        setShowInStock(e.target.checked);
+                        setShowOutOfStock(false);
+                      }}
                     />
                     In Stock{" "}
                     <span className="text-blue-600">
@@ -490,9 +494,13 @@ export default function ProductsPageComponent({
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
+                      className="cursor-pointer"
                       type="checkbox"
                       checked={showOutOfStock}
-                      onChange={(e) => setShowOutOfStock(e.target.checked)}
+                      onChange={(e) => {
+                        setShowOutOfStock(e.target.checked);
+                        setShowInStock(false);
+                      }}
                     />
                     Out of Stock{" "}
                     <span className="text-blue-600">
