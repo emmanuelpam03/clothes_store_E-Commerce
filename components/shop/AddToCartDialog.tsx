@@ -86,8 +86,6 @@ export default function AddToCartDialog({ product, isOpen, onClose }: Props) {
       return;
     }
 
-    const colorValue = COLOR_MAP[selectedColor] ?? selectedColor;
-
     const cartItem = {
       id: product.id,
       title: product.name,
@@ -95,7 +93,7 @@ export default function AddToCartDialog({ product, isOpen, onClose }: Props) {
       price: product.price / 100,
       image: product.image ?? "/placeholder.png",
       size: selectedSize,
-      color: colorValue,
+      color: selectedColor,
       qty,
     };
 
