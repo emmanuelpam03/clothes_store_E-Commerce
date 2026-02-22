@@ -14,12 +14,43 @@ const COLOR_MAP: Record<string, string> = {
   Black: "#111827",
   White: "#ffffff",
   Gray: "#9ca3af",
+  Grey: "#9ca3af",
   Blue: "#3b82f6",
+  Navy: "#1e3a8a",
   Red: "#ef4444",
+  Burgundy: "#7f1d1d",
   Green: "#22c55e",
+  Pink: "#ec4899",
+  Purple: "#a855f7",
+  Yellow: "#facc15",
+  Orange: "#f97316",
+  Brown: "#92400e",
+  Beige: "#d6d3d1",
+  Cream: "#fef3c7",
 };
 
 const DEFAULT_COLORS = Object.keys(COLOR_MAP);
+
+/**
+ * Get a valid CSS color value from a color name.
+ * Returns the mapped color if found in COLOR_MAP,
+ * or the color if it's a valid hex value,
+ * otherwise defaults to a neutral gray.
+ */
+const getColorValue = (color: string): string => {
+  // Check if color exists in COLOR_MAP
+  if (COLOR_MAP[color]) {
+    return COLOR_MAP[color];
+  }
+
+  // Check if it's a valid hex color (starts with #)
+  if (color.startsWith("#")) {
+    return color;
+  }
+
+  // Default to neutral gray for invalid colors
+  return "#d4d4d4";
+};
 
 type Product = {
   id: string;
@@ -189,7 +220,7 @@ export default function AddToCartDialog({ product, isOpen, onClose }: Props) {
                     ? "border-black scale-110 ring-1 ring-black ring-offset-1"
                     : "border-neutral-200 hover:scale-105"
                 }`}
-                style={{ backgroundColor: COLOR_MAP[color] ?? color }}
+                style={{ backgroundColor: getColorValue(color) }}
               />
             ))}
           </div>
