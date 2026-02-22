@@ -2,17 +2,21 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { Search, Heart, ChevronDown, ChevronRight, X } from "lucide-react";
+import {
+  Search,
+  Heart,
+  ChevronDown,
+  ChevronRight,
+  X,
+  ShoppingBag,
+} from "lucide-react";
 import { Suspense, useState } from "react";
-import { addToCartAction } from "@/app/actions/cart.actions";
-import { useCart } from "@/lib/cart/cart";
-import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import { useFavorites } from "@/lib/favorites/useFavorites";
 import ProductsGridSkeleton from "./skeleton/ProductsGridSkeleton";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTransition, useEffect } from "react";
-// import { createDefaultCategories } from "@/app/actions/product.actions";
+import AddToCartDialog from "./AddToCartDialog";
 
 type Product = {
   id: string;
@@ -90,36 +94,13 @@ export default function ProductsPageComponent({
     return () => clearTimeout(timeout);
   }, [inputValue, router]);
 
-  const { addItem } = useCart();
-  const { status } = useSession();
-  const isLoggedIn = status === "authenticated";
   const {
     isFavorited,
     toggleFavorite,
     isLoading: isFavoritePending,
   } = useFavorites();
 
-  const handleAddToCart = async (product: Product) => {
-    const cartItem = {
-      id: product.id,
-      title: product.name,
-      subtitle: product.description ?? "",
-      price: product.price / 100,
-      image: product.image ?? "/placeholder.png",
-      size: "L",
-      color: "#000000",
-      qty: 1,
-    };
-    addItem(cartItem);
-    try {
-      if (isLoggedIn) {
-        await addToCartAction(product.id);
-      }
-      toast.success("Added to cart");
-    } catch {
-      toast.error("Failed to add to cart");
-    }
-  };
+  const [dialogProduct, setDialogProduct] = useState<Product | null>(null);
 
   // Add state for price range
   const [maxPrice, setMaxPrice] = useState(500);
@@ -1144,11 +1125,11 @@ export default function ProductsPageComponent({
                               disabled={isFavoritePending}
                               onClick={(e) => {
                                 e.preventDefault();
-                                void handleAddToCart(product);
+                                setDialogProduct(product);
                               }}
                               className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white px-3 py-2 text-sm text-black"
                             >
-                              +
+                              <ShoppingBag className="h-4 w-4" />
                             </button>
                           </div>
 
@@ -1171,6 +1152,15 @@ export default function ProductsPageComponent({
           </div>
         </div>
       </div>
+
+      {/* ADD TO CART DIALOG */}
+      {dialogProduct && (
+        <AddToCartDialog
+          product={dialogProduct}
+          isOpen={!!dialogProduct}
+          onClose={() => setDialogProduct(null)}
+        />
+      )}
     </section>
   );
 }

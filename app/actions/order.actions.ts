@@ -70,6 +70,8 @@ export async function createOrderAction(items: CartItem[]) {
           price: item.product.price,
           name: item.product.name,
           image: item.product.image,
+          size: item.size,
+          color: item.color,
         })),
       });
 
@@ -123,6 +125,9 @@ export async function getOrderById(orderId: string) {
   const order = await prisma.order.findUnique({
     where: { id: orderId },
     include: {
+      user: {
+        select: { id: true, name: true, email: true },
+      },
       items: {
         include: {
           product: true,

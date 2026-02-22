@@ -3,6 +3,8 @@ import type { CartItem } from "./cart.types";
 export function mapDbCartToUICart(cart: {
   items: {
     quantity: number;
+    size: string;
+    color: string;
     product: {
       id: string;
       name: string;
@@ -18,8 +20,8 @@ export function mapDbCartToUICart(cart: {
     subtitle: item.product.description ?? "",
     price: item.product.price,
     image: item.product.image ?? "/placeholder.png",
-    size: "L",
-    color: "#000000",
+    size: item.size,
+    color: item.color,
     qty: item.quantity,
   }));
 }

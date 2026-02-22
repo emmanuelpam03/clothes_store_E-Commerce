@@ -1,0 +1,7 @@
+-- AlterTable
+ALTER TABLE "CartItem" ADD COLUMN     "color" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "size" TEXT NOT NULL DEFAULT 'M';
+
+-- AlterTable
+ALTER TABLE "OrderItem" ADD COLUMN     "color" TEXT NOT NULL DEFAULT '',
+ADD COLUMN     "size" TEXT NOT NULL DEFAULT 'M';

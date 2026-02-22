@@ -74,7 +74,7 @@ export default function ProductInfo({ product }: ProductInfoProps) {
     setIsLoading(true);
     try {
       if (isLoggedIn) {
-        await addToCartAction(product.id, 1);
+        await addToCartAction(product.id, 1, activeSize, COLORS[activeColor]);
       }
       addItem(cartItem);
       toast.success("Added to cart!");
@@ -89,7 +89,9 @@ export default function ProductInfo({ product }: ProductInfoProps) {
   const handleToggleFavorite = async () => {
     try {
       const result = await toggleFavorite(product.id);
-      toast.success(result.isFavorited ? "Added to favorites" : "Removed from favorites");
+      toast.success(
+        result.isFavorited ? "Added to favorites" : "Removed from favorites",
+      );
     } catch {
       toast.error("Failed to update favorite");
     }
@@ -151,7 +153,9 @@ export default function ProductInfo({ product }: ProductInfoProps) {
                 >
                   <Heart
                     className={`h-5 w-5 ${
-                      isFavorited(product.id) ? "fill-red-500 text-red-500" : "text-black"
+                      isFavorited(product.id)
+                        ? "fill-red-500 text-red-500"
+                        : "text-black"
                     }`}
                   />
                 </button>

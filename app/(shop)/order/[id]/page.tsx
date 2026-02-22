@@ -49,32 +49,69 @@ export default async function OrderSuccessPage({ params }: PageProps) {
           </p>
         </div>
 
+        {/* Buyer info */}
+        {"user" in order && order.user && (
+          <div className="mb-8 border border-neutral-200 p-4 text-sm space-y-1">
+            <p className="text-xs uppercase text-neutral-500 font-semibold mb-2">
+              Ordered By
+            </p>
+            <p>
+              <span className="font-medium">Name:</span>{" "}
+              <span className="text-neutral-600">
+                {(order.user as { name?: string | null }).name ?? "—"}
+              </span>
+            </p>
+            <p>
+              <span className="font-medium">Email:</span>{" "}
+              <span className="text-neutral-600">
+                {(order.user as { email?: string | null }).email ?? "—"}
+              </span>
+            </p>
+          </div>
+        )}
+
         <div className="border-t border-neutral-200 pt-6 space-y-6">
           {order.items.map((item) => (
-            <div key={item.id} className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-black">
-                  {item.product.name}
-                </p>
-                {item.product.image && (
+            <div key={item.id} className="flex gap-4">
+              {item.product.image && (
+                <div className="relative h-24 w-16 shrink-0 bg-neutral-100">
+                  <Image
+                    src={item.product.image}
+                    alt={item.product.name}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              )}
+              <div className="flex flex-1 justify-between items-start">
+                <div className="space-y-1">
                   <p className="text-sm font-medium text-black">
-                    <Image
-                      src={item.product.image}
-                      alt={item.product.name}
-                      width={50}
-                      height={50}
-                      className="w-12 h-16"
-                    />
+                    {item.product.name}
                   </p>
-                )}
-                <p className="text-xs text-neutral-500">
-                  Quantity: {item.quantity}
+                  <p className="text-xs text-neutral-500">
+                    Qty: {item.quantity}
+                  </p>
+                  {"size" in item && item.size && (
+                    <p className="text-xs text-neutral-500">
+                      Size: {(item as { size: string }).size}
+                    </p>
+                  )}
+                  {"color" in item && item.color && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs text-neutral-500">Color:</span>
+                      <span
+                        className="inline-block h-3 w-3 border border-neutral-300"
+                        style={{
+                          backgroundColor: (item as { color: string }).color,
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+                <p className="text-sm font-medium text-black">
+                  ${((item.price * item.quantity) / 100).toFixed(2)}
                 </p>
               </div>
-
-              <p className="text-sm font-medium text-black">
-                ${((item.price * item.quantity) / 100).toFixed(2)}
-              </p>
             </div>
           ))}
         </div>

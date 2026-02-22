@@ -38,7 +38,12 @@ export async function getOrCreateCart() {
 /* =========================
    ADD ITEM
 ========================= */
-export async function addToCartAction(productId: string, qty = 1) {
+export async function addToCartAction(
+  productId: string,
+  qty = 1,
+  size = "M",
+  color = "",
+) {
   const cart = await getOrCreateCart();
 
   await prisma.cartItem.upsert({
@@ -50,11 +55,15 @@ export async function addToCartAction(productId: string, qty = 1) {
     },
     update: {
       quantity: { increment: qty },
+      size,
+      color,
     },
     create: {
       cartId: cart.id,
       productId,
       quantity: qty,
+      size,
+      color,
     },
   });
 
@@ -137,11 +146,15 @@ export async function mergeGuestCartAction(guestItems: UICartItem[]) {
       },
       update: {
         quantity: { increment: item.qty },
+        size: item.size,
+        color: item.color,
       },
       create: {
         cartId: cart.id,
         productId: item.id,
         quantity: item.qty,
+        size: item.size,
+        color: item.color,
       },
     });
   }

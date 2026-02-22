@@ -2,10 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronDown, ChevronUp, Heart } from "lucide-react";
+import { ChevronDown, ChevronUp, Heart, ShoppingBag } from "lucide-react";
 import { Suspense, useState } from "react";
 import { useFavorites } from "@/lib/favorites/useFavorites";
 import { toast } from "sonner";
+import AddToCartDialog from "./AddToCartDialog";
 
 // fallback image
 import { whiteShirt1 } from "@/public/assets/images/images";
@@ -18,6 +19,8 @@ type Product = {
   description: string | null;
   price: number; // cents
   image: string | null;
+  sizes?: string[];
+  colors?: string[];
   // active: boolean;
 };
 
@@ -27,6 +30,7 @@ type CollectionsGridProps = {
 
 export function CollectionsGrid({ products = [] }: CollectionsGridProps) {
   const { isFavorited, toggleFavorite, isLoading: isPending } = useFavorites();
+  const [dialogProduct, setDialogProduct] = useState<Product | null>(null);
 
   // show products in batches of 6
   const BATCH_SIZE = 6;
@@ -45,9 +49,7 @@ export function CollectionsGrid({ products = [] }: CollectionsGridProps) {
     try {
       const result = await toggleFavorite(productId);
       toast.success(
-        result.isFavorited
-          ? "Added to favorites!"
-          : "Removed from favorites",
+        result.isFavorited ? "Added to favorites!" : "Removed from favorites",
       );
     } catch {
       toast.error("Failed to update favorites");
@@ -90,10 +92,7 @@ export function CollectionsGrid({ products = [] }: CollectionsGridProps) {
                 key={product.id}
                 className="animate-[fadeInUp_0.35s_ease-out]"
               >
-                <Link
-                  href={`/products/${product.slug}`}
-                  className="w-full"
-                >
+                <Link href={`/products/${product.slug}`} className="w-full">
                   {/* IMAGE */}
                   <div className="relative h-80 md:h-[520px] bg-white group">
                     <Image
@@ -105,9 +104,7 @@ export function CollectionsGrid({ products = [] }: CollectionsGridProps) {
 
                     {/* FAVORITE */}
                     <button
-                      onClick={(e) =>
-                        handleToggleFavorite(product.id, e)
-                      }
+                      onClick={(e) => handleToggleFavorite(product.id, e)}
                       className="absolute top-4 right-4 p-2 rounded-full bg-white/80"
                       disabled={isPending}
                     >
@@ -121,8 +118,16 @@ export function CollectionsGrid({ products = [] }: CollectionsGridProps) {
                     </button>
 
                     {/* ADD */}
-                    <button className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white px-3 py-1 text-sm">
-                      +
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setDialogProduct(product);
+                      }}
+                      className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white/80 hover:bg-white p-2 transition-colors"
+                      title="Add to cart"
+                    >
+                      <ShoppingBag className="h-4 w-4 text-black" />
                     </button>
                   </div>
 
@@ -143,9 +148,7 @@ export function CollectionsGrid({ products = [] }: CollectionsGridProps) {
         <div className="mt-16 flex flex-col items-center text-sm text-neutral-500">
           {hasMore ? (
             <button
-              onClick={() =>
-                setVisibleCount((prev) => prev + BATCH_SIZE)
-              }
+              onClick={() => setVisibleCount((prev) => prev + BATCH_SIZE)}
               className="flex flex-col items-center rounded-full px-6 py-3 hover:text-black transition"
             >
               <span>More</span>
@@ -162,6 +165,15 @@ export function CollectionsGrid({ products = [] }: CollectionsGridProps) {
           ) : null}
         </div>
       </div>
+
+      {/* ADD TO CART DIALOG */}
+      {dialogProduct && (
+        <AddToCartDialog
+          product={dialogProduct}
+          isOpen={!!dialogProduct}
+          onClose={() => setDialogProduct(null)}
+        />
+      )}
     </section>
   );
 }

@@ -6,21 +6,27 @@ import Link from "next/link";
 import { Heart } from "lucide-react";
 import { useFavorites } from "@/lib/favorites/useFavorites";
 import { toast } from "sonner";
+import AddToCartDialog from "./AddToCartDialog";
+import { ShoppingBag } from "lucide-react";
 
 // fallback image (IMPORTANT)
 import { whiteShirt1 } from "@/public/assets/images/images";
 import { NewThisWeekSkeleton } from "./skeleton/NewThisWeekSkeleton";
 
+type NewThisWeekProduct = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  price: number; // cents
+  image: string | null;
+  sizes?: string[];
+  colors?: string[];
+  // active: boolean;
+};
+
 type NewThisWeekProps = {
-  products: {
-    id: string;
-    name: string;
-    slug: string;
-    description: string | null;
-    price: number; // cents
-    image: string | null;
-    // active: boolean;
-  }[];
+  products: NewThisWeekProduct[];
 };
 
 export function NewThisWeek({ products }: NewThisWeekProps) {
@@ -31,6 +37,9 @@ export function NewThisWeek({ products }: NewThisWeekProps) {
   const [dragStart, setDragStart] = useState<number | null>(null);
   const [dragOffset, setDragOffset] = useState(0);
   const { isFavorited, toggleFavorite, isLoading: isPending } = useFavorites();
+  const [dialogProduct, setDialogProduct] = useState<NewThisWeekProduct | null>(
+    null,
+  );
 
   const handleToggleFavorite = async (
     productId: string,
@@ -112,7 +121,7 @@ export function NewThisWeek({ products }: NewThisWeekProps) {
                 }% + ${dragOffset}px))`,
               }}
             >
-              {products.map((product, i) => (
+              {products.map((product) => (
                 <Link
                   href={`/products/${product.slug}`}
                   key={product.id}
@@ -142,6 +151,19 @@ export function NewThisWeek({ products }: NewThisWeekProps) {
                         }`}
                       />
                     </button>
+
+                    {/* ADD TO CART */}
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setDialogProduct(product);
+                      }}
+                      className="absolute bottom-4 left-1/2 -translate-x-1/2 p-2 rounded-full bg-white/80 hover:bg-white transition-colors"
+                      title="Add to cart"
+                    >
+                      <ShoppingBag className="h-4 w-4 text-black" />
+                    </button>
                   </div>
 
                   <div className="mt-3 text-sm">
@@ -155,6 +177,15 @@ export function NewThisWeek({ products }: NewThisWeekProps) {
             </div>
           </div>
         </Suspense>
+
+        {/* ADD TO CART DIALOG */}
+        {dialogProduct && (
+          <AddToCartDialog
+            product={dialogProduct}
+            isOpen={!!dialogProduct}
+            onClose={() => setDialogProduct(null)}
+          />
+        )}
 
         {/* CONTROLS */}
         <div className="mt-6 flex justify-center gap-2">

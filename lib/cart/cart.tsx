@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import type { CartItem } from "./cart.types";
 import { mapDbCartToUICart } from "./cart.mapper";
+import { getOrCreateCart } from "@/app/actions/cart.actions";
 
 const GUEST_CART_KEY = "guest-cart";
 
@@ -64,9 +65,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   // ✅ NEW
   // cart.tsx
   const hydrateFromDb = async () => {
-    const res = await fetch("/api/cart", { cache: "no-store" });
-    if (!res.ok) return;
-    const cart = await res.json();
+    const cart = await getOrCreateCart();
     setItems(mapDbCartToUICart(cart));
   };
 
