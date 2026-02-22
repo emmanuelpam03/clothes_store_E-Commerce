@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { mergeGuestCartAction } from "@/app/actions/cart.actions";
 import { useCart } from "@/lib/cart/cart";
 import { useSession } from "next-auth/react";
+import type { CartItem } from "@/lib/cart/cart.types";
 
 const GUEST_FAVORITES_KEY = "guest-favorites";
 
@@ -21,7 +22,7 @@ export default function CartAuthSync() {
 
     const guestCart = JSON.parse(
       localStorage.getItem("guest-cart") ?? "[]",
-    ) as { id: string; qty: number }[];
+    ) as CartItem[];
 
     (async () => {
       if (guestCart.length > 0) {
@@ -34,7 +35,7 @@ export default function CartAuthSync() {
 
       await hydrateFromDb();
     })();
-  }, [status]);
+  }, [status, hydrateFromDb]);
 
   return null;
 }

@@ -12,17 +12,68 @@ import { useCart } from "@/lib/cart/cart";
 import {
   removeFromCart,
   updateCartQtyAction,
+  updateCartItemAction,
 } from "@/app/actions/cart.actions";
+import { getProductsByIds } from "@/app/actions/product.actions";
 import { useFavorites } from "@/lib/favorites/useFavorites";
 
+const DEFAULT_SIZES = ["XS", "S", "M", "L", "XL", "2X"];
+const DEFAULT_COLORS = ["Black", "White", "Gray", "Blue", "Red", "Green"];
+
+const COLOR_MAP: Record<string, string> = {
+  Black: "#111827",
+  White: "#ffffff",
+  Gray: "#9ca3af",
+  Grey: "#9ca3af",
+  Blue: "#3b82f6",
+  Navy: "#1e3a8a",
+  Red: "#ef4444",
+  Burgundy: "#7f1d1d",
+  Green: "#22c55e",
+  Pink: "#ec4899",
+  Purple: "#a855f7",
+  Yellow: "#facc15",
+  Orange: "#f97316",
+  Brown: "#92400e",
+  Beige: "#d6d3d1",
+  Cream: "#fef3c7",
+};
+
+const getColorValue = (color: string): string => {
+  const normalizedColor = color.trim();
+  const colorMapEntry = Object.entries(COLOR_MAP).find(
+    ([key]) => key.toLowerCase() === normalizedColor.toLowerCase(),
+  );
+  if (colorMapEntry) return colorMapEntry[1];
+  const hexColorRegex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i;
+  if (hexColorRegex.test(normalizedColor)) return normalizedColor;
+  return "#d4d4d4";
+};
+
+const isDarkColor = (color: string): boolean => {
+  const darkColors = ["Black", "Navy", "Burgundy", "Brown", "Purple"];
+  return darkColors.some((dark) =>
+    color.toLowerCase().includes(dark.toLowerCase()),
+  );
+};
+
+type ProductData = {
+  id: string;
+  sizes: string[];
+  colors: string[];
+};
+
 export default function ShoppingBag() {
-  const { items, updateQty, removeItem } = useCart();
+  const { items, updateQty, updateItem, removeItem } = useCart();
   const { status } = useSession();
   const isLoggedIn = status === "authenticated";
   const { isFavorited, toggleFavorite } = useFavorites();
 
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [productsData, setProductsData] = useState<Map<string, ProductData>>(
+    new Map(),
+  );
 
   // prevent empty flash
   const [isHydrated, setIsHydrated] = useState(false);
@@ -30,6 +81,28 @@ export default function ShoppingBag() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsHydrated(true);
   }, []);
+
+  // Fetch product data for sizes and colors
+  useEffect(() => {
+    if (items.length === 0) return;
+
+    const fetchProductData = async () => {
+      const productIds = items.map((item) => item.productId);
+      const products = await getProductsByIds(productIds);
+
+      const dataMap = new Map<string, ProductData>();
+      products.forEach((p) => {
+        dataMap.set(p.id, {
+          id: p.id,
+          sizes: p.sizes && p.sizes.length > 0 ? p.sizes : DEFAULT_SIZES,
+          colors: p.colors && p.colors.length > 0 ? p.colors : DEFAULT_COLORS,
+        });
+      });
+      setProductsData(dataMap);
+    };
+
+    fetchProductData();
+  }, [items.length]);
 
   // OPTIMISTIC STATE (remove only)
   const [optimisticItems, removeOptimistic] = useOptimistic(
@@ -67,6 +140,28 @@ export default function ShoppingBag() {
       // rollback
       updateQty(id, type === "inc" ? "dec" : "inc");
       toast.error("Failed to update quantity");
+    }
+  };
+
+  // UPDATE SIZE OR COLOR
+  const handleUpdateItem = async (
+    id: string,
+    field: "size" | "color",
+    value: string,
+  ) => {
+    // optimistic UI
+    updateItem(id, { [field]: value });
+
+    if (!isLoggedIn) return;
+
+    try {
+      await updateCartItemAction(id, { [field]: value });
+      toast.success(
+        `${field.charAt(0).toUpperCase() + field.slice(1)} updated`,
+      );
+    } catch {
+      // could rollback here if needed
+      toast.error(`Failed to update ${field}`);
     }
   };
 
@@ -136,14 +231,14 @@ export default function ShoppingBag() {
                       />
 
                       <button
-                        onClick={(e) => handleToggleFavorite(item.id, e)}
+                        onClick={(e) => handleToggleFavorite(item.productId, e)}
                         className="absolute bottom-3 right-3 bg-white p-2 rounded-full shadow-md"
                       >
                         <Heart
                           width={16}
                           height={16}
                           className={
-                            isFavorited(item.id)
+                            isFavorited(item.productId)
                               ? "fill-red-500 text-red-500"
                               : "text-black"
                           }
@@ -195,15 +290,45 @@ export default function ShoppingBag() {
                     )}
 
                     {/* SIZE */}
-                    <div className="w-7 h-7 border flex items-center justify-center">
-                      {item.size}
-                    </div>
+                    <select
+                      value={item.size}
+                      onChange={(e) =>
+                        handleUpdateItem(item.id, "size", e.target.value)
+                      }
+                      className="w-12 h-7 border border-neutral-300 text-xs text-center cursor-pointer hover:border-black transition"
+                      title="Select size"
+                    >
+                      {(
+                        productsData.get(item.productId)?.sizes || DEFAULT_SIZES
+                      ).map((size) => (
+                        <option key={size} value={size}>
+                          {size}
+                        </option>
+                      ))}
+                    </select>
 
                     {/* COLOR */}
-                    <div
-                      className="w-7 h-7 border"
-                      style={{ backgroundColor: item.color }}
-                    />
+                    <select
+                      value={item.color}
+                      onChange={(e) =>
+                        handleUpdateItem(item.id, "color", e.target.value)
+                      }
+                      className="w-12 h-7 border border-neutral-300 text-xs text-center cursor-pointer hover:border-black transition"
+                      title="Select color"
+                      style={{
+                        backgroundColor: getColorValue(item.color),
+                        color: isDarkColor(item.color) ? "white" : "black",
+                      }}
+                    >
+                      {(
+                        productsData.get(item.productId)?.colors ||
+                        DEFAULT_COLORS
+                      ).map((color) => (
+                        <option key={color} value={color}>
+                          {color}
+                        </option>
+                      ))}
+                    </select>
 
                     {/* QTY */}
                     <div className="flex flex-col items-center">

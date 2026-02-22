@@ -76,7 +76,7 @@ type Props = {
 };
 
 export default function AddToCartDialog({ product, isOpen, onClose }: Props) {
-  const { addItem } = useCart();
+  const { addItem, hydrateFromDb } = useCart();
   const { status } = useSession();
   const isLoggedIn = status === "authenticated";
 
@@ -126,7 +126,8 @@ export default function AddToCartDialog({ product, isOpen, onClose }: Props) {
     }
 
     const cartItem = {
-      id: product.id,
+      id: `${product.id}-${selectedSize}-${selectedColor}`, // Unique ID for guest cart
+      productId: product.id,
       title: product.name,
       subtitle: product.name,
       price: product.price / 100,
@@ -138,9 +139,11 @@ export default function AddToCartDialog({ product, isOpen, onClose }: Props) {
 
     setIsLoading(true);
     try {
-      addItem(cartItem);
       if (isLoggedIn) {
         await addToCartAction(product.id, qty, selectedSize, selectedColor);
+        await hydrateFromDb(); // Get real IDs from DB
+      } else {
+        addItem(cartItem); // Guest users use fake IDs
       }
       toast.success("Added to cart!");
       onClose();

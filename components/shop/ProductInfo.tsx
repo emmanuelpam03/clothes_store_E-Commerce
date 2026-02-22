@@ -47,7 +47,7 @@ export default function ProductInfo({ product }: ProductInfoProps) {
   const [activeSize, setActiveSize] = useState<string | null>(null);
   const [activeColor, setActiveColor] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const { addItem } = useCart();
+  const { addItem, hydrateFromDb } = useCart();
   const { status } = useSession();
   const isLoggedIn = status === "authenticated";
   const { isFavorited, toggleFavorite, isLoading: isPending } = useFavorites();
@@ -61,7 +61,8 @@ export default function ProductInfo({ product }: ProductInfoProps) {
     }
 
     const cartItem = {
-      id: product.id,
+      id: `${product.id}-${activeSize}-${COLORS[activeColor]}`, // Unique ID for guest cart
+      productId: product.id,
       title: product.name,
       price: product.price / 100,
       image: product.image,

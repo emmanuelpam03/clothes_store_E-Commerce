@@ -48,15 +48,15 @@ export async function addToCartAction(
 
   await prisma.cartItem.upsert({
     where: {
-      cartId_productId: {
+      cartId_productId_size_color: {
         cartId: cart.id,
         productId,
+        size,
+        color,
       },
     },
     update: {
       quantity: { increment: qty },
-      size,
-      color,
     },
     create: {
       cartId: cart.id,
@@ -73,15 +73,10 @@ export async function addToCartAction(
 /* =========================
    REMOVE ITEM
 ========================= */
-export async function removeFromCart(productId: string) {
-  const cart = await getOrCreateCart();
-
+export async function removeFromCart(cartItemId: string) {
   await prisma.cartItem.delete({
     where: {
-      cartId_productId: {
-        cartId: cart.id,
-        productId,
-      },
+      id: cartItemId,
     },
   });
 
@@ -91,16 +86,14 @@ export async function removeFromCart(productId: string) {
 /* =========================
    UPDATE QTY
 ========================= */
-export async function updateCartQtyAction(productId: string, quantity: number) {
-  const cart = await getOrCreateCart();
-
+export async function updateCartQtyAction(
+  cartItemId: string,
+  quantity: number,
+) {
   if (quantity <= 0) {
     await prisma.cartItem.delete({
       where: {
-        cartId_productId: {
-          cartId: cart.id,
-          productId,
-        },
+        id: cartItemId,
       },
     });
     return;
@@ -108,12 +101,24 @@ export async function updateCartQtyAction(productId: string, quantity: number) {
 
   await prisma.cartItem.update({
     where: {
-      cartId_productId: {
-        cartId: cart.id,
-        productId,
-      },
+      id: cartItemId,
     },
     data: { quantity },
+  });
+}
+
+/* =========================
+   UPDATE ITEM (SIZE/COLOR)
+========================= */
+export async function updateCartItemAction(
+  cartItemId: string,
+  updates: { size?: string; color?: string },
+) {
+  await prisma.cartItem.update({
+    where: {
+      id: cartItemId,
+    },
+    data: updates,
   });
 }
 
@@ -139,19 +144,19 @@ export async function mergeGuestCartAction(guestItems: UICartItem[]) {
   for (const item of guestItems) {
     await prisma.cartItem.upsert({
       where: {
-        cartId_productId: {
+        cartId_productId_size_color: {
           cartId: cart.id,
-          productId: item.id,
+          productId: item.productId,
+          size: item.size,
+          color: item.color,
         },
       },
       update: {
         quantity: { increment: item.qty },
-        size: item.size,
-        color: item.color,
       },
       create: {
         cartId: cart.id,
-        productId: item.id,
+        productId: item.productId,
         quantity: item.qty,
         size: item.size,
         color: item.color,

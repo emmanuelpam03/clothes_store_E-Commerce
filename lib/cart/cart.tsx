@@ -22,6 +22,10 @@ type CartContextType = {
   items: CartItem[];
   addItem: (item: CartItem) => void;
   updateQty: (id: string, type: "inc" | "dec") => void;
+  updateItem: (
+    id: string,
+    updates: Partial<Pick<CartItem, "size" | "color">>,
+  ) => void;
   removeItem: (id: string) => void;
   clearCart: () => void;
   hydrateFromDb: () => Promise<void>;
@@ -71,10 +75,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const addItem = (item: CartItem) => {
     setItems((prev) => {
-      const existing = prev.find((p) => p.id === item.id);
+      const existing = prev.find(
+        (p) =>
+          p.productId === item.productId &&
+          p.size === item.size &&
+          p.color === item.color,
+      );
       if (existing) {
         return prev.map((p) =>
-          p.id === item.id ? { ...p, qty: p.qty + 1 } : p
+          p.id === existing.id ? { ...p, qty: p.qty + item.qty } : p,
         );
       }
       return [...prev, item];
@@ -86,8 +95,17 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       prev.map((item) =>
         item.id === id
           ? { ...item, qty: Math.max(1, item.qty + (type === "inc" ? 1 : -1)) }
-          : item
-      )
+          : item,
+      ),
+    );
+  };
+
+  const updateItem = (
+    id: string,
+    updates: Partial<Pick<CartItem, "size" | "color">>,
+  ) => {
+    setItems((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, ...updates } : item)),
     );
   };
 
@@ -103,6 +121,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         items,
         addItem,
         updateQty,
+        updateItem,
         removeItem,
         clearCart,
         hydrateFromDb,

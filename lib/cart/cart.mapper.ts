@@ -2,6 +2,7 @@ import type { CartItem } from "./cart.types";
 
 export function mapDbCartToUICart(cart: {
   items: {
+    id: string;
     quantity: number;
     size: string;
     color: string;
@@ -15,7 +16,8 @@ export function mapDbCartToUICart(cart: {
   }[];
 }): CartItem[] {
   return cart.items.map((item) => ({
-    id: item.product.id,
+    id: item.id, // Use CartItem.id, not product.id
+    productId: item.product.id,
     title: item.product.name,
     subtitle: item.product.description ?? "",
     price: item.product.price,

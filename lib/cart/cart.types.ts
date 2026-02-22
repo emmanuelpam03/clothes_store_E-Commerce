@@ -1,5 +1,6 @@
 export type CartItem = {
-  id: string;        // productId (from DB)
+  id: string; // CartItem ID (cuid)
+  productId: string; // Product ID
   title: string;
   subtitle: string;
   price: number;
