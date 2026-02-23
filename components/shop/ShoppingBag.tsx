@@ -82,6 +82,7 @@ export default function ShoppingBag() {
     new Map(),
   );
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [focusedIndex, setFocusedIndex] = useState<number>(-1);
 
   // prevent empty flash
   const [isHydrated, setIsHydrated] = useState(false);
@@ -125,12 +126,22 @@ export default function ShoppingBag() {
       const target = event.target as HTMLElement;
       if (!target.closest(".dropdown-container")) {
         setOpenDropdown(null);
+        setFocusedIndex(-1);
       }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Manage focus when focusedIndex changes
+  useEffect(() => {
+    if (focusedIndex >= 0 && openDropdown) {
+      const selector = `[role="option"][tabindex="0"]`;
+      const focusedElement = document.querySelector(selector) as HTMLElement;
+      focusedElement?.focus();
+    }
+  }, [focusedIndex, openDropdown]);
 
   // OPTIMISTIC STATE (remove only)
   const [optimisticItems, removeOptimistic] = useOptimistic(
@@ -325,33 +336,82 @@ export default function ShoppingBag() {
                     {/* SIZE */}
                     <div className="relative dropdown-container">
                       <button
-                        onClick={() =>
-                          setOpenDropdown(
-                            openDropdown === `size-${item.id}`
-                              ? null
-                              : `size-${item.id}`,
-                          )
-                        }
+                        onClick={() => {
+                          const isOpen = openDropdown === `size-${item.id}`;
+                          setOpenDropdown(isOpen ? null : `size-${item.id}`);
+                          setFocusedIndex(-1);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+                            e.preventDefault();
+                            setOpenDropdown(`size-${item.id}`);
+                            setFocusedIndex(0);
+                          } else if (e.key === "Escape" && openDropdown === `size-${item.id}`) {
+                            setOpenDropdown(null);
+                            setFocusedIndex(-1);
+                          }
+                        }}
+                        aria-haspopup="listbox"
+                        aria-expanded={openDropdown === `size-${item.id}`}
+                        aria-label="Select size"
                         className="px-3 py-2 min-w-[60px] border border-neutral-300 rounded-md text-xs font-medium cursor-pointer hover:border-black transition-all focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-1 flex items-center justify-between gap-2"
                       >
                         <span>{item.size}</span>
                         <ChevronDown size={12} />
                       </button>
                       {openDropdown === `size-${item.id}` && (
-                        <div className="absolute z-10 mt-1 w-full bg-white border border-neutral-300 rounded-md shadow-lg max-h-48 overflow-auto">
+                        <div
+                          role="listbox"
+                          aria-label="Size options"
+                          className="absolute z-10 mt-1 w-full bg-white border border-neutral-300 rounded-md shadow-lg max-h-48 overflow-auto"
+                        >
                           {(
                             productsData.get(item.productId)?.sizes ||
                             DEFAULT_SIZES
-                          ).map((size) => (
+                          ).map((size, idx) => (
                             <button
                               key={size}
+                              role="option"
+                              aria-selected={item.size === size}
+                              tabIndex={focusedIndex === idx ? 0 : -1}
                               onClick={() => {
                                 handleUpdateItem(item.id, "size", size);
                                 setOpenDropdown(null);
+                                setFocusedIndex(-1);
                               }}
+                              onKeyDown={(e) => {
+                                const sizes =
+                                  productsData.get(item.productId)?.sizes ||
+                                  DEFAULT_SIZES;
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault();
+                                  handleUpdateItem(item.id, "size", size);
+                                  setOpenDropdown(null);
+                                  setFocusedIndex(-1);
+                                } else if (e.key === "ArrowDown") {
+                                  e.preventDefault();
+                                  setFocusedIndex(
+                                    idx === sizes.length - 1 ? 0 : idx + 1,
+                                  );
+                                } else if (e.key === "ArrowUp") {
+                                  e.preventDefault();
+                                  setFocusedIndex(
+                                    idx === 0 ? sizes.length - 1 : idx - 1,
+                                  );
+                                } else if (e.key === "Escape") {
+                                  e.preventDefault();
+                                  setOpenDropdown(null);
+                                  setFocusedIndex(-1);
+                                }
+                              }}
+                              onFocus={() => setFocusedIndex(idx)}
                               className={`w-full px-3 py-2 text-xs font-medium text-left hover:bg-neutral-100 transition ${
                                 item.size === size
                                   ? "bg-neutral-100 font-semibold"
+                                  : ""
+                              } ${
+                                focusedIndex === idx
+                                  ? "ring-2 ring-black ring-inset"
                                   : ""
                               }`}
                             >
@@ -365,13 +425,24 @@ export default function ShoppingBag() {
                     {/* COLOR */}
                     <div className="relative dropdown-container">
                       <button
-                        onClick={() =>
-                          setOpenDropdown(
-                            openDropdown === `color-${item.id}`
-                              ? null
-                              : `color-${item.id}`,
-                          )
-                        }
+                        onClick={() => {
+                          const isOpen = openDropdown === `color-${item.id}`;
+                          setOpenDropdown(isOpen ? null : `color-${item.id}`);
+                          setFocusedIndex(-1);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+                            e.preventDefault();
+                            setOpenDropdown(`color-${item.id}`);
+                            setFocusedIndex(0);
+                          } else if (e.key === "Escape" && openDropdown === `color-${item.id}`) {
+                            setOpenDropdown(null);
+                            setFocusedIndex(-1);
+                          }
+                        }}
+                        aria-haspopup="listbox"
+                        aria-expanded={openDropdown === `color-${item.id}`}
+                        aria-label="Select color"
                         className="px-3 py-2 min-w-[90px] border border-neutral-300 rounded-md text-xs font-medium cursor-pointer hover:border-black transition-all focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-1 flex items-center justify-between gap-2"
                         style={{
                           backgroundColor: getColorValue(item.color),
@@ -382,20 +453,58 @@ export default function ShoppingBag() {
                         <ChevronDown size={12} />
                       </button>
                       {openDropdown === `color-${item.id}` && (
-                        <div className="absolute z-10 mt-1 w-full bg-white border border-neutral-300 rounded-md shadow-lg max-h-48 overflow-auto">
+                        <div
+                          role="listbox"
+                          aria-label="Color options"
+                          className="absolute z-10 mt-1 w-full bg-white border border-neutral-300 rounded-md shadow-lg max-h-48 overflow-auto"
+                        >
                           {(
                             productsData.get(item.productId)?.colors ||
                             DEFAULT_COLORS
-                          ).map((color) => (
+                          ).map((color, idx) => (
                             <button
                               key={color}
+                              role="option"
+                              aria-selected={item.color === color}
+                              tabIndex={focusedIndex === idx ? 0 : -1}
                               onClick={() => {
                                 handleUpdateItem(item.id, "color", color);
                                 setOpenDropdown(null);
+                                setFocusedIndex(-1);
                               }}
+                              onKeyDown={(e) => {
+                                const colors =
+                                  productsData.get(item.productId)?.colors ||
+                                  DEFAULT_COLORS;
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault();
+                                  handleUpdateItem(item.id, "color", color);
+                                  setOpenDropdown(null);
+                                  setFocusedIndex(-1);
+                                } else if (e.key === "ArrowDown") {
+                                  e.preventDefault();
+                                  setFocusedIndex(
+                                    idx === colors.length - 1 ? 0 : idx + 1,
+                                  );
+                                } else if (e.key === "ArrowUp") {
+                                  e.preventDefault();
+                                  setFocusedIndex(
+                                    idx === 0 ? colors.length - 1 : idx - 1,
+                                  );
+                                } else if (e.key === "Escape") {
+                                  e.preventDefault();
+                                  setOpenDropdown(null);
+                                  setFocusedIndex(-1);
+                                }
+                              }}
+                              onFocus={() => setFocusedIndex(idx)}
                               className={`w-full px-3 py-2 text-xs font-medium text-left hover:bg-neutral-50 transition flex items-center gap-2 ${
                                 item.color === color
                                   ? "bg-neutral-50 font-semibold"
+                                  : ""
+                              } ${
+                                focusedIndex === idx
+                                  ? "ring-2 ring-black ring-inset"
                                   : ""
                               }`}
                             >
