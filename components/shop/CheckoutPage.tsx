@@ -110,11 +110,22 @@ export default function Checkout() {
     setIsLoading(true);
     try {
       const cartItems = items.map((item) => ({
-        productId: item.id,
+        productId: item.productId,
         quantity: item.qty,
       }));
 
-      await createOrderAction(cartItems);
+      const shippingDetails = {
+        email: formData.email,
+        phone: formData.phone,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        address: formData.address,
+        city: formData.city,
+        zipCode: formData.zipCode,
+        country: formData.country,
+      };
+
+      await createOrderAction(cartItems, shippingDetails);
       toast.success("Order placed successfully! Pay on delivery.");
       router.push("/order");
     } catch (error) {

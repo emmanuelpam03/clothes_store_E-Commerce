@@ -10,7 +10,21 @@ type CartItem = {
   quantity: number;
 };
 
-export async function createOrderAction(items: CartItem[]) {
+type ShippingDetails = {
+  email: string;
+  phone: string;
+  firstName: string;
+  lastName: string;
+  address: string;
+  city: string;
+  zipCode: string;
+  country: string;
+};
+
+export async function createOrderAction(
+  items: CartItem[],
+  shippingDetails: ShippingDetails,
+) {
   const session = await auth();
 
   if (!session?.user?.id) {
@@ -58,6 +72,14 @@ export async function createOrderAction(items: CartItem[]) {
             (sum, i) => sum + i.product.price * i.quantity,
             0,
           ),
+          email: shippingDetails.email,
+          phone: shippingDetails.phone,
+          firstName: shippingDetails.firstName,
+          lastName: shippingDetails.lastName,
+          address: shippingDetails.address,
+          city: shippingDetails.city,
+          zipCode: shippingDetails.zipCode,
+          country: shippingDetails.country,
         },
       });
 

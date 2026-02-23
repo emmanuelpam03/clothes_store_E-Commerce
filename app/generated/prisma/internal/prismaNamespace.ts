@@ -1431,6 +1431,14 @@ export const OrderScalarFieldEnum = {
   userId: 'userId',
   status: 'status',
   total: 'total',
+  email: 'email',
+  phone: 'phone',
+  firstName: 'firstName',
+  lastName: 'lastName',
+  address: 'address',
+  city: 'city',
+  zipCode: 'zipCode',
+  country: 'country',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const

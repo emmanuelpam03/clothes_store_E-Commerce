@@ -125,6 +125,16 @@ model Order {
   status OrderStatus @default(PENDING)
   total  Int // computed at creation
 
+  // Shipping details
+  email     String
+  phone     String
+  firstName String
+  lastName  String
+  address   String
+  city      String
+  zipCode   String
+  country   String
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
