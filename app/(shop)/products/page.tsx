@@ -35,13 +35,17 @@ export default async function ProductsPage({
   const colors = parseArray(params.colors);
   const tags = parseArray(params.tags);
   const collections = parseArray(params.collections);
-  
+
   // Validate price parameters to avoid NaN
   const parsedMinPrice = params.minPrice ? Number(params.minPrice) : NaN;
   const parsedMaxPrice = params.maxPrice ? Number(params.maxPrice) : NaN;
-  const validMinPrice = !Number.isNaN(parsedMinPrice) ? parsedMinPrice : undefined;
-  const validMaxPrice = !Number.isNaN(parsedMaxPrice) ? parsedMaxPrice : undefined;
-  
+  const validMinPrice = !Number.isNaN(parsedMinPrice)
+    ? parsedMinPrice
+    : undefined;
+  const validMaxPrice = !Number.isNaN(parsedMaxPrice)
+    ? parsedMaxPrice
+    : undefined;
+
   const inStock = params.inStock === "true";
   const outOfStock = params.outOfStock === "true";
 

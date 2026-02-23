@@ -131,9 +131,7 @@ export default function ProductsPageComponent({
       const wasFavorited = isFavorited(productId);
       await toggleFavorite(productId);
       toast.success(
-        wasFavorited
-          ? "Removed from favorites"
-          : "Added to favorites",
+        wasFavorited ? "Removed from favorites" : "Added to favorites",
       );
     } catch (error) {
       toast.error("Failed to update favorite");
@@ -776,7 +774,9 @@ export default function ProductsPageComponent({
                   <div className="sticky top-16 md:top-24 z-20 bg-neutral-200 pb-4 items-center justify-between gap-2 rounded text-white px-4 py-3 mb-6">
                     <p className="text-sm text-neutral-900">
                       Showing results for{" "}
-                      <span className="font-semibold">&ldquo;{query}&rdquo;</span>
+                      <span className="font-semibold">
+                        &ldquo;{query}&rdquo;
+                      </span>
                       <span className="ml-2 text-neutral-900">
                         ({products.length} item
                         {products.length !== 1 ? "s" : ""} found)
