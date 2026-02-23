@@ -65,6 +65,149 @@ export async function deleteProductAdmin(productId: string) {
   return { success: true };
 }
 
+export interface CreateProductInput {
+  name: string;
+  slug: string;
+  description?: string;
+  price: number; // in cents
+  image?: string;
+  categoryId?: string;
+  sizes?: string[];
+  colors?: string[];
+  tags?: string[];
+  collection?: string;
+  stock: number;
+  active?: boolean;
+  isFeatured?: boolean;
+}
+
+export async function createProductAdmin(input: CreateProductInput) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN") {
+    throw new Error("Unauthorized");
+  }
+
+  // Validate required fields
+  if (
+    !input.name ||
+    !input.slug ||
+    input.price === undefined ||
+    input.stock === undefined
+  ) {
+    throw new Error("Missing required fields");
+  }
+
+  // Check if slug already exists
+  const existingProduct = await prisma.product.findUnique({
+    where: { slug: input.slug },
+  });
+
+  if (existingProduct) {
+    throw new Error("A product with this slug already exists");
+  }
+
+  // Create product with inventory
+  const product = await prisma.product.create({
+    data: {
+      name: input.name,
+      slug: input.slug,
+      description: input.description || null,
+      price: input.price,
+      image: input.image || null,
+      categoryId: input.categoryId || null,
+      sizes: input.sizes || [],
+      colors: input.colors || [],
+      tags: input.tags || [],
+      collection: input.collection || null,
+      active: input.active ?? true,
+      isFeatured: input.isFeatured ?? false,
+      inventory: {
+        create: {
+          quantity: input.stock,
+        },
+      },
+    },
+    include: {
+      category: true,
+      inventory: true,
+    },
+  });
+
+  revalidatePath("/admin/products");
+  return { success: true, product };
+}
+
+export async function updateProductAdmin(
+  productId: string,
+  input: Partial<CreateProductInput>,
+) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN") {
+    throw new Error("Unauthorized");
+  }
+
+  const product = await prisma.product.findUnique({
+    where: { id: productId },
+    include: { inventory: true },
+  });
+
+  if (!product) {
+    throw new Error("Product not found");
+  }
+
+  // If slug is being changed, check for duplicates
+  if (input.slug && input.slug !== product.slug) {
+    const existingProduct = await prisma.product.findUnique({
+      where: { slug: input.slug },
+    });
+
+    if (existingProduct) {
+      throw new Error("A product with this slug already exists");
+    }
+  }
+
+  // Update product
+  const updatedProduct = await prisma.product.update({
+    where: { id: productId },
+    data: {
+      ...(input.name && { name: input.name }),
+      ...(input.slug && { slug: input.slug }),
+      ...(input.description !== undefined && {
+        description: input.description || null,
+      }),
+      ...(input.price !== undefined && { price: input.price }),
+      ...(input.image !== undefined && { image: input.image || null }),
+      ...(input.categoryId !== undefined && {
+        categoryId: input.categoryId || null,
+      }),
+      ...(input.sizes && { sizes: input.sizes }),
+      ...(input.colors && { colors: input.colors }),
+      ...(input.tags && { tags: input.tags }),
+      ...(input.collection !== undefined && {
+        collection: input.collection || null,
+      }),
+      ...(input.active !== undefined && { active: input.active }),
+      ...(input.isFeatured !== undefined && { isFeatured: input.isFeatured }),
+    },
+    include: {
+      category: true,
+      inventory: true,
+    },
+  });
+
+  // Update inventory if stock is provided
+  if (input.stock !== undefined && product.inventory) {
+    await prisma.inventory.update({
+      where: { id: product.inventory.id },
+      data: { quantity: input.stock },
+    });
+  }
+
+  revalidatePath("/admin/products");
+  revalidatePath(`/products/${updatedProduct.slug}`);
+  return { success: true, product: updatedProduct };
+}
+
 // Orders & Stats
 export async function getAdminStats() {
   const session = await auth();
