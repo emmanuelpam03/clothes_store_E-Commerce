@@ -8,6 +8,7 @@ import {
   useOptimistic,
   useEffect,
   useMemo,
+  useRef,
 } from "react";
 import { Heart, XIcon, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
@@ -83,6 +84,7 @@ export default function ShoppingBag() {
   );
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
+  const optionRefs = useRef<Map<string, HTMLElement>>(new Map());
 
   // prevent empty flash
   const [isHydrated, setIsHydrated] = useState(false);
@@ -137,9 +139,8 @@ export default function ShoppingBag() {
   // Manage focus when focusedIndex changes
   useEffect(() => {
     if (focusedIndex >= 0 && openDropdown) {
-      const selector = `[role="option"][tabindex="0"]`;
-      const focusedElement = document.querySelector(selector) as HTMLElement;
-      focusedElement?.focus();
+      const key = `${openDropdown}-${focusedIndex}`;
+      optionRefs.current.get(key)?.focus();
     }
   }, [focusedIndex, openDropdown]);
 
@@ -374,6 +375,14 @@ export default function ShoppingBag() {
                           ).map((size, idx) => (
                             <button
                               key={size}
+                              ref={(el) => {
+                                const refKey = `size-${item.id}-${idx}`;
+                                if (el) {
+                                  optionRefs.current.set(refKey, el);
+                                } else {
+                                  optionRefs.current.delete(refKey);
+                                }
+                              }}
                               role="option"
                               aria-selected={item.size === size}
                               tabIndex={focusedIndex === idx ? 0 : -1}
@@ -470,6 +479,14 @@ export default function ShoppingBag() {
                           ).map((color, idx) => (
                             <button
                               key={color}
+                              ref={(el) => {
+                                const refKey = `color-${item.id}-${idx}`;
+                                if (el) {
+                                  optionRefs.current.set(refKey, el);
+                                } else {
+                                  optionRefs.current.delete(refKey);
+                                }
+                              }}
                               role="option"
                               aria-selected={item.color === color}
                               tabIndex={focusedIndex === idx ? 0 : -1}
