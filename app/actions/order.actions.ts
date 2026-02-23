@@ -21,6 +21,28 @@ type ShippingDetails = {
   country: string;
 };
 
+function validateShippingDetails(details: ShippingDetails): void {
+  const requiredFields: (keyof ShippingDetails)[] = [
+    "email",
+    "phone",
+    "firstName",
+    "lastName",
+    "address",
+    "city",
+    "zipCode",
+    "country",
+  ];
+  for (const field of requiredFields) {
+    if (!details[field] || details[field].trim() === "") {
+      throw new Error(`${field} is required`);
+    }
+  }
+  // Basic email format check
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(details.email)) {
+    throw new Error("Invalid email format");
+  }
+}
+
 export async function createOrderAction(
   items: CartItem[],
   shippingDetails: ShippingDetails,
@@ -30,6 +52,8 @@ export async function createOrderAction(
   if (!session?.user?.id) {
     throw new Error("Unauthorized");
   }
+
+  validateShippingDetails(shippingDetails);
 
   const userId = session.user.id;
 
