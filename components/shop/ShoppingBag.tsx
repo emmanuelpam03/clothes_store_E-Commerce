@@ -9,7 +9,7 @@ import {
   useEffect,
   useMemo,
 } from "react";
-import { Heart, XIcon } from "lucide-react";
+import { Heart, XIcon, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { useSession } from "next-auth/react";
 
@@ -81,6 +81,7 @@ export default function ShoppingBag() {
   const [productsData, setProductsData] = useState<Map<string, ProductData>>(
     new Map(),
   );
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
   // prevent empty flash
   const [isHydrated, setIsHydrated] = useState(false);
@@ -117,6 +118,19 @@ export default function ShoppingBag() {
 
     fetchProductData();
   }, [uniqueProductIds]);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest(".dropdown-container")) {
+        setOpenDropdown(null);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   // OPTIMISTIC STATE (remove only)
   const [optimisticItems, removeOptimistic] = useOptimistic(
@@ -309,60 +323,113 @@ export default function ShoppingBag() {
                     )}
 
                     {/* SIZE */}
-                    <select
-                      value={item.size}
-                      onChange={(e) =>
-                        handleUpdateItem(item.id, "size", e.target.value)
-                      }
-                      className="w-12 h-7 border border-neutral-300 text-xs text-center cursor-pointer hover:border-black transition"
-                      title="Select size"
-                    >
-                      {(
-                        productsData.get(item.productId)?.sizes || DEFAULT_SIZES
-                      ).map((size) => (
-                        <option key={size} value={size}>
-                          {size}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="relative dropdown-container">
+                      <button
+                        onClick={() =>
+                          setOpenDropdown(
+                            openDropdown === `size-${item.id}`
+                              ? null
+                              : `size-${item.id}`,
+                          )
+                        }
+                        className="px-3 py-2 min-w-[60px] border border-neutral-300 rounded-md text-xs font-medium cursor-pointer hover:border-black transition-all focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-1 flex items-center justify-between gap-2"
+                      >
+                        <span>{item.size}</span>
+                        <ChevronDown size={12} />
+                      </button>
+                      {openDropdown === `size-${item.id}` && (
+                        <div className="absolute z-10 mt-1 w-full bg-white border border-neutral-300 rounded-md shadow-lg max-h-48 overflow-auto">
+                          {(
+                            productsData.get(item.productId)?.sizes ||
+                            DEFAULT_SIZES
+                          ).map((size) => (
+                            <button
+                              key={size}
+                              onClick={() => {
+                                handleUpdateItem(item.id, "size", size);
+                                setOpenDropdown(null);
+                              }}
+                              className={`w-full px-3 py-2 text-xs font-medium text-left hover:bg-neutral-100 transition ${
+                                item.size === size
+                                  ? "bg-neutral-100 font-semibold"
+                                  : ""
+                              }`}
+                            >
+                              {size}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
 
                     {/* COLOR */}
-                    <select
-                      value={item.color}
-                      onChange={(e) =>
-                        handleUpdateItem(item.id, "color", e.target.value)
-                      }
-                      className="w-12 h-7 border border-neutral-300 text-xs text-center cursor-pointer hover:border-black transition"
-                      title="Select color"
-                      style={{
-                        backgroundColor: getColorValue(item.color),
-                        color: isDarkColor(item.color) ? "white" : "black",
-                      }}
-                    >
-                      {(
-                        productsData.get(item.productId)?.colors ||
-                        DEFAULT_COLORS
-                      ).map((color) => (
-                        <option key={color} value={color}>
-                          {color}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="relative dropdown-container">
+                      <button
+                        onClick={() =>
+                          setOpenDropdown(
+                            openDropdown === `color-${item.id}`
+                              ? null
+                              : `color-${item.id}`,
+                          )
+                        }
+                        className="px-3 py-2 min-w-[90px] border border-neutral-300 rounded-md text-xs font-medium cursor-pointer hover:border-black transition-all focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-1 flex items-center justify-between gap-2"
+                        style={{
+                          backgroundColor: getColorValue(item.color),
+                          color: isDarkColor(item.color) ? "white" : "black",
+                        }}
+                      >
+                        <span>{item.color}</span>
+                        <ChevronDown size={12} />
+                      </button>
+                      {openDropdown === `color-${item.id}` && (
+                        <div className="absolute z-10 mt-1 w-full bg-white border border-neutral-300 rounded-md shadow-lg max-h-48 overflow-auto">
+                          {(
+                            productsData.get(item.productId)?.colors ||
+                            DEFAULT_COLORS
+                          ).map((color) => (
+                            <button
+                              key={color}
+                              onClick={() => {
+                                handleUpdateItem(item.id, "color", color);
+                                setOpenDropdown(null);
+                              }}
+                              className={`w-full px-3 py-2 text-xs font-medium text-left hover:bg-neutral-50 transition flex items-center gap-2 ${
+                                item.color === color
+                                  ? "bg-neutral-50 font-semibold"
+                                  : ""
+                              }`}
+                            >
+                              <div
+                                className="w-4 h-4 rounded-full border border-neutral-300"
+                                style={{
+                                  backgroundColor: getColorValue(color),
+                                }}
+                              />
+                              {color}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
 
                     {/* QTY */}
-                    <div className="flex flex-col items-center">
+                    <div className="flex flex-col items-center gap-1">
                       <button
                         onClick={() =>
                           handleQtyChange(item.id, "inc", item.qty)
                         }
+                        className="w-7 h-7 flex items-center justify-center border border-neutral-300 rounded-md text-sm font-semibold hover:bg-black hover:text-white hover:border-black transition-all"
                       >
                         +
                       </button>
-                      <span>{item.qty}</span>
+                      <span className="text-sm font-medium my-1">
+                        {item.qty}
+                      </span>
                       <button
                         onClick={() =>
                           handleQtyChange(item.id, "dec", item.qty)
                         }
+                        className="w-7 h-7 flex items-center justify-center border border-neutral-300 rounded-md text-sm font-semibold hover:bg-black hover:text-white hover:border-black transition-all"
                       >
                         -
                       </button>
