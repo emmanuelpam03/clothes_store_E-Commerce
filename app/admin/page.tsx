@@ -6,6 +6,8 @@ import {
   Package,
   Users as UsersIcon,
 } from "lucide-react";
+import { getAdminStats } from "@/app/actions/admin.actions";
+import prisma from "@/lib/prisma";
 
 type Order = {
   id: string;
@@ -14,30 +16,6 @@ type Order = {
   amount: string;
   date: string;
 };
-
-const recentOrders: Order[] = [
-  {
-    id: "ORD-001",
-    customer: "Jane Smith",
-    status: "Completed",
-    amount: "$249.99",
-    date: "2024-01-15",
-  },
-  {
-    id: "ORD-002",
-    customer: "John Doe",
-    status: "Pending",
-    amount: "$149.50",
-    date: "2024-01-16",
-  },
-  {
-    id: "ORD-003",
-    customer: "Sarah Johnson",
-    status: "Completed",
-    amount: "$399.99",
-    date: "2024-01-16",
-  },
-];
 
 const orderColumns: Column<Order>[] = [
   { key: "id", label: "Order ID" },
@@ -63,8 +41,26 @@ const orderColumns: Column<Order>[] = [
   { key: "date", label: "Date" },
 ];
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const stats = await getAdminStats();
   
+  // Fetch recent 5 orders
+  const recentOrdersData = await prisma.order.findMany({
+    take: 5,
+    orderBy: { createdAt: "desc" },
+    include: {
+      user: true,
+    },
+  });
+
+  const recentOrders = recentOrdersData.map((order) => ({
+    id: order.id,
+    customer: order.user?.name || order.firstName + " " + order.lastName,
+    status: order.status === "PAID" ? "Completed" as const : order.status === "PENDING" ? "Pending" as const : "Cancelled" as const,
+    amount: `$${(order.total / 100).toFixed(2)}`,
+    date: new Date(order.createdAt).toLocaleDateString(),
+  }));
+
   return (
     <div className="p-8 space-y-8 bg-slate-50 min-h-screen">
       <div>
@@ -77,25 +73,25 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Total Revenue"
-          value="$18,240"
+          value={`$${(stats.totalRevenue / 100).toFixed(2)}`}
           change="+12.5%"
           icon={<TrendingUp size={24} className="text-blue-500" />}
         />
         <StatCard
           title="Orders Today"
-          value="48"
+          value={stats.todayOrders.toString()}
           change="+8.2%"
           icon={<ShoppingCart size={24} className="text-cyan-500" />}
         />
         <StatCard
           title="Active Products"
-          value="126"
+          value={stats.activeProducts.toString()}
           change="+2.1%"
           icon={<Package size={24} className="text-indigo-500" />}
         />
         <StatCard
           title="Total Customers"
-          value="1,394"
+          value={stats.totalCustomers.toString()}
           change="+18.7%"
           icon={<UsersIcon size={24} className="text-purple-500" />}
         />
@@ -105,7 +101,11 @@ export default function DashboardPage() {
         <h2 className="text-2xl font-bold text-slate-900 mb-6">
           Recent Orders
         </h2>
-        <Table columns={orderColumns} data={recentOrders} />
+        {recentOrders.length > 0 ? (
+          <Table columns={orderColumns} data={recentOrders} />
+        ) : (
+          <p className="text-center text-slate-500 py-8">No orders yet</p>
+        )}
       </div>
     </div>
   );
