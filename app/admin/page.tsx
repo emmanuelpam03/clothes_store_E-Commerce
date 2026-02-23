@@ -43,7 +43,7 @@ const orderColumns: Column<Order>[] = [
 
 export default async function DashboardPage() {
   const stats = await getAdminStats();
-  
+
   // Fetch recent 5 orders
   const recentOrdersData = await prisma.order.findMany({
     take: 5,
@@ -56,7 +56,12 @@ export default async function DashboardPage() {
   const recentOrders = recentOrdersData.map((order) => ({
     id: order.id,
     customer: order.user?.name || order.firstName + " " + order.lastName,
-    status: order.status === "PAID" ? "Completed" as const : order.status === "PENDING" ? "Pending" as const : "Cancelled" as const,
+    status:
+      order.status === "PAID"
+        ? ("Completed" as const)
+        : order.status === "PENDING"
+          ? ("Pending" as const)
+          : ("Cancelled" as const),
     amount: `$${(order.total / 100).toFixed(2)}`,
     date: new Date(order.createdAt).toLocaleDateString(),
   }));

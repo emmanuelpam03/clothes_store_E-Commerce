@@ -113,7 +113,9 @@ export default async function ProductsPage() {
         ) : (
           <div className="text-center py-12 text-slate-500">
             <p className="text-lg font-medium">No products yet</p>
-            <p className="text-sm mt-2">Create your first product to get started</p>
+            <p className="text-sm mt-2">
+              Create your first product to get started
+            </p>
           </div>
         )}
       </div>

@@ -72,23 +72,24 @@ export async function getAdminStats() {
     throw new Error("Unauthorized");
   }
 
-  const [totalRevenue, todayOrders, activeProducts, totalCustomers] = await Promise.all([
-    prisma.order.aggregate({
-      where: { status: "PAID" },
-      _sum: { total: true },
-    }),
-    prisma.order.count({
-      where: {
-        createdAt: {
-          gte: new Date(new Date().setHours(0, 0, 0, 0)),
+  const [totalRevenue, todayOrders, activeProducts, totalCustomers] =
+    await Promise.all([
+      prisma.order.aggregate({
+        where: { status: "PAID" },
+        _sum: { total: true },
+      }),
+      prisma.order.count({
+        where: {
+          createdAt: {
+            gte: new Date(new Date().setHours(0, 0, 0, 0)),
+          },
         },
-      },
-    }),
-    prisma.product.count({
-      where: { active: true },
-    }),
-    prisma.user.count(),
-  ]);
+      }),
+      prisma.product.count({
+        where: { active: true },
+      }),
+      prisma.user.count(),
+    ]);
 
   return {
     totalRevenue: totalRevenue._sum.total || 0,
