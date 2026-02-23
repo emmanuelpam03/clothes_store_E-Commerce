@@ -346,7 +346,10 @@ export default function ShoppingBag() {
                             e.preventDefault();
                             setOpenDropdown(`size-${item.id}`);
                             setFocusedIndex(0);
-                          } else if (e.key === "Escape" && openDropdown === `size-${item.id}`) {
+                          } else if (
+                            e.key === "Escape" &&
+                            openDropdown === `size-${item.id}`
+                          ) {
                             setOpenDropdown(null);
                             setFocusedIndex(-1);
                           }
@@ -435,7 +438,10 @@ export default function ShoppingBag() {
                             e.preventDefault();
                             setOpenDropdown(`color-${item.id}`);
                             setFocusedIndex(0);
-                          } else if (e.key === "Escape" && openDropdown === `color-${item.id}`) {
+                          } else if (
+                            e.key === "Escape" &&
+                            openDropdown === `color-${item.id}`
+                          ) {
                             setOpenDropdown(null);
                             setFocusedIndex(-1);
                           }
