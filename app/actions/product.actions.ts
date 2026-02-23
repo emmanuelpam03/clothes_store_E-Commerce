@@ -1,62 +1,158 @@
 "use server";
 import prisma from "@/lib/prisma";
 import { unstable_noStore as noStore } from "next/cache";
+import { Prisma } from "@/app/generated/prisma/client";
 
-export async function getProducts(query?: string, filter?: string) {
+export interface ProductFilters {
+  query?: string;
+  filter?: string;
+  sizes?: string[];
+  colors?: string[];
+  tags?: string[];
+  collections?: string[];
+  minPrice?: number;
+  maxPrice?: number;
+  inStock?: boolean;
+  outOfStock?: boolean;
+}
+
+export async function getProducts(filters: ProductFilters = {}) {
   noStore();
+
+  const {
+    query,
+    filter,
+    sizes,
+    colors,
+    tags,
+    collections,
+    minPrice,
+    maxPrice,
+    inStock,
+    outOfStock,
+  } = filters;
 
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-  return prisma.product.findMany({
-    where: {
-      active: true,
+  // Build where clause
+  const where: Prisma.ProductWhereInput = {
+    active: true,
 
-      ...(query && {
-        OR: [
-          {
-            name: {
-              contains: query,
-              mode: "insensitive",
-            },
+    // Search query
+    ...(query && {
+      OR: [
+        {
+          name: {
+            contains: query,
+            mode: "insensitive",
           },
-          {
-            description: {
-              contains: query,
-              mode: "insensitive",
-            },
+        },
+        {
+          description: {
+            contains: query,
+            mode: "insensitive",
           },
-        ],
-      }),
+        },
+      ],
+    }),
 
-      ...(filter === "featured"
-        ? { isFeatured: true }
-        : filter === "new"
+    // Category/Featured/New/Best Sellers filter
+    ...(filter === "featured"
+      ? { isFeatured: true }
+      : filter === "new"
+        ? {
+            createdAt: {
+              gte: thirtyDaysAgo,
+            },
+          }
+        : filter === "best-sellers"
           ? {
-              createdAt: {
-                gte: thirtyDaysAgo,
+              orderItems: {
+                some: {},
               },
             }
-          : filter === "best-sellers"
+          : filter
             ? {
-                orderItems: {
-                  some: {},
+                category: {
+                  slug: filter,
                 },
               }
-            : filter
-              ? {
-                  category: {
-                    slug: filter,
-                  },
-                }
-              : {}),
-    },
+            : {}),
 
+    // Size filter - product must have at least one of the selected sizes
+    ...(sizes &&
+      sizes.length > 0 && {
+        sizes: {
+          hasSome: sizes,
+        },
+      }),
+
+    // Color filter - product must have at least one of the selected colors
+    ...(colors &&
+      colors.length > 0 && {
+        colors: {
+          hasSome: colors,
+        },
+      }),
+
+    // Tags filter - product must have at least one of the selected tags
+    ...(tags &&
+      tags.length > 0 && {
+        tags: {
+          hasSome: tags,
+        },
+      }),
+
+    // Collections filter - product collection must match one of the selected collections
+    ...(collections &&
+      collections.length > 0 && {
+        collection: {
+          in: collections,
+        },
+      }),
+
+    // Price filter
+    ...((minPrice !== undefined || maxPrice !== undefined) && {
+      price: {
+        ...(minPrice !== undefined && { gte: minPrice }),
+        ...(maxPrice !== undefined && { lte: maxPrice }),
+      },
+    }),
+
+    // Stock availability filter
+    ...(inStock && !outOfStock
+      ? {
+          inventory: {
+            quantity: {
+              gt: 0,
+            },
+          },
+        }
+      : outOfStock && !inStock
+        ? {
+            OR: [
+              {
+                inventory: {
+                  quantity: {
+                    lte: 0,
+                  },
+                },
+              },
+              {
+                inventory: null,
+              },
+            ],
+          }
+        : {}),
+  };
+
+  return prisma.product.findMany({
+    where,
     include: {
       category: true,
       inventory: true,
     },
-
     orderBy:
       filter === "best-sellers"
         ? {

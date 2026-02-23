@@ -82,9 +82,13 @@ export default function ProductsPageComponent({
     const timeout = setTimeout(() => {
       startTransition(() => {
         if (!inputValue.trim()) {
-          router.replace("/products", { scroll: false });
+          const params = new URLSearchParams(searchParams.toString());
+          params.delete("q");
+          router.replace(`/products?${params.toString()}`, { scroll: false });
         } else {
-          router.replace(`/products?q=${encodeURIComponent(inputValue)}`, {
+          const params = new URLSearchParams(searchParams.toString());
+          params.set("q", inputValue);
+          router.replace(`/products?${params.toString()}`, {
             scroll: false,
           });
         }
@@ -102,85 +106,55 @@ export default function ProductsPageComponent({
 
   const [dialogProduct, setDialogProduct] = useState<Product | null>(null);
 
-  // Add state for price range
-  const [maxPrice, setMaxPrice] = useState(500);
-
   // Add state for mobile filters toggle
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
 
-  // Filter states
-  const [selectedSizes, setSelectedSizes] = useState<Set<string>>(new Set());
-  const [selectedColors, setSelectedColors] = useState<Set<string>>(new Set());
-  const [selectedTags, setSelectedTags] = useState<Set<string>>(new Set());
-  const [selectedCollections, setSelectedCollections] = useState<Set<string>>(
-    new Set(),
+  // Read filter values from URL search params
+  const selectedSizes = new Set(
+    searchParams.get("sizes")?.split(",").filter(Boolean) || [],
   );
-  const [selectedRatings, setSelectedRatings] = useState<Set<number>>(
-    new Set(),
+  const selectedColors = new Set(
+    searchParams.get("colors")?.split(",").filter(Boolean) || [],
   );
-  const [showInStock, setShowInStock] = useState(false);
-  const [showOutOfStock, setShowOutOfStock] = useState(false);
+  const selectedTags = new Set(
+    searchParams.get("tags")?.split(",").filter(Boolean) || [],
+  );
+  const selectedCollections = new Set(
+    searchParams.get("collections")?.split(",").filter(Boolean) || [],
+  );
+  const maxPrice = Number(searchParams.get("maxPrice") || "100000"); // Store in cents
+  const showInStock = searchParams.get("inStock") === "true";
+  const showOutOfStock = searchParams.get("outOfStock") === "true";
 
   const handleToggleFavorite = async (productId: string) => {
     try {
-      const result = await toggleFavorite(productId);
+      await toggleFavorite(productId);
       toast.success(
-        result.isFavorited ? "Added to favorites" : "Removed from favorites",
+        isFavorited(productId)
+          ? "Removed from favorites"
+          : "Added to favorites",
       );
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (error) {
       toast.error("Failed to update favorite");
     }
   };
 
-  // Filter products based on selected filters
-  const filteredProducts = products.filter((product) => {
-    // Size filter
-    if (selectedSizes.size > 0) {
-      const hasMatchingSize = product.sizes?.some((size) =>
-        selectedSizes.has(size),
-      );
-      if (!hasMatchingSize) return false;
-    }
+  // Helper function to update URL with new filters
+  const updateFilters = (updates: Record<string, string | undefined>) => {
+    const params = new URLSearchParams(searchParams.toString());
 
-    // Color filter
-    if (selectedColors.size > 0) {
-      const hasMatchingColor = product.colors?.some((color) =>
-        selectedColors.has(color),
-      );
-      if (!hasMatchingColor) return false;
-    }
-
-    // Tags filter
-    if (selectedTags.size > 0) {
-      const hasMatchingTag = product.tags?.some((tag) => selectedTags.has(tag));
-      if (!hasMatchingTag) return false;
-    }
-
-    // Collection filter
-    if (selectedCollections.size > 0) {
-      if (!product.collection || !selectedCollections.has(product.collection)) {
-        return false;
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === undefined || value === "") {
+        params.delete(key);
+      } else {
+        params.set(key, value);
       }
-    }
+    });
 
-    // Price filter
-    const productPrice = product.price / 100; // Convert cents to dollars
-    if (productPrice > maxPrice) return false;
-
-    // Availability filter
-    // Only filter when exactly one option is selected, not both
-    if (showInStock && !showOutOfStock) {
-      const inStock = (product.inventory?.quantity ?? 0) > 0;
-      if (!inStock) return false;
-    } else if (showOutOfStock && !showInStock) {
-      const inStock = (product.inventory?.quantity ?? 0) > 0;
-      if (inStock) return false;
-    }
-    // If both or neither are selected, don't filter by availability (show all)
-
-    return true;
-  });
+    startTransition(() => {
+      router.replace(`/products?${params.toString()}`, { scroll: false });
+    });
+  };
 
   const toggleFilter = (filterName: string) => {
     setExpandedFilters((prev) => {
@@ -197,7 +171,8 @@ export default function ProductsPageComponent({
   const isExpanded = (filterName: string) => expandedFilters.has(filterName);
 
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setMaxPrice(Number(e.target.value));
+    const newMaxPrice = e.target.value;
+    updateFilters({ maxPrice: newMaxPrice });
   };
 
   // Toggle mobile filters
@@ -207,76 +182,87 @@ export default function ProductsPageComponent({
 
   // Helper functions to toggle filters
   const toggleSize = (size: string) => {
-    setSelectedSizes((prev) => {
-      const next = new Set(prev);
-      if (next.has(size)) {
-        next.delete(size);
-      } else {
-        next.add(size);
-      }
-      return next;
+    const next = new Set(selectedSizes);
+    if (next.has(size)) {
+      next.delete(size);
+    } else {
+      next.add(size);
+    }
+    updateFilters({
+      sizes: next.size > 0 ? Array.from(next).join(",") : undefined,
     });
   };
 
   const toggleColor = (color: string) => {
-    setSelectedColors((prev) => {
-      const next = new Set(prev);
-      if (next.has(color)) {
-        next.delete(color);
-      } else {
-        next.add(color);
-      }
-      return next;
+    const next = new Set(selectedColors);
+    if (next.has(color)) {
+      next.delete(color);
+    } else {
+      next.add(color);
+    }
+    updateFilters({
+      colors: next.size > 0 ? Array.from(next).join(",") : undefined,
     });
   };
 
   const toggleTag = (tag: string) => {
-    setSelectedTags((prev) => {
-      const next = new Set(prev);
-      if (next.has(tag)) {
-        next.delete(tag);
-      } else {
-        next.add(tag);
-      }
-      return next;
+    const next = new Set(selectedTags);
+    if (next.has(tag)) {
+      next.delete(tag);
+    } else {
+      next.add(tag);
+    }
+    updateFilters({
+      tags: next.size > 0 ? Array.from(next).join(",") : undefined,
     });
   };
 
   const toggleCollection = (collection: string) => {
-    setSelectedCollections((prev) => {
-      const next = new Set(prev);
-      if (next.has(collection)) {
-        next.delete(collection);
-      } else {
-        next.add(collection);
-      }
-      return next;
+    const next = new Set(selectedCollections);
+    if (next.has(collection)) {
+      next.delete(collection);
+    } else {
+      next.add(collection);
+    }
+    updateFilters({
+      collections: next.size > 0 ? Array.from(next).join(",") : undefined,
     });
   };
 
-  const toggleRating = (rating: number) => {
-    setSelectedRatings((prev) => {
-      const next = new Set(prev);
-      if (next.has(rating)) {
-        next.delete(rating);
-      } else {
-        next.add(rating);
-      }
-      return next;
+  const toggleInStock = (checked: boolean) => {
+    updateFilters({
+      inStock: checked ? "true" : undefined,
+      outOfStock: checked
+        ? undefined
+        : searchParams.get("outOfStock") || undefined,
     });
   };
 
-  // handle seed
-  // function handleSeed() {
-  //   startTransition(async () => {
-  //     try {
-  //       await createDefaultCategories();
-  //       toast.success("Categories added successfully");
-  //     } catch (error) {
-  //       toast.error("Failed to add categories");
-  //     }
-  //   });
-  // }
+  const toggleOutOfStock = (checked: boolean) => {
+    updateFilters({
+      outOfStock: checked ? "true" : undefined,
+      inStock: checked ? undefined : searchParams.get("inStock") || undefined,
+    });
+  };
+
+  // Get unique values from ALL products for filter options (not filtered)
+  // Note: In production, you might want to get these from the database
+  const allSizes = Array.from(new Set(products.flatMap((p) => p.sizes || [])));
+  const allColors = Array.from(
+    new Set(products.flatMap((p) => p.colors || [])),
+  );
+  const allTags = Array.from(new Set(products.flatMap((p) => p.tags || [])));
+  const allCollections = Array.from(
+    new Set(products.map((p) => p.collection).filter(Boolean) as string[]),
+  );
+
+  // Calculate counts based on CURRENT filtered products
+  const inStockCount = products.filter(
+    (p) => (p.inventory?.quantity ?? 0) > 0,
+  ).length;
+  const outOfStockCount = products.filter(
+    (p) => (p.inventory?.quantity ?? 0) === 0,
+  ).length;
 
   return (
     <section className="w-full bg-neutral-100 py-16">
@@ -306,20 +292,42 @@ export default function ProductsPageComponent({
                   if (e.key === "Escape") {
                     setInputValue("");
                     setShowSuggestions(false);
-                    router.replace("/products", { scroll: false });
+                    const params = new URLSearchParams(searchParams.toString());
+                    params.delete("q");
+                    router.replace(`/products?${params.toString()}`, {
+                      scroll: false,
+                    });
                   }
                 }}
                 placeholder="Search"
                 className="w-full bg-transparent outline-none placeholder:text-neutral-500"
               />
             </div>
-            {/* <button
-                onClick={handleSeed}
-                disabled={isPending}
-                className="px-4 py-2 bg-black text-white text-sm rounded hover:bg-neutral-800 transition"
-              >
-                {isPending ? "Adding..." : "Add Default Categories"}
-              </button> */}
+
+            {/* SUGGESTIONS */}
+            {showSuggestions && inputValue && suggestions.length > 0 && (
+              <div className="absolute top-full z-30 mt-1 w-full rounded bg-white shadow border">
+                {suggestions.map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => {
+                      setInputValue(s.name);
+                      setShowSuggestions(false);
+                      const params = new URLSearchParams(
+                        searchParams.toString(),
+                      );
+                      params.set("q", s.name);
+                      router.replace(`/products?${params.toString()}`, {
+                        scroll: false,
+                      });
+                    }}
+                    className="block w-full px-4 py-2 text-left text-sm hover:bg-neutral-100"
+                  >
+                    {s.name}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* CATEGORY PILLS - Hidden on mobile when filters are open */}
@@ -333,8 +341,7 @@ export default function ProductsPageComponent({
               <button
                 key={item.slug}
                 onClick={() => {
-                  const params = new URLSearchParams();
-                  if (query) params.set("q", query);
+                  const params = new URLSearchParams(searchParams.toString());
 
                   if (filter === item.slug) {
                     params.delete("filter");
@@ -361,8 +368,7 @@ export default function ProductsPageComponent({
               <button
                 key={cat.id}
                 onClick={() => {
-                  const params = new URLSearchParams();
-                  if (query) params.set("q", query);
+                  const params = new URLSearchParams(searchParams.toString());
 
                   if (filter === cat.slug) {
                     params.delete("filter");
@@ -386,27 +392,6 @@ export default function ProductsPageComponent({
           </div>
         </div>
 
-        {/* SUGGESTIONs */}
-        {showSuggestions && inputValue && suggestions.length > 0 && (
-          <div className="absolute z-30 mt-1 w-auto rounded bg-white shadow border">
-            {suggestions.map((s) => (
-              <button
-                key={s.id}
-                onClick={() => {
-                  setInputValue(s.name);
-                  setShowSuggestions(false);
-                  router.replace(`/products?q=${encodeURIComponent(s.name)}`, {
-                    scroll: false,
-                  });
-                }}
-                className="block w-full px-4 py-2 text-left text-sm hover:bg-neutral-100"
-              >
-                {s.name}
-              </button>
-            ))}
-          </div>
-        )}
-
         {/* MOBILE FILTERS TOGGLE BUTTON */}
         <div className="mt-6 md:hidden">
           <button
@@ -428,24 +413,28 @@ export default function ProductsPageComponent({
             {/* FILTER SIDEBAR - Desktop always visible */}
             <aside className="hidden md:block w-64 shrink-0 space-y-10">
               {/* SIZE */}
-              <div>
-                <h3 className="mb-4 text-sm font-semibold text-black">Size</h3>
-                <div className="flex flex-wrap gap-2">
-                  {["XS", "S", "M", "L", "XL", "2X"].map((size) => (
-                    <button
-                      key={size}
-                      onClick={() => toggleSize(size)}
-                      className={`h-9 w-9 border text-xs transition-colors ${
-                        selectedSizes.has(size)
-                          ? "bg-black text-white"
-                          : "text-black hover:bg-black hover:text-white"
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  ))}
+              {allSizes.length > 0 && (
+                <div>
+                  <h3 className="mb-4 text-sm font-semibold text-black">
+                    Size
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {allSizes.map((size) => (
+                      <button
+                        key={size}
+                        onClick={() => toggleSize(size)}
+                        className={`h-9 w-9 border text-xs transition-colors ${
+                          selectedSizes.has(size)
+                            ? "bg-black text-white"
+                            : "text-black hover:bg-black hover:text-white"
+                        }`}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* AVAILABILITY */}
               <div>
@@ -458,41 +447,20 @@ export default function ProductsPageComponent({
                       className="cursor-pointer"
                       type="checkbox"
                       checked={showInStock}
-                      onChange={(e) => {
-                        setShowInStock(e.target.checked);
-                        setShowOutOfStock(false);
-                      }}
+                      onChange={(e) => toggleInStock(e.target.checked)}
                     />
                     In Stock{" "}
-                    <span className="text-blue-600">
-                      (
-                      {
-                        products.filter((p) => (p.inventory?.quantity ?? 0) > 0)
-                          .length
-                      }
-                      )
-                    </span>
+                    <span className="text-blue-600">({inStockCount})</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       className="cursor-pointer"
                       type="checkbox"
                       checked={showOutOfStock}
-                      onChange={(e) => {
-                        setShowOutOfStock(e.target.checked);
-                        setShowInStock(false);
-                      }}
+                      onChange={(e) => toggleOutOfStock(e.target.checked)}
                     />
                     Out of Stock{" "}
-                    <span className="text-blue-600">
-                      (
-                      {
-                        products.filter(
-                          (p) => (p.inventory?.quantity ?? 0) === 0,
-                        ).length
-                      }
-                      )
-                    </span>
+                    <span className="text-blue-600">({outOfStockCount})</span>
                   </label>
                 </div>
               </div>
@@ -521,9 +489,9 @@ export default function ProductsPageComponent({
                           type="checkbox"
                           checked={filter === item.slug}
                           onChange={() => {
-                            const params = new URLSearchParams();
-
-                            if (query) params.set("q", query);
+                            const params = new URLSearchParams(
+                              searchParams.toString(),
+                            );
 
                             if (filter === item.slug) {
                               params.delete("filter");
@@ -539,42 +507,85 @@ export default function ProductsPageComponent({
                         {item.label}
                       </label>
                     ))}
+                    {categories.map((cat) => (
+                      <label
+                        key={cat.id}
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={filter === cat.slug}
+                          onChange={() => {
+                            const params = new URLSearchParams(
+                              searchParams.toString(),
+                            );
+
+                            if (filter === cat.slug) {
+                              params.delete("filter");
+                            } else {
+                              params.set("filter", cat.slug);
+                            }
+
+                            router.replace(`/products?${params.toString()}`, {
+                              scroll: false,
+                            });
+                          }}
+                        />
+                        {cat.name}
+                      </label>
+                    ))}
                   </div>
                 )}
               </div>
 
               {/* COLORS FILTER */}
-              <div>
-                <button
-                  onClick={() => toggleFilter("Colors")}
-                  className="flex w-full items-center justify-between text-sm font-semibold text-black"
-                >
-                  Colors
-                  <ChevronDown
-                    className={`h-4 w-4 transition-transform ${
-                      isExpanded("Colors") ? "" : "-rotate-90"
-                    }`}
-                  />
-                </button>
-                {isExpanded("Colors") && (
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {[
-                      { name: "Black", color: "bg-black" },
-                      { name: "White", color: "bg-white border" },
-                      { name: "Gray", color: "bg-gray-500" },
-                      { name: "Blue", color: "bg-blue-500" },
-                      { name: "Red", color: "bg-red-500" },
-                      { name: "Green", color: "bg-green-500" },
-                    ].map((color) => (
-                      <button
-                        key={color.name}
-                        className={`h-8 w-8 rounded ${color.color} border hover:scale-110 transition-transform`}
-                        title={color.name}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
+              {allColors.length > 0 && (
+                <div>
+                  <button
+                    onClick={() => toggleFilter("Colors")}
+                    className="flex w-full items-center justify-between text-sm font-semibold text-black"
+                  >
+                    Colors
+                    <ChevronDown
+                      className={`h-4 w-4 transition-transform ${
+                        isExpanded("Colors") ? "" : "-rotate-90"
+                      }`}
+                    />
+                  </button>
+                  {isExpanded("Colors") && (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {allColors.map((color) => {
+                        const colorClasses: Record<string, string> = {
+                          Black: "bg-black",
+                          White: "bg-white border",
+                          Gray: "bg-gray-500",
+                          Grey: "bg-gray-500",
+                          Blue: "bg-blue-500",
+                          Red: "bg-red-500",
+                          Green: "bg-green-500",
+                          Yellow: "bg-yellow-500",
+                          Orange: "bg-orange-500",
+                          Purple: "bg-purple-500",
+                          Pink: "bg-pink-500",
+                          Brown: "bg-brown-500",
+                        };
+                        return (
+                          <button
+                            key={color}
+                            onClick={() => toggleColor(color)}
+                            className={`h-8 w-8 rounded ${colorClasses[color] || "bg-gray-300"} border hover:scale-110 transition-transform ${
+                              selectedColors.has(color)
+                                ? "ring-2 ring-offset-2 ring-black"
+                                : ""
+                            }`}
+                            title={color}
+                          />
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* PRICE RANGE FILTER */}
               <div>
@@ -595,7 +606,8 @@ export default function ProductsPageComponent({
                       <input
                         type="range"
                         min="0"
-                        max="1000"
+                        max="100000"
+                        step="100"
                         value={maxPrice}
                         onChange={handlePriceChange}
                         className="w-full accent-black cursor-pointer"
@@ -603,130 +615,85 @@ export default function ProductsPageComponent({
                     </div>
                     <div className="flex items-center justify-between text-xs text-neutral-500">
                       <span>$0</span>
-                      <span>${maxPrice}</span>
+                      <span>${(maxPrice / 100).toFixed(2)}</span>
                     </div>
                     <div className="text-center text-sm text-black font-medium">
-                      Range: $0 - ${maxPrice}
+                      Range: $0 - ${(maxPrice / 100).toFixed(2)}
                     </div>
                   </div>
                 )}
               </div>
 
               {/* COLLECTIONS FILTER */}
-              <div>
-                <button
-                  onClick={() => toggleFilter("Collections")}
-                  className="flex w-full items-center justify-between text-sm font-semibold text-black"
-                >
-                  Collections
-                  <ChevronDown
-                    className={`h-4 w-4 transition-transform ${
-                      isExpanded("Collections") ? "" : "-rotate-90"
-                    }`}
-                  />
-                </button>
-                {isExpanded("Collections") && (
-                  <div className="mt-4 space-y-2 text-sm text-black">
-                    {[
-                      "Spring 2024",
-                      "Summer 2024",
-                      "Fall 2024",
-                      "Winter 2024",
-                    ].map((collection) => (
-                      <label
-                        key={collection}
-                        className="flex items-center gap-2"
-                      >
-                        <input type="checkbox" />
-                        {collection}
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
+              {allCollections.length > 0 && (
+                <div>
+                  <button
+                    onClick={() => toggleFilter("Collections")}
+                    className="flex w-full items-center justify-between text-sm font-semibold text-black"
+                  >
+                    Collections
+                    <ChevronDown
+                      className={`h-4 w-4 transition-transform ${
+                        isExpanded("Collections") ? "" : "-rotate-90"
+                      }`}
+                    />
+                  </button>
+                  {isExpanded("Collections") && (
+                    <div className="mt-4 space-y-2 text-sm text-black">
+                      {allCollections.map((collection) => (
+                        <label
+                          key={collection}
+                          className="flex items-center gap-2 cursor-pointer"
+                        >
+                          <input
+                            type="checkbox"
+                            checked={selectedCollections.has(collection)}
+                            onChange={() => toggleCollection(collection)}
+                          />
+                          {collection}
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* TAGS FILTER */}
-              <div>
-                <button
-                  onClick={() => toggleFilter("Tags")}
-                  className="flex w-full items-center justify-between text-sm font-semibold text-black"
-                >
-                  Tags
-                  <ChevronDown
-                    className={`h-4 w-4 transition-transform ${
-                      isExpanded("Tags") ? "" : "-rotate-90"
-                    }`}
-                  />
-                </button>
-                {isExpanded("Tags") && (
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {["Casual", "Formal", "Sport", "Vintage", "Modern"].map(
-                      (tag) => (
+              {allTags.length > 0 && (
+                <div>
+                  <button
+                    onClick={() => toggleFilter("Tags")}
+                    className="flex w-full items-center justify-between text-sm font-semibold text-black"
+                  >
+                    Tags
+                    <ChevronDown
+                      className={`h-4 w-4 transition-transform ${
+                        isExpanded("Tags") ? "" : "-rotate-90"
+                      }`}
+                    />
+                  </button>
+                  {isExpanded("Tags") && (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {allTags.map((tag) => (
                         <button
                           key={tag}
                           onClick={() => toggleTag(tag)}
-                          className={`rounded border border-neutral-300 px-2 py-1 text-xs transition-colors ${
+                          className={`rounded border px-2 py-1 text-xs ${
                             selectedTags.has(tag)
                               ? "bg-black text-white"
-                              : "text-black hover:bg-black hover:text-white"
+                              : "border-neutral-300 text-black hover:bg-black hover:text-white"
                           }`}
                         >
                           {tag}
                         </button>
-                      ),
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* RATINGS FILTER */}
-              <div>
-                <button
-                  onClick={() => toggleFilter("Ratings")}
-                  className="flex w-full items-center justify-between text-sm font-semibold text-black"
-                >
-                  Ratings
-                  <ChevronDown
-                    className={`h-4 w-4 transition-transform ${
-                      isExpanded("Ratings") ? "" : "-rotate-90"
-                    }`}
-                  />
-                </button>
-                {isExpanded("Ratings") && (
-                  <div className="mt-4 space-y-2 text-sm text-black">
-                    {[5, 4, 3, 2, 1].map((rating) => (
-                      <label
-                        key={rating}
-                        className="flex items-center gap-2 cursor-pointer"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selectedRatings.has(rating)}
-                          onChange={() => toggleRating(rating)}
-                        />
-                        <div className="flex">
-                          {[...Array(5)].map((_, i) => (
-                            <span
-                              key={i}
-                              className={`text-yellow-400 ${
-                                i < rating ? "fill-current" : ""
-                              }`}
-                            >
-                              ★
-                            </span>
-                          ))}
-                        </div>
-                        <span className="text-xs text-neutral-500">
-                          ({(6 - rating) * 15})
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </aside>
 
-            {/* MOBILE FILTER SIDEBAR - Slides in and pushes content */}
+            {/* MOBILE FILTER SIDEBAR - Simplified version */}
             <aside
               className={`
                 md:hidden w-64 shrink-0 space-y-8 bg-white p-4 overflow-y-auto
@@ -746,25 +713,30 @@ export default function ProductsPageComponent({
                 </button>
               </div>
 
+              {/* Mobile filters - Same content as desktop but in mobile view */}
               {/* SIZE */}
-              <div>
-                <h3 className="mb-4 text-sm font-semibold text-black">Size</h3>
-                <div className="flex flex-wrap gap-2">
-                  {["XS", "S", "M", "L", "XL", "2X"].map((size) => (
-                    <button
-                      key={size}
-                      onClick={() => toggleSize(size)}
-                      className={`h-9 w-9 border text-xs transition-colors ${
-                        selectedSizes.has(size)
-                          ? "bg-black text-white"
-                          : "text-black hover:bg-black hover:text-white"
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  ))}
+              {allSizes.length > 0 && (
+                <div>
+                  <h3 className="mb-4 text-sm font-semibold text-black">
+                    Size
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {allSizes.map((size) => (
+                      <button
+                        key={size}
+                        onClick={() => toggleSize(size)}
+                        className={`h-9 w-9 border text-xs transition-colors ${
+                          selectedSizes.has(size)
+                            ? "bg-black text-white"
+                            : "text-black hover:bg-black hover:text-white"
+                        }`}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* AVAILABILITY */}
               <div>
@@ -776,378 +748,127 @@ export default function ProductsPageComponent({
                     <input
                       type="checkbox"
                       checked={showInStock}
-                      onChange={(e) => setShowInStock(e.target.checked)}
+                      onChange={(e) => toggleInStock(e.target.checked)}
                     />
                     In Stock{" "}
-                    <span className="text-blue-600">
-                      (
-                      {
-                        products.filter((p) => (p.inventory?.quantity ?? 0) > 0)
-                          .length
-                      }
-                      )
-                    </span>
+                    <span className="text-blue-600">({inStockCount})</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
                       checked={showOutOfStock}
-                      onChange={(e) => setShowOutOfStock(e.target.checked)}
+                      onChange={(e) => toggleOutOfStock(e.target.checked)}
                     />
                     Out of Stock{" "}
-                    <span className="text-blue-600">
-                      (
-                      {
-                        products.filter(
-                          (p) => (p.inventory?.quantity ?? 0) === 0,
-                        ).length
-                      }
-                      )
-                    </span>
+                    <span className="text-blue-600">({outOfStockCount})</span>
                   </label>
                 </div>
               </div>
 
-              {/* CATEGORY FILTER */}
-              <div>
-                <button
-                  onClick={() => toggleFilter("Category")}
-                  className="flex w-full items-center justify-between text-sm font-semibold text-black"
-                >
-                  Category
-                  <ChevronDown
-                    className={`h-4 w-4 transition-transform ${
-                      isExpanded("Category") ? "" : "-rotate-90"
-                    }`}
-                  />
-                </button>
-                {isExpanded("Category") && (
-                  <div className="mt-4 space-y-2 text-sm text-black">
-                    {FILTERS.map((item) => (
-                      <label
-                        key={item.slug}
-                        className="flex items-center gap-2 cursor-pointer"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={filter === item.slug}
-                          onChange={() => {
-                            const params = new URLSearchParams();
-
-                            if (query) params.set("q", query);
-
-                            if (filter === item.slug) {
-                              params.delete("filter");
-                            } else {
-                              params.set("filter", item.slug);
-                            }
-
-                            router.replace(`/products?${params.toString()}`, {
-                              scroll: false,
-                            });
-                          }}
-                        />
-                        {item.label}
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* COLORS FILTER */}
-              <div>
-                <button
-                  onClick={() => toggleFilter("Colors")}
-                  className="flex w-full items-center justify-between text-sm font-semibold text-black"
-                >
-                  Colors
-                  <ChevronDown
-                    className={`h-4 w-4 transition-transform ${
-                      isExpanded("Colors") ? "" : "-rotate-90"
-                    }`}
-                  />
-                </button>
-                {isExpanded("Colors") && (
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {[
-                      { name: "Black", color: "bg-black" },
-                      { name: "White", color: "bg-white border" },
-                      { name: "Gray", color: "bg-gray-500" },
-                      { name: "Blue", color: "bg-blue-500" },
-                      { name: "Red", color: "bg-red-500" },
-                      { name: "Green", color: "bg-green-500" },
-                    ].map((color) => (
-                      <button
-                        key={color.name}
-                        onClick={() => toggleColor(color.name)}
-                        className={`h-8 w-8 rounded ${color.color} border hover:scale-110 transition-transform ${
-                          selectedColors.has(color.name)
-                            ? "ring-2 ring-offset-2 ring-black"
-                            : ""
-                        }`}
-                        title={color.name}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* PRICE RANGE FILTER */}
-              <div>
-                <button
-                  onClick={() => toggleFilter("Price Range")}
-                  className="flex w-full items-center justify-between text-sm font-semibold text-black"
-                >
-                  Price Range
-                  <ChevronDown
-                    className={`h-4 w-4 transition-transform ${
-                      isExpanded("Price Range") ? "" : "-rotate-90"
-                    }`}
-                  />
-                </button>
-                {isExpanded("Price Range") && (
-                  <div className="mt-4 space-y-3">
-                    <div className="flex items-center gap-2 text-sm text-black">
-                      <input
-                        type="range"
-                        min="0"
-                        max="1000"
-                        value={maxPrice}
-                        onChange={handlePriceChange}
-                        className="w-full accent-black cursor-pointer"
-                      />
-                    </div>
-                    <div className="flex items-center justify-between text-xs text-neutral-500">
-                      <span>$0</span>
-                      <span>${maxPrice}</span>
-                    </div>
-                    <div className="text-center text-sm text-black font-medium">
-                      Range: $0 - ${maxPrice}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* COLLECTIONS FILTER */}
-              <div>
-                <button
-                  onClick={() => toggleFilter("Collections")}
-                  className="flex w-full items-center justify-between text-sm font-semibold text-black"
-                >
-                  Collections
-                  <ChevronDown
-                    className={`h-4 w-4 transition-transform ${
-                      isExpanded("Collections") ? "" : "-rotate-90"
-                    }`}
-                  />
-                </button>
-                {isExpanded("Collections") && (
-                  <div className="mt-4 space-y-2 text-sm text-black">
-                    {[
-                      "Spring 2024",
-                      "Summer 2024",
-                      "Fall 2024",
-                      "Winter 2024",
-                    ].map((collection) => (
-                      <label
-                        key={collection}
-                        className="flex items-center gap-2 cursor-pointer"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selectedCollections.has(collection)}
-                          onChange={() => toggleCollection(collection)}
-                        />
-                        {collection}
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* TAGS FILTER */}
-              <div>
-                <button
-                  onClick={() => toggleFilter("Tags")}
-                  className="flex w-full items-center justify-between text-sm font-semibold text-black"
-                >
-                  Tags
-                  <ChevronDown
-                    className={`h-4 w-4 transition-transform ${
-                      isExpanded("Tags") ? "" : "-rotate-90"
-                    }`}
-                  />
-                </button>
-                {isExpanded("Tags") && (
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {["Casual", "Formal", "Sport", "Vintage", "Modern"].map(
-                      (tag) => (
-                        <button
-                          key={tag}
-                          onClick={() => toggleTag(tag)}
-                          className={`rounded border px-2 py-1 text-xs transition-colors ${
-                            selectedTags.has(tag)
-                              ? "bg-black text-white border-black"
-                              : "border-neutral-300 text-black hover:bg-black hover:text-white"
-                          }`}
-                        >
-                          {tag}
-                        </button>
-                      ),
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* RATINGS FILTER */}
-              <div>
-                <button
-                  onClick={() => toggleFilter("Ratings")}
-                  className="flex w-full items-center justify-between text-sm font-semibold text-black"
-                >
-                  Ratings
-                  <ChevronDown
-                    className={`h-4 w-4 transition-transform ${
-                      isExpanded("Ratings") ? "" : "-rotate-90"
-                    }`}
-                  />
-                </button>
-                {isExpanded("Ratings") && (
-                  <div className="mt-4 space-y-2 text-sm text-black">
-                    {[5, 4, 3, 2, 1].map((rating) => (
-                      <label
-                        key={rating}
-                        className="flex items-center gap-2 cursor-pointer"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selectedRatings.has(rating)}
-                          onChange={() => toggleRating(rating)}
-                        />
-                        <div className="flex">
-                          {[...Array(5)].map((_, i) => (
-                            <span
-                              key={i}
-                              className={`text-yellow-400 ${
-                                i < rating ? "fill-current" : ""
-                              }`}
-                            >
-                              ★
-                            </span>
-                          ))}
-                        </div>
-                        <span className="text-xs text-neutral-500">
-                          ({(6 - rating) * 15})
-                        </span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-              </div>
+              {/* Add other mobile filters as needed */}
             </aside>
 
-            {/* PRODUCTS GRID - Adjusts columns based on available space */}
-            <div className="flex-1 flex flex-col">
-              <Suspense fallback={<ProductsGridSkeleton count={6} />}>
-                {/* NO RESULTS */}
-                {filteredProducts.length === 0 ? (
-                  <div className="flex flex-1 justify-center min-h-100px">
-                    <div className="text-center">
-                      <p className="text-xl font-semibold text-black">
-                        No results found
-                      </p>
-                      <p className="mt-2 text-sm text-neutral-500">
-                        We couldn’t find anything for{" "}
-                        <span className="font-medium">“{query}”</span>
-                      </p>
-                    </div>
+            {/* PRODUCTS GRID */}
+            <div className="flex-1">
+              <div className="space-y-6">
+                {query && (
+                  <div className="sticky top-16 md:top-24 z-20 bg-neutral-200 pb-4 items-center justify-between gap-2 rounded text-white px-4 py-3 mb-6">
+                    <p className="text-sm text-neutral-900">
+                      Showing results for{" "}
+                      <span className="font-semibold">"{query}"</span>
+                      <span className="ml-2 text-neutral-900">
+                        ({products.length} item
+                        {products.length !== 1 ? "s" : ""} found)
+                      </span>
+                    </p>
                   </div>
-                ) : (
-                  <>
-                    {/* SEARCH INFO — NOW ALWAYS ON TOP */}
-                    {/* STICKY SEARCH HEADER */}
-                    {query && (
-                      <div className="sticky top-16 md:top-24 z-20 bg-neutral-200 pb-4 items-center justify-between gap-2 rounded text-white px-4 py-3 mb-6">
-                        <p className="text-sm text-neutral-900">
-                          Showing results for{" "}
-                          <span className="font-semibold">“{query}”</span>
-                          <span className="ml-2 text-neutral-900">
-                            ({filteredProducts.length} item
-                            {filteredProducts.length !== 1 ? "s" : ""} found)
-                          </span>
-                        </p>
-                      </div>
-                    )}
-
-                    {/* GRID */}
-                    <div
-                      className={`
-                      grid gap-8 transition-opacity duration-300
-                      ${isPending ? "opacity-40" : "opacity-100"}
-                      ${isMobileFiltersOpen ? "hidden md:grid" : "grid"}
-                      grid-cols-1 md:grid-cols-2 lg:grid-cols-3
-                    `}
-                    >
-                      {filteredProducts.map((product) => (
-                        <Link
-                          key={product.id}
-                          href={`/products/${product.slug}`}
-                        >
-                          {/* product card */}
-                          <div className="relative h-105 bg-white group">
-                            <Image
-                              src={product.image || "/placeholder.png"}
-                              alt={product.name}
-                              fill
-                              className="object-cover"
-                            />
-
-                            {/* FAVORITE BUTTON */}
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleToggleFavorite(product.id);
-                              }}
-                              className="absolute top-4 right-4 p-2 rounded-full bg-white/80 hover:bg-white transition-colors z-10"
-                            >
-                              <Heart
-                                className={`h-5 w-5 ${
-                                  isFavorited(product.id)
-                                    ? "fill-red-500 text-red-500"
-                                    : "text-black"
-                                }`}
-                              />
-                            </button>
-
-                            {/* ADD */}
-                            <button
-                              disabled={isFavoritePending}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                setDialogProduct(product);
-                              }}
-                              className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white px-3 py-2 text-sm text-black"
-                            >
-                              <ShoppingBag className="h-4 w-4" />
-                            </button>
-                          </div>
-
-                          <div className="mt-3 flex items-center justify-between text-sm text-black">
-                            <div>
-                              <p className="text-neutral-500">
-                                {product.description ?? "product"}
-                              </p>
-                              <p className="font-medium">{product.name}</p>
-                            </div>
-                            <p className="font-semibold">{product.price}</p>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  </>
                 )}
-              </Suspense>
+
+                {/* GRID */}
+                <Suspense fallback={<ProductsGridSkeleton />}>
+                  {isPending ? (
+                    <ProductsGridSkeleton />
+                  ) : (
+                    <>
+                      <div
+                        className={`
+                          grid gap-8 transition-opacity duration-300
+                          ${isPending ? "opacity-40" : "opacity-100"}
+                          grid-cols-1 sm:grid-cols-2 lg:grid-cols-3
+                        `}
+                      >
+                        {products.map((product) => (
+                          <Link
+                            key={product.id}
+                            href={`/products/${product.slug}`}
+                          >
+                            {/* product card */}
+                            <div className="relative h-105 bg-white group">
+                              <Image
+                                src={product.image || "/placeholder.png"}
+                                alt={product.name}
+                                fill
+                                className="object-cover"
+                              />
+
+                              {/* FAVORITE BUTTON */}
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleToggleFavorite(product.id);
+                                }}
+                                className="absolute top-4 right-4 p-2 rounded-full bg-white/80 hover:bg-white transition-colors z-10"
+                              >
+                                <Heart
+                                  className={`h-5 w-5 ${
+                                    isFavorited(product.id)
+                                      ? "fill-red-500 text-red-500"
+                                      : "text-black"
+                                  }`}
+                                />
+                              </button>
+
+                              {/* ADD TO CART */}
+                              <button
+                                disabled={isFavoritePending}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  setDialogProduct(product);
+                                }}
+                                className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white px-3 py-2 text-sm text-black"
+                              >
+                                <ShoppingBag className="h-4 w-4" />
+                              </button>
+                            </div>
+
+                            <div className="mt-3 flex items-center justify-between text-sm text-black">
+                              <div>
+                                <p className="text-neutral-500">
+                                  {product.description ?? "product"}
+                                </p>
+                                <p className="font-medium">{product.name}</p>
+                              </div>
+                              <p className="font-semibold">
+                                ${(product.price / 100).toFixed(2)}
+                              </p>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+
+                      {products.length === 0 && (
+                        <div className="col-span-full py-20 text-center text-neutral-500">
+                          <p className="text-lg">No products found</p>
+                          <p className="text-sm mt-2">
+                            Try adjusting your filters
+                          </p>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </Suspense>
+              </div>
             </div>
           </div>
         </div>
