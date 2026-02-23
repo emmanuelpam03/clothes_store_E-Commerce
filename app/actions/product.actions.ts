@@ -35,12 +35,12 @@ export async function getProducts(filters: ProductFilters = {}) {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-  // Build where clause
-  const where: Prisma.ProductWhereInput = {
-    active: true,
+  // Build AND conditions array to avoid OR key conflicts
+  const andConditions: Prisma.ProductWhereInput[] = [];
 
-    // Search query
-    ...(query && {
+  // Search query - OR condition for name/description
+  if (query) {
+    andConditions.push({
       OR: [
         {
           name: {
@@ -55,7 +55,41 @@ export async function getProducts(filters: ProductFilters = {}) {
           },
         },
       ],
-    }),
+    });
+  }
+
+  // Stock availability filter - OR condition for out of stock
+  if (inStock && !outOfStock) {
+    andConditions.push({
+      inventory: {
+        quantity: {
+          gt: 0,
+        },
+      },
+    });
+  } else if (outOfStock && !inStock) {
+    andConditions.push({
+      OR: [
+        {
+          inventory: {
+            quantity: {
+              lte: 0,
+            },
+          },
+        },
+        {
+          inventory: null,
+        },
+      ],
+    });
+  }
+
+  // Build where clause
+  const where: Prisma.ProductWhereInput = {
+    active: true,
+
+    // Combine OR conditions using AND
+    ...(andConditions.length > 0 && { AND: andConditions }),
 
     // Category/Featured/New/Best Sellers filter
     ...(filter === "featured"
@@ -119,32 +153,6 @@ export async function getProducts(filters: ProductFilters = {}) {
         ...(maxPrice !== undefined && { lte: maxPrice }),
       },
     }),
-
-    // Stock availability filter
-    ...(inStock && !outOfStock
-      ? {
-          inventory: {
-            quantity: {
-              gt: 0,
-            },
-          },
-        }
-      : outOfStock && !inStock
-        ? {
-            OR: [
-              {
-                inventory: {
-                  quantity: {
-                    lte: 0,
-                  },
-                },
-              },
-              {
-                inventory: null,
-              },
-            ],
-          }
-        : {}),
   };
 
   return prisma.product.findMany({
