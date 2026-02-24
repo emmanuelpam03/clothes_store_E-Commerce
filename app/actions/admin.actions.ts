@@ -97,6 +97,15 @@ export async function createProductAdmin(input: CreateProductInput) {
     throw new Error("Missing required fields");
   }
 
+  // Validate numeric values
+  if (input.price <= 0) {
+    throw new Error("Price must be greater than 0");
+  }
+
+  if (input.stock < 0) {
+    throw new Error("Stock cannot be negative");
+  }
+
   // Check if slug already exists
   const existingProduct = await prisma.product.findUnique({
     where: { slug: input.slug },
@@ -155,6 +164,15 @@ export async function updateProductAdmin(
     throw new Error("Product not found");
   }
 
+  // Validate numeric values if provided
+  if (input.price !== undefined && input.price <= 0) {
+    throw new Error("Price must be greater than 0");
+  }
+
+  if (input.stock !== undefined && input.stock < 0) {
+    throw new Error("Stock cannot be negative");
+  }
+
   // If slug is being changed, check for duplicates
   if (input.slug && input.slug !== product.slug) {
     const existingProduct = await prisma.product.findUnique({
@@ -195,12 +213,23 @@ export async function updateProductAdmin(
     },
   });
 
-  // Update inventory if stock is provided
-  if (input.stock !== undefined && product.inventory) {
-    await prisma.inventory.update({
-      where: { id: product.inventory.id },
-      data: { quantity: input.stock },
-    });
+  // Update or create inventory if stock is provided
+  if (input.stock !== undefined) {
+    if (product.inventory) {
+      // Update existing inventory
+      await prisma.inventory.update({
+        where: { id: product.inventory.id },
+        data: { quantity: input.stock },
+      });
+    } else {
+      // Create inventory record for legacy products
+      await prisma.inventory.create({
+        data: {
+          productId: productId,
+          quantity: input.stock,
+        },
+      });
+    }
   }
 
   revalidatePath("/admin/products");

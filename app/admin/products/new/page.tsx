@@ -40,23 +40,20 @@ export default function NewProductPage() {
         [name]: checked,
       });
     } else {
+      // Auto-generate slug from name if applicable
+      const autoSlug =
+        name === "name" && !formData.slug
+          ? value
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, "-")
+              .replace(/(^-|-$)/g, "")
+          : undefined;
+
       setFormData({
         ...formData,
         [name]: value,
+        ...(autoSlug !== undefined && { slug: autoSlug }),
       });
-
-      // Auto-generate slug from name
-      if (name === "name" && !formData.slug) {
-        const autoSlug = value
-          .toLowerCase()
-          .replace(/[^a-z0-9]+/g, "-")
-          .replace(/(^-|-$)/g, "");
-        setFormData((prev) => ({
-          ...prev,
-          name: value,
-          slug: autoSlug,
-        }));
-      }
     }
   };
 
