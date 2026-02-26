@@ -4,10 +4,12 @@ import { Plus } from "lucide-react";
 import { auth } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import { getAllProductsAdmin } from "@/app/actions/admin.actions";
+import ProductActions from "@/components/admin/ProductActions";
 
 type Product = {
   id: string;
   name: string;
+  slug: string;
   active: boolean;
   price: number;
   inventory: {
@@ -69,14 +71,9 @@ const columns: Column<Product>[] = [
   },
   {
     key: "id",
-    label: "",
+    label: "Actions",
     render: (_, row) => (
-      <Link
-        href={`/admin/products/${row.id}`}
-        className="text-blue-600 hover:text-blue-800 font-medium text-sm"
-      >
-        Edit
-      </Link>
+      <ProductActions productSlug={row.slug} productName={row.name} />
     ),
   },
 ];

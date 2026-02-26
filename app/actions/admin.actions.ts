@@ -27,6 +27,27 @@ export async function getAllProductsAdmin() {
   });
 }
 
+export async function getProductBySlugAdmin(slug: string) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN") {
+    throw new Error("Unauthorized");
+  }
+
+  const product = await prisma.product.findUnique({
+    where: { slug },
+    include: {
+      category: true,
+      inventory: true,
+    },
+  });
+
+  if (!product) {
+    throw new Error("Product not found");
+  }
+
+  return product;
+}
+
 export async function toggleProductStatus(productId: string) {
   const session = await auth();
   if (session?.user?.role !== "ADMIN") {
@@ -51,14 +72,14 @@ export async function toggleProductStatus(productId: string) {
   return { success: true };
 }
 
-export async function deleteProductAdmin(productId: string) {
+export async function deleteProductAdmin(slug: string) {
   const session = await auth();
   if (session?.user?.role !== "ADMIN") {
     throw new Error("Unauthorized");
   }
 
   await prisma.product.delete({
-    where: { id: productId },
+    where: { slug },
   });
 
   revalidatePath("/admin/products");
@@ -98,11 +119,11 @@ export async function createProductAdmin(input: CreateProductInput) {
   }
 
   // Validate numeric values
-  if (input.price <= 0) {
+  if (isNaN(input.price) || input.price <= 0) {
     throw new Error("Price must be greater than 0");
   }
 
-  if (input.stock < 0) {
+  if (isNaN(input.stock) || input.stock < 0) {
     throw new Error("Stock cannot be negative");
   }
 
@@ -147,7 +168,7 @@ export async function createProductAdmin(input: CreateProductInput) {
 }
 
 export async function updateProductAdmin(
-  productId: string,
+  slug: string,
   input: Partial<CreateProductInput>,
 ) {
   const session = await auth();
@@ -156,7 +177,7 @@ export async function updateProductAdmin(
   }
 
   const product = await prisma.product.findUnique({
-    where: { id: productId },
+    where: { slug },
     include: { inventory: true },
   });
 
@@ -165,11 +186,11 @@ export async function updateProductAdmin(
   }
 
   // Validate numeric values if provided
-  if (input.price !== undefined && input.price <= 0) {
+  if (input.price !== undefined && (isNaN(input.price) || input.price <= 0)) {
     throw new Error("Price must be greater than 0");
   }
 
-  if (input.stock !== undefined && input.stock < 0) {
+  if (input.stock !== undefined && (isNaN(input.stock) || input.stock < 0)) {
     throw new Error("Stock cannot be negative");
   }
 
@@ -186,7 +207,7 @@ export async function updateProductAdmin(
 
   // Update product
   const updatedProduct = await prisma.product.update({
-    where: { id: productId },
+    where: { slug },
     data: {
       ...(input.name && { name: input.name }),
       ...(input.slug && { slug: input.slug }),
@@ -225,7 +246,7 @@ export async function updateProductAdmin(
       // Create inventory record for legacy products
       await prisma.inventory.create({
         data: {
-          productId: productId,
+          productId: product.id,
           quantity: input.stock,
         },
       });
