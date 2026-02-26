@@ -6,6 +6,16 @@ import { ArrowLeft } from "lucide-react";
 import { createProductAdmin } from "@/app/actions/admin.actions";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 
 export default function NewProductPage() {
   const router = useRouter();
@@ -130,225 +140,226 @@ export default function NewProductPage() {
   };
 
   return (
-    <div className="p-8 bg-slate-50 min-h-screen">
-      <div className="max-w-3xl">
+    <div className="min-h-screen bg-slate-50 p-6 md:p-8">
+      <div className="mx-auto max-w-5xl">
         <Link
           href="/admin/products"
-          className="flex items-center gap-2 text-slate-600 hover:text-slate-900 mb-6 font-medium"
+          className="mb-5 inline-flex items-center gap-2 text-sm font-medium text-slate-600 transition-colors hover:text-slate-900"
         >
           <ArrowLeft size={18} />
           Back to Products
         </Link>
 
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-slate-900">Add New Product</h1>
-          <p className="text-slate-600 mt-1">
+        <div className="mb-8 space-y-1">
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900 md:text-4xl">
+            Add New Product
+          </h1>
+          <p className="text-sm text-slate-600 md:text-base">
             Create a new product and add it to your catalog.
           </p>
         </div>
 
-        <form
-          onSubmit={handleSubmit}
-          className="bg-white rounded-xl border border-slate-200 p-8 space-y-6"
-        >
-          {/* Name & Slug */}
-          <div className="grid grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Product Name <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                placeholder="Enter product name"
-                required
-                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Slug <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="text"
-                name="slug"
-                value={formData.slug}
-                onChange={handleChange}
-                placeholder="product-slug"
-                required
-                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Basic Information</CardTitle>
+              <CardDescription>
+                Product identity, pricing, and stock details.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="grid gap-5 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Product Name *</Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    placeholder="Enter product name"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="slug">Slug *</Label>
+                  <Input
+                    id="slug"
+                    type="text"
+                    name="slug"
+                    value={formData.slug}
+                    onChange={handleChange}
+                    placeholder="product-slug"
+                    required
+                  />
+                </div>
+              </div>
 
-          {/* Price & Stock */}
-          <div className="grid grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Price ($) <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="number"
-                name="price"
-                value={formData.price}
-                onChange={handleChange}
-                placeholder="0.00"
-                step="0.01"
-                min="0"
-                required
-                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Stock Quantity <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="number"
-                name="stock"
-                value={formData.stock}
-                onChange={handleChange}
-                placeholder="0"
-                min="0"
-                required
-                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
+              <div className="grid gap-5 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="price">Price ($) *</Label>
+                  <Input
+                    id="price"
+                    type="number"
+                    name="price"
+                    value={formData.price}
+                    onChange={handleChange}
+                    placeholder="0.00"
+                    step="0.01"
+                    min="0"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="stock">Stock Quantity *</Label>
+                  <Input
+                    id="stock"
+                    type="number"
+                    name="stock"
+                    value={formData.stock}
+                    onChange={handleChange}
+                    placeholder="0"
+                    min="0"
+                    required
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Description
-            </label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              placeholder="Enter product description"
-              rows={4}
-              className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-            />
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Content & Media</CardTitle>
+              <CardDescription>
+                Add product description and image source.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <textarea
+                  id="description"
+                  name="description"
+                  value={formData.description}
+                  onChange={handleChange}
+                  placeholder="Enter product description"
+                  rows={4}
+                  className="border-input placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-ring/50 flex w-full resize-none rounded-md border bg-transparent px-3 py-2 text-sm transition-[color,box-shadow] outline-none focus-visible:ring-[3px]"
+                />
+              </div>
 
-          {/* Image URL */}
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Image URL
-            </label>
-            <input
-              type="url"
-              name="image"
-              value={formData.image}
-              onChange={handleChange}
-              placeholder="https://example.com/image.jpg"
-              className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+              <div className="space-y-2">
+                <Label htmlFor="image">Image URL</Label>
+                <Input
+                  id="image"
+                  type="url"
+                  name="image"
+                  value={formData.image}
+                  onChange={handleChange}
+                  placeholder="https://example.com/image.jpg"
+                />
+              </div>
+            </CardContent>
+          </Card>
 
-          {/* Sizes, Colors, Tags */}
-          <div className="grid grid-cols-3 gap-6">
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Sizes (comma-separated)
-              </label>
-              <input
-                type="text"
-                name="sizes"
-                value={formData.sizes}
-                onChange={handleChange}
-                placeholder="XS, S, M, L, XL"
-                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Colors (comma-separated)
-              </label>
-              <input
-                type="text"
-                name="colors"
-                value={formData.colors}
-                onChange={handleChange}
-                placeholder="Black, White, Blue"
-                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Tags (comma-separated)
-              </label>
-              <input
-                type="text"
-                name="tags"
-                value={formData.tags}
-                onChange={handleChange}
-                placeholder="summer, casual"
-                className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Attributes</CardTitle>
+              <CardDescription>
+                Organize variants and taxonomy with comma-separated values.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div className="grid gap-5 md:grid-cols-3">
+                <div className="space-y-2">
+                  <Label htmlFor="sizes">Sizes</Label>
+                  <Input
+                    id="sizes"
+                    type="text"
+                    name="sizes"
+                    value={formData.sizes}
+                    onChange={handleChange}
+                    placeholder="XS, S, M, L, XL"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="colors">Colors</Label>
+                  <Input
+                    id="colors"
+                    type="text"
+                    name="colors"
+                    value={formData.colors}
+                    onChange={handleChange}
+                    placeholder="Black, White, Blue"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="tags">Tags</Label>
+                  <Input
+                    id="tags"
+                    type="text"
+                    name="tags"
+                    value={formData.tags}
+                    onChange={handleChange}
+                    placeholder="summer, casual"
+                  />
+                </div>
+              </div>
 
-          {/* Collection */}
-          <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">
-              Collection
-            </label>
-            <input
-              type="text"
-              name="collection"
-              value={formData.collection}
-              onChange={handleChange}
-              placeholder="Spring 2026"
-              className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+              <div className="space-y-2">
+                <Label htmlFor="collection">Collection</Label>
+                <Input
+                  id="collection"
+                  type="text"
+                  name="collection"
+                  value={formData.collection}
+                  onChange={handleChange}
+                  placeholder="Spring 2026"
+                />
+              </div>
+            </CardContent>
+          </Card>
 
-          {/* Checkboxes */}
-          <div className="flex gap-6">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                name="active"
-                checked={formData.active}
-                onChange={handleChange}
-                className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
-              />
-              <span className="text-sm font-semibold text-slate-700">
+          <Card>
+            <CardHeader>
+              <CardTitle>Visibility</CardTitle>
+              <CardDescription>
+                Control storefront visibility and featuring.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                <input
+                  type="checkbox"
+                  name="active"
+                  checked={formData.active}
+                  onChange={handleChange}
+                  className="size-4 rounded border-slate-300"
+                />
                 Active
-              </span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                name="isFeatured"
-                checked={formData.isFeatured}
-                onChange={handleChange}
-                className="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500"
-              />
-              <span className="text-sm font-semibold text-slate-700">
+              </label>
+              <label className="flex items-center gap-2 text-sm font-medium text-slate-700">
+                <input
+                  type="checkbox"
+                  name="isFeatured"
+                  checked={formData.isFeatured}
+                  onChange={handleChange}
+                  className="size-4 rounded border-slate-300"
+                />
                 Featured
-              </span>
-            </label>
-          </div>
+              </label>
+            </CardContent>
+          </Card>
 
-          {/* Buttons */}
-          <div className="flex gap-4 pt-6 border-t border-slate-200">
-            <button
-              type="submit"
-              disabled={isPending}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-2 rounded-lg transition"
-            >
-              {isPending ? "Creating..." : "Create Product"}
-            </button>
-            <Link
-              href="/admin/products"
-              className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 rounded-lg transition text-center"
-            >
-              Cancel
-            </Link>
+          <div className="sticky bottom-4 z-10 rounded-xl border bg-background p-4 shadow-sm">
+            <div className="flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <Button type="button" variant="outline" asChild>
+                <Link href="/admin/products">Cancel</Link>
+              </Button>
+              <Button type="submit" disabled={isPending}>
+                {isPending ? "Creating..." : "Create Product"}
+              </Button>
+            </div>
           </div>
         </form>
       </div>
