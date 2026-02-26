@@ -4,13 +4,9 @@ export type Column<T> = {
   render?: (value: T[keyof T], row: T) => React.ReactNode;
 };
 
-export default function Table<T extends Record<string, unknown>>({
-  columns,
-  data,
-}: {
-  columns: Column<T>[];
-  data: T[];
-}) {
+export default function Table<
+  T extends Record<string, unknown> & { id?: string; slug?: string },
+>({ columns, data }: { columns: Column<T>[]; data: T[] }) {
   return (
     <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
       <table className="w-full text-sm">
@@ -30,7 +26,7 @@ export default function Table<T extends Record<string, unknown>>({
         <tbody>
           {data.map((row, i) => (
             <tr
-              key={i}
+              key={(row.id || row.slug || i) as string | number}
               className="border-b border-slate-100 hover:bg-blue-50 transition-colors"
             >
               {columns.map((c) => {

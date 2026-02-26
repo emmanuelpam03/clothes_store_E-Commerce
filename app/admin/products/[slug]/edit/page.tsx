@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import { getProductBySlugAdmin } from "@/app/actions/admin.actions";
-import EditProductForm from "./EditProductForm";
+import EditProductForm from "@/components/admin/EditProductForm";
 
 export default async function EditProductPage({
   params,
