@@ -64,9 +64,17 @@ function formatYAxisRevenue(value: number) {
 }
 
 export default function RevenueChart({ data }: { data: MonthData[] }) {
+  if (!data || data.length === 0) {
+    return (
+      <div className="w-full h-80 flex items-center justify-center text-slate-500">
+        No revenue data available
+      </div>
+    );
+  }
+
   return (
-    <div className="w-full h-80">
-      <ResponsiveContainer width="100%" height="100%">
+    <div className="w-full min-h-80 h-80">
+      <ResponsiveContainer width="100%" height="100%" minHeight={320}>
         <AreaChart
           data={data}
           margin={{ top: 10, right: 30, left: 0, bottom: 0 }}

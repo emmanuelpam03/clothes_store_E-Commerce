@@ -198,8 +198,26 @@ export async function getRevenueByMonth(months: number = 6) {
   }
 
   const now = new Date();
-  const monthsData = [];
+  const startDate = new Date(now.getFullYear(), now.getMonth() - months + 1, 1);
 
+  // Fetch all orders for the date range in one query
+  const orders = await prisma.order.findMany({
+    where: {
+      status: {
+        in: [OrderStatus.PAID, OrderStatus.SHIPPED, OrderStatus.DELIVERED],
+      },
+      createdAt: {
+        gte: startDate,
+      },
+    },
+    select: {
+      total: true,
+      createdAt: true,
+    },
+  });
+
+  // Group orders by month
+  const monthsData = [];
   for (let i = months - 1; i >= 0; i--) {
     const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const nextMonthDate = new Date(
@@ -208,20 +226,10 @@ export async function getRevenueByMonth(months: number = 6) {
       1,
     );
 
-    const monthOrders = await prisma.order.findMany({
-      where: {
-        status: {
-          in: [OrderStatus.PAID, OrderStatus.SHIPPED, OrderStatus.DELIVERED],
-        },
-        createdAt: {
-          gte: monthDate,
-          lt: nextMonthDate,
-        },
-      },
-      select: {
-        total: true,
-      },
-    });
+    const monthOrders = orders.filter(
+      (order) =>
+        order.createdAt >= monthDate && order.createdAt < nextMonthDate,
+    );
 
     const monthRevenue = monthOrders.reduce(
       (sum, order) => sum + order.total,
@@ -247,45 +255,73 @@ export async function getCategoryStats() {
     throw new Error("Unauthorized");
   }
 
+  // Get all categories with product counts
   const categories = await prisma.category.findMany({
-    include: {
+    select: {
+      id: true,
+      name: true,
       products: {
-        include: {
-          orderItems: {
-            include: {
-              order: {
-                select: {
-                  status: true,
-                },
-              },
-            },
-          },
+        select: {
+          id: true,
         },
       },
     },
   });
 
-  const categoryStats = categories.map((category) => {
-    let totalRevenue = 0;
-    let totalSold = 0;
+  // Get all order items for completed orders in one query
+  const allOrderItems = await prisma.orderItem.findMany({
+    where: {
+      order: {
+        status: {
+          in: [OrderStatus.PAID, OrderStatus.SHIPPED, OrderStatus.DELIVERED],
+        },
+      },
+    },
+    select: {
+      productId: true,
+      price: true,
+      quantity: true,
+    },
+  });
 
+  // Build a map of productId to category
+  const productToCategoryMap = new Map<string, string>();
+  categories.forEach((category) => {
     category.products.forEach((product) => {
-      product.orderItems.forEach((item) => {
-        if (
-          item.order.status === OrderStatus.PAID ||
-          item.order.status === OrderStatus.SHIPPED ||
-          item.order.status === OrderStatus.DELIVERED
-        ) {
-          totalRevenue += item.price * item.quantity;
-          totalSold += item.quantity;
-        }
-      });
+      productToCategoryMap.set(product.id, category.id);
     });
+  });
 
+  // Aggregate stats by category
+  const categoryStatsMap = new Map<
+    string,
+    { revenue: number; itemsSold: number }
+  >();
+
+  allOrderItems.forEach((item) => {
+    const categoryId = productToCategoryMap.get(item.productId);
+    if (categoryId) {
+      const existing = categoryStatsMap.get(categoryId) || {
+        revenue: 0,
+        itemsSold: 0,
+      };
+      categoryStatsMap.set(categoryId, {
+        revenue: existing.revenue + item.price * item.quantity,
+        itemsSold: existing.itemsSold + item.quantity,
+      });
+    }
+  });
+
+  // Build final result
+  const categoryStats = categories.map((category) => {
+    const stats = categoryStatsMap.get(category.id) || {
+      revenue: 0,
+      itemsSold: 0,
+    };
     return {
       name: category.name,
-      revenue: totalRevenue,
-      itemsSold: totalSold,
+      revenue: stats.revenue,
+      itemsSold: stats.itemsSold,
       productCount: category.products.length,
     };
   });
