@@ -33,10 +33,21 @@ export function LoginForm(props: React.ComponentProps<typeof Card>) {
   useEffect(() => {
     if (searchParams.get("error") === "email-exists") {
       toast.error(
-        "An account with this email already exists. Please sign in using your original method."
+        "An account with this email already exists. Please sign in using your original method.",
       );
 
       // Clean the URL so toast doesn’t repeat
+      router.replace("/login");
+    }
+    if (searchParams.get("error") === "account-deactivated") {
+      toast.error(
+        "Account not found. Please check your credentials or create a new account.",
+      );
+      router.replace("/login");
+    }
+
+    if (searchParams.get("deleted") === "true") {
+      toast.success("Your account has been deleted successfully.");
       router.replace("/login");
     }
   }, [searchParams, router]);

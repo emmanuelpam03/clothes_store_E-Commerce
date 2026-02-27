@@ -519,3 +519,107 @@ export async function cancelOrderAdmin(orderId: string) {
   revalidatePath(`/admin/orders/${orderId}`);
   return { success: true };
 }
+
+// Admin User Management
+export async function getAllUsersAdmin() {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN") {
+    throw new Error("Unauthorized");
+  }
+
+  const users = await prisma.user.findMany({
+    where: {
+      active: true, // Only show active users
+    },
+    include: {
+      _count: {
+        select: {
+          orders: true,
+          favorites: true,
+        },
+      },
+    },
+    orderBy: {
+      email: "asc",
+    },
+  });
+
+  return users;
+}
+
+export async function getUserByIdAdmin(userId: string) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN") {
+    throw new Error("Unauthorized");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      orders: {
+        orderBy: { createdAt: "desc" },
+        take: 10,
+      },
+      _count: {
+        select: {
+          orders: true,
+          favorites: true,
+        },
+      },
+    },
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  return user;
+}
+
+export async function updateUserRoleAdmin(
+  userId: string,
+  role: "USER" | "ADMIN",
+) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN") {
+    throw new Error("Unauthorized");
+  }
+
+  // Prevent changing own role
+  if (session.user.id === userId) {
+    throw new Error("Cannot change your own role");
+  }
+
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data: { role },
+  });
+
+  revalidatePath("/admin/users");
+  revalidatePath(`/admin/users/${userId}`);
+  return { success: true, user };
+}
+
+export async function deleteUserAdmin(userId: string) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN") {
+    throw new Error("Unauthorized");
+  }
+
+  // Prevent deleting own account
+  if (session.user.id === userId) {
+    throw new Error("Cannot delete your own account");
+  }
+
+  // Soft delete: mark as inactive and set deletedAt timestamp
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      active: false,
+      deletedAt: new Date(),
+    },
+  });
+
+  revalidatePath("/admin/users");
+  return { success: true };
+}

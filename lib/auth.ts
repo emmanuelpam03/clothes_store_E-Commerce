@@ -96,6 +96,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
+        // Reject if account is deactivated
+        if (!user.active) {
+          return null;
+        }
+
         // Compare password hash
         const validPassword = await bcrypt.compare(password, user.password);
         if (!validPassword) {
@@ -155,10 +160,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           // If not linked, check if email is taken by a user
           const existingUser = await prisma.user.findUnique({
             where: { email: user.email! },
-            select: { id: true },
+            select: { id: true, active: true },
           });
 
           if (existingUser) {
+            // If account exists and is deactivated, block login
+            if (!existingUser.active) {
+              return "/login?error=account-deactivated";
+            }
             return "/login?error=email-exists";
           }
         }
@@ -223,14 +232,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         return token;
       }
 
+      // Validate that user still exists and is active
       if (token.sub) {
-        const dbUser = await prisma.user.findUnique({
-          where: { id: token.sub },
-          select: { id: true },
-        });
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.sub },
+            select: { id: true, active: true },
+          });
 
-        if (!dbUser) {
-          return null;
+          // Invalidate session if user doesn't exist or is deactivated
+          if (!dbUser || !dbUser.active) {
+            return null;
+          }
+        } catch (error) {
+          // If database check fails, continue with existing token
+          // This prevents sessions from breaking due to transient errors
+          console.error("Failed to validate user in JWT callback:", error);
         }
       }
 

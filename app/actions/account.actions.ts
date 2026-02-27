@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@/lib/auth";
+import { auth, signOut } from "@/lib/auth";
 import { sendVerificationEmail } from "@/lib/email";
 import prisma from "@/lib/prisma";
 // import { rateLimit } from "@/lib/rate-limit";
@@ -257,4 +257,28 @@ export async function resendVerificationCodeAction() {
 
   // ✅ SEND REAL EMAIL
   await sendVerificationEmail(email, code);
+}
+
+/**
+ * DELETE ACCOUNT ACTION (SOFT DELETE)
+ * Deactivates the user's account and signs them out
+ */
+export async function deleteAccountAction() {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    redirect("/login");
+  }
+
+  // Soft delete: mark account as inactive
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: {
+      active: false,
+      deletedAt: new Date(),
+    },
+  });
+
+  // Sign the user out
+  await signOut({ redirectTo: "/login?deleted=true" });
 }

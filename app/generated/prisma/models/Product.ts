@@ -616,10 +616,6 @@ export type ProductCreatetagsInput = {
   set: string[]
 }
 
-export type BoolFieldUpdateOperationsInput = {
-  set?: boolean
-}
-
 export type ProductUpdatesizesInput = {
   set?: string[]
   push?: string | string[]

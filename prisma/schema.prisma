@@ -51,6 +51,8 @@ model User {
   image                   String?
   role                    Role                     @default(USER)
   password                String?
+  active                  Boolean                  @default(true)
+  deletedAt               DateTime?                @map("deleted_at")
   accounts                Account[]
   sessions                Session[]
   emailVerificationTokens EmailVerificationToken[]

@@ -9,10 +9,13 @@ import {
 import { getAdminStats } from "@/app/actions/admin.actions";
 import prisma from "@/lib/prisma";
 
+// Force dynamic rendering to always show fresh data
+export const dynamic = "force-dynamic";
+
 type Order = {
   id: string;
   customer: string;
-  status: "Pending" | "Completed" | "Cancelled";
+  status: "PENDING" | "PAID" | "SHIPPED" | "DELIVERED" | "CANCELLED";
   amount: string;
   date: string;
 };
@@ -23,19 +26,22 @@ const orderColumns: Column<Order>[] = [
   {
     key: "status",
     label: "Status",
-    render: (v) => (
-      <span
-        className={`text-xs font-semibold px-3 py-1 rounded-full ${
-          v === "Completed"
-            ? "bg-green-100 text-green-700"
-            : v === "Pending"
-              ? "bg-yellow-100 text-yellow-700"
-              : "bg-red-100 text-red-700"
-        }`}
-      >
-        {String(v)}
-      </span>
-    ),
+    render: (v) => {
+      const statusStyles = {
+        PENDING: "bg-yellow-100 text-yellow-700",
+        PAID: "bg-blue-100 text-blue-700",
+        SHIPPED: "bg-purple-100 text-purple-700",
+        DELIVERED: "bg-green-100 text-green-700",
+        CANCELLED: "bg-red-100 text-red-700",
+      };
+      return (
+        <span
+          className={`text-xs font-semibold px-3 py-1 rounded-full ${statusStyles[v as keyof typeof statusStyles]}`}
+        >
+          {String(v)}
+        </span>
+      );
+    },
   },
   { key: "amount", label: "Amount" },
   { key: "date", label: "Date" },
@@ -56,12 +62,7 @@ export default async function DashboardPage() {
   const recentOrders = recentOrdersData.map((order) => ({
     id: order.id,
     customer: order.user?.name || order.firstName + " " + order.lastName,
-    status:
-      order.status === "PAID"
-        ? ("Completed" as const)
-        : order.status === "PENDING"
-          ? ("Pending" as const)
-          : ("Cancelled" as const),
+    status: order.status,
     amount: `$${(order.total / 100).toFixed(2)}`,
     date: new Date(order.createdAt).toLocaleDateString(),
   }));

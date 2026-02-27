@@ -74,28 +74,32 @@ export default function OrderActions({
   };
 
   const handleCancelOrder = async () => {
-    if (
-      !confirm(
-        "Are you sure you want to cancel this order? This action cannot be undone.",
-      )
-    ) {
-      return;
-    }
-
-    setLoading(true);
-    try {
-      await cancelOrderAdmin(orderId);
-      setSelectedStatus("CANCELLED");
-      toast.success("Order cancelled successfully");
-      router.refresh();
-    } catch (error) {
-      console.error("Failed to cancel order:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Failed to cancel order",
-      );
-    } finally {
-      setLoading(false);
-    }
+    toast.warning("Are you sure you want to cancel this order?", {
+      description: "This action cannot be undone.",
+      action: {
+        label: "Cancel Order",
+        onClick: async () => {
+          setLoading(true);
+          try {
+            await cancelOrderAdmin(orderId);
+            setSelectedStatus("CANCELLED");
+            toast.success("Order cancelled successfully");
+            router.refresh();
+          } catch (error) {
+            console.error("Failed to cancel order:", error);
+            toast.error(
+              error instanceof Error ? error.message : "Failed to cancel order",
+            );
+          } finally {
+            setLoading(false);
+          }
+        },
+      },
+      cancel: {
+        label: "Cancel",
+        onClick: () => {},
+      },
+    });
   };
 
   const isDisabled =

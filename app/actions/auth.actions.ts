@@ -25,7 +25,7 @@ type LoginState = {
 
 export async function loginAction(
   _prev: LoginState,
-  formData: FormData
+  formData: FormData,
 ): Promise<LoginState> {
   const email = String(formData.get("email") ?? "");
   const password = String(formData.get("password") ?? "");
@@ -73,10 +73,9 @@ export async function loginAction(
   }
 }
 
-
 export async function registerAction(
   _prev: RegisterState,
-  formData: FormData
+  formData: FormData,
 ): Promise<RegisterState> {
   const rawData = {
     name: String(formData.get("name") ?? ""),
@@ -96,7 +95,7 @@ export async function registerAction(
       error: "Please ensure all inputs are valid",
       success: null,
       fieldErrors: Object.fromEntries(
-        Object.entries(fieldErrors).map(([k, v]) => [k, v?.[0] ?? ""])
+        Object.entries(fieldErrors).map(([k, v]) => [k, v?.[0] ?? ""]),
       ),
     };
   }
@@ -106,6 +105,31 @@ export async function registerAction(
   });
 
   if (existingUser) {
+    // If user exists and is deactivated, restore their account
+    if (!existingUser.active) {
+      const hashedPassword = await bcrypt.hash(rawData.password, 10);
+
+      await prisma.user.update({
+        where: { id: existingUser.id },
+        data: {
+          name: rawData.name,
+          password: hashedPassword,
+          active: true,
+          deletedAt: null,
+          emailVerified: null, // Require re-verification
+        },
+      });
+
+      return {
+        name: "",
+        email: "",
+        error: null,
+        success: "Account created successfully! Please verify your email.",
+        fieldErrors: {},
+      };
+    }
+
+    // User exists and is active
     return {
       name: rawData.name,
       email: rawData.email,
