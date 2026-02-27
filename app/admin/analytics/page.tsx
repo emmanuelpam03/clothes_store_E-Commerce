@@ -1,12 +1,13 @@
 import {
   TrendingUp,
-  TrendingDown,
   BarChart3,
   DollarSign,
   ShoppingCart,
   Users,
   Package,
 } from "lucide-react";
+import { unstable_noStore as noStore } from "next/cache";
+import Image from "next/image";
 import StatCard from "@/components/admin/StatCard";
 import RevenueChart from "@/components/admin/RevenueChart";
 import { auth } from "@/lib/auth";
@@ -20,6 +21,9 @@ import {
   getOrderStatusDistribution,
 } from "@/app/actions/analytics.actions";
 
+// Force dynamic rendering to always fetch fresh data
+export const dynamic = "force-dynamic";
+
 function formatCurrency(cents: number): string {
   return `$${(cents / 100).toFixed(2)}`;
 }
@@ -30,6 +34,8 @@ function formatChange(change: number): string {
 }
 
 export default async function AnalyticsPage() {
+  noStore(); // Prevent caching of analytics data
+
   const session = await auth();
   if (session?.user.role !== "ADMIN") {
     notFound(); // hides existence of route
@@ -119,10 +125,12 @@ export default async function AnalyticsPage() {
                       #{index + 1}
                     </span>
                     {product.image && (
-                      <img
+                      <Image
                         src={product.image}
                         alt={product.name || "Product"}
-                        className="w-12 h-12 object-cover rounded"
+                        width={48}
+                        height={48}
+                        className="object-cover rounded"
                       />
                     )}
                     <div>
