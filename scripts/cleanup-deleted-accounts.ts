@@ -51,13 +51,11 @@ async function cleanupDeletedAccounts() {
       `🗑️  Found ${accountsToDelete.length} account(s) to permanently delete`,
     );
     console.log("   Deletion timestamps:");
-    accountsToDelete.forEach(
-      (account: { id: string; deletedAt: Date | null }) => {
-        console.log(
-          `   - Account deleted on: ${account.deletedAt?.toISOString()}`,
-        );
-      },
-    );
+    accountsToDelete.forEach((account) => {
+      console.log(
+        `   - Account ${account.id} deleted on: ${account.deletedAt?.toISOString()}`,
+      );
+    });
 
     // Confirm deletion (in production, you might want to skip this prompt)
     console.log(
