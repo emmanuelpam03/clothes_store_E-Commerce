@@ -314,3 +314,155 @@ export async function backfillOrderItemSnapshots() {
 
   return { updated: items.length };
 }
+
+// Admin Order Management
+export async function getAllOrdersAdmin() {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN") {
+    throw new Error("Unauthorized");
+  }
+
+  const orders = await prisma.order.findMany({
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      items: {
+        include: {
+          product: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+              slug: true,
+            },
+          },
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  return orders;
+}
+
+export async function getOrderByIdAdmin(orderId: string) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN") {
+    throw new Error("Unauthorized");
+  }
+
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+      items: {
+        include: {
+          product: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+              slug: true,
+              active: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!order) {
+    throw new Error("Order not found");
+  }
+
+  return order;
+}
+
+export async function updateOrderStatusAdmin(
+  orderId: string,
+  status: "PENDING" | "PAID" | "SHIPPED" | "CANCELLED",
+) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN") {
+    throw new Error("Unauthorized");
+  }
+
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+  });
+
+  if (!order) {
+    throw new Error("Order not found");
+  }
+
+  const updatedOrder = await prisma.order.update({
+    where: { id: orderId },
+    data: { status },
+  });
+
+  revalidatePath("/admin/orders");
+  revalidatePath(`/admin/orders/${orderId}`);
+  return { success: true, order: updatedOrder };
+}
+
+export async function cancelOrderAdmin(orderId: string) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN") {
+    throw new Error("Unauthorized");
+  }
+
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: {
+      items: true,
+    },
+  });
+
+  if (!order) {
+    throw new Error("Order not found");
+  }
+
+  // If order was PAID or SHIPPED, we should restore inventory
+  if (order.status === "PAID" || order.status === "SHIPPED") {
+    await prisma.$transaction(async (tx) => {
+      // Restore inventory for cancelled orders
+      for (const item of order.items) {
+        await tx.inventory.update({
+          where: { productId: item.productId },
+          data: {
+            quantity: { increment: item.quantity },
+          },
+        });
+      }
+
+      // Update order status
+      await tx.order.update({
+        where: { id: orderId },
+        data: { status: "CANCELLED" },
+      });
+    });
+  } else {
+    // Just cancel if still pending
+    await prisma.order.update({
+      where: { id: orderId },
+      data: { status: "CANCELLED" },
+    });
+  }
+
+  revalidatePath("/admin/orders");
+  revalidatePath(`/admin/orders/${orderId}`);
+  return { success: true };
+}

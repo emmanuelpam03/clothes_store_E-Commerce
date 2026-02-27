@@ -22,15 +22,18 @@ interface UploadResult {
 
 /**
  * Upload a product image to Cloudinary
- * @param file - The image file to upload
+ * @param formData - FormData containing the image file
  * @param options - Optional configuration for the upload
  * @returns Object with success status and URL/error
  */
 export async function uploadProductImage(
-  file: File,
+  formData: FormData,
   options?: UploadOptions,
 ): Promise<UploadResult> {
   try {
+    // Extract file from FormData
+    const file = formData.get("file") as File;
+
     // Validate file
     if (!file) {
       return { success: false, error: "No file provided" };
@@ -105,15 +108,23 @@ export async function uploadProductImage(
  */
 export async function deleteProductImage(
   publicId: string,
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; result?: string }> {
   try {
     if (!publicId) {
       return { success: false, error: "No public ID provided" };
     }
 
-    await cloudinary.uploader.destroy(publicId);
+    const res = await cloudinary.uploader.destroy(publicId);
 
-    return { success: true };
+    if (res.result === "ok") {
+      return { success: true };
+    } else {
+      return {
+        success: false,
+        error: `Failed to delete image: ${res.result}`,
+        result: res.result,
+      };
+    }
   } catch (error) {
     console.error("Error deleting image from Cloudinary:", error);
     return {
@@ -128,22 +139,22 @@ export async function deleteProductImage(
 
 /**
  * Upload multiple product images to Cloudinary
- * @param files - Array of image files to upload
+ * @param formDataArray - Array of FormData objects containing image files
  * @param options - Optional configuration for the upload
  * @returns Array of upload results
  */
 export async function uploadMultipleProductImages(
-  files: File[],
+  formDataArray: FormData[],
   options?: UploadOptions,
 ): Promise<UploadResult[]> {
   try {
-    const uploadPromises = files.map((file) =>
-      uploadProductImage(file, options),
+    const uploadPromises = formDataArray.map((formData) =>
+      uploadProductImage(formData, options),
     );
     return await Promise.all(uploadPromises);
   } catch (error) {
     console.error("Error uploading multiple images:", error);
-    return files.map(() => ({
+    return formDataArray.map(() => ({
       success: false,
       error: "Failed to upload image. Please try again.",
     }));

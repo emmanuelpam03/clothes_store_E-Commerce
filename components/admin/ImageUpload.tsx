@@ -30,6 +30,7 @@ export default function ImageUpload({
   disabled = false,
 }: ImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [preview, setPreview] = useState<string | undefined>(value);
   const [publicId, setPublicId] = useState<string | undefined>();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -59,7 +60,11 @@ export default function ImageUpload({
     // Upload to Cloudinary
     setIsUploading(true);
     try {
-      const result = await uploadProductImage(file);
+      // Wrap file in FormData for server action
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const result = await uploadProductImage(formData);
 
       if (result.success && result.url) {
         toast.success("Image uploaded successfully!");
@@ -86,23 +91,36 @@ export default function ImageUpload({
   };
 
   const handleRemove = async () => {
-    // Delete from Cloudinary if we have a publicId
-    if (publicId) {
-      const result = await deleteProductImage(publicId);
-      if (!result.success) {
-        toast.error(result.error || "Failed to delete image");
-        return;
+    setIsDeleting(true);
+    try {
+      // Delete from Cloudinary if we have a publicId
+      if (publicId) {
+        const result = await deleteProductImage(publicId);
+        if (!result.success) {
+          toast.error(result.error || "Failed to delete image");
+          return;
+        }
       }
-    }
 
-    setPreview(undefined);
-    setPublicId(undefined);
-    onChange("");
-    onPublicIdChange?.("");
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+      // Only clear state after successful delete
+      setPreview(undefined);
+      setPublicId(undefined);
+      onChange("");
+      onPublicIdChange?.("");
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      toast.success("Image removed");
+    } catch (error) {
+      console.error("Delete error:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to delete image. Please try again.",
+      );
+    } finally {
+      setIsDeleting(false);
     }
-    toast.success("Image removed");
   };
 
   const handleClick = () => {
@@ -128,25 +146,29 @@ export default function ImageUpload({
               <Button
                 type="button"
                 onClick={handleClick}
-                disabled={disabled || isUploading}
+                disabled={disabled || isUploading || isDeleting}
                 size="sm"
                 variant="outline"
                 className="bg-white/90 hover:bg-white"
+                aria-label="Upload new image"
+                title="Upload new image"
               >
                 <Upload className="size-4" />
               </Button>
               <Button
                 type="button"
                 onClick={handleRemove}
-                disabled={disabled || isUploading}
+                disabled={disabled || isUploading || isDeleting}
                 size="sm"
                 variant="outline"
                 className="bg-white/90 hover:bg-white"
+                aria-label="Remove image"
+                title="Remove image"
               >
                 <X className="size-4" />
               </Button>
             </div>
-            {isUploading && (
+            {(isUploading || isDeleting) && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/50">
                 <Loader2 className="size-8 animate-spin text-white" />
               </div>
@@ -156,7 +178,7 @@ export default function ImageUpload({
           <button
             type="button"
             onClick={handleClick}
-            disabled={disabled || isUploading}
+            disabled={disabled || isUploading || isDeleting}
             className="flex aspect-square max-w-xs items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 transition-colors hover:border-slate-400 hover:bg-slate-100 disabled:pointer-events-none disabled:opacity-50"
           >
             <div className="flex flex-col items-center gap-2 p-8 text-slate-500">
@@ -182,7 +204,7 @@ export default function ImageUpload({
           type="file"
           accept="image/jpeg,image/png,image/webp,image/jpg"
           onChange={handleFileChange}
-          disabled={disabled || isUploading}
+          disabled={disabled || isUploading || isDeleting}
           className="hidden"
         />
       </div>

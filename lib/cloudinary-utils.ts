@@ -22,10 +22,15 @@ export function extractPublicId(url: string): string | null {
     // Get everything after /upload/ and before the file extension
     const afterUpload = urlParts.slice(uploadIndex + 1);
 
-    // Remove version if present (starts with v)
-    const withoutVersion = afterUpload.filter(
-      (part) => !part.startsWith("v") || isNaN(Number(part.substring(1))),
-    );
+    // Remove version and transformation segments
+    const withoutVersion = afterUpload.filter((part) => {
+      // Skip version parts (e.g., v1234567890)
+      const isVersion =
+        part.startsWith("v") && !isNaN(Number(part.substring(1)));
+      // Skip transformation parts (contain _ or , which are transform delimiters)
+      const isTransformation = part.includes("_") || part.includes(",");
+      return !isVersion && !isTransformation;
+    });
 
     // Join and remove file extension
     const publicIdWithExt = withoutVersion.join("/");
