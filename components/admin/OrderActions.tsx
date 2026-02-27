@@ -24,11 +24,11 @@ export default function OrderActions({
   const [selectedStatus, setSelectedStatus] =
     useState<OrderStatus>(currentStatus);
 
-  // Define valid state transitions - balanced approach
+  // Define valid state transitions - enforce proper tracking
   const getValidNextStates = (status: OrderStatus): OrderStatus[] => {
     const transitions: Record<OrderStatus, OrderStatus[]> = {
-      PENDING: ["PAID", "SHIPPED"], // Allow skipping payment for COD
-      PAID: ["SHIPPED", "DELIVERED"], // Allow skipping shipped if already delivered
+      PENDING: ["PAID", "SHIPPED"], // COD orders can skip payment (PENDING → SHIPPED)
+      PAID: ["SHIPPED"], // Prepaid orders must be shipped before delivery
       SHIPPED: ["DELIVERED"],
       DELIVERED: [],
       CANCELLED: [],

@@ -417,10 +417,10 @@ export async function updateOrderStatusAdmin(
 
   const currentStatus = order.status;
 
-  // Validate state transitions - balanced approach
+  // Validate state transitions - enforce proper tracking
   const validTransitions: Record<string, string[]> = {
-    PENDING: ["PAID", "SHIPPED"], // Allow skipping payment for COD
-    PAID: ["SHIPPED", "DELIVERED"], // Allow skipping shipped if already delivered
+    PENDING: ["PAID", "SHIPPED"], // COD orders can skip payment (PENDING → SHIPPED)
+    PAID: ["SHIPPED"], // Prepaid orders must be shipped before delivery
     SHIPPED: ["DELIVERED"],
     DELIVERED: [], // Terminal state
     CANCELLED: [], // Terminal state
