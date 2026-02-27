@@ -22,13 +22,68 @@ export function extractPublicId(url: string): string | null {
     // Get everything after /upload/ and before the file extension
     const afterUpload = urlParts.slice(uploadIndex + 1);
 
+    // Cloudinary transformation parameter prefixes (based on official documentation)
+    // See: https://cloudinary.com/documentation/transformation_reference
+    const transformPrefixes = [
+      "w_",
+      "h_",
+      "c_",
+      "ar_",
+      "g_",
+      "x_",
+      "y_",
+      "r_",
+      "e_",
+      "l_",
+      "t_",
+      "q_",
+      "f_",
+      "dpr_",
+      "fl_",
+      "bo_",
+      "co_",
+      "o_",
+      "b_",
+      "a_",
+      "dn_",
+      "pg_",
+      "dl_",
+      "vs_",
+      "so_",
+      "eo_",
+      "du_",
+      "z_",
+      "d_",
+      "if_",
+      "ac_",
+      "af_",
+      "br_",
+      "cs_",
+      "ki_",
+      "vc_",
+      "fps_",
+      "sp_",
+      "u_",
+    ];
+
     // Remove version and transformation segments
     const withoutVersion = afterUpload.filter((part) => {
       // Skip version parts (e.g., v1234567890)
       const isVersion =
         part.startsWith("v") && !isNaN(Number(part.substring(1)));
-      // Skip transformation parts (contain _ or , which are transform delimiters)
-      const isTransformation = part.includes("_") || part.includes(",");
+
+      // Skip transformation parts: check if part starts with known transformation prefixes
+      // or contains multiple comma-separated transformation parameters
+      const isTransformation =
+        transformPrefixes.some((prefix) => part.startsWith(prefix)) ||
+        // Check if it's a compound transformation (e.g., "w_200,h_300,c_fill")
+        (part.includes(",") &&
+          transformPrefixes.some((prefix) =>
+            part
+              .split(",")
+              .some((segment) => segment.trim().startsWith(prefix)),
+          ));
+
       return !isVersion && !isTransformation;
     });
 

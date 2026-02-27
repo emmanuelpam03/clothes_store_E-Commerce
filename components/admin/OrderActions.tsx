@@ -24,7 +24,13 @@ export default function OrderActions({
     useState<OrderStatus>(currentStatus);
 
   const handleStatusChange = async (newStatus: OrderStatus) => {
-    if (newStatus === currentStatus || loading) return;
+    if (newStatus === selectedStatus || loading) return;
+
+    // Prevent selecting CANCELLED from dropdown - must use Cancel button
+    if (newStatus === "CANCELLED") {
+      alert("Please use the Cancel button to cancel orders.");
+      return;
+    }
 
     setLoading(true);
     try {
@@ -65,7 +71,8 @@ export default function OrderActions({
     }
   };
 
-  const isDisabled = currentStatus === "CANCELLED" || loading;
+  const isDisabled =
+    selectedStatus === "CANCELLED" || selectedStatus === "SHIPPED" || loading;
 
   return (
     <div className="flex items-center gap-2">
@@ -78,10 +85,10 @@ export default function OrderActions({
         <option value="PENDING">Pending</option>
         <option value="PAID">Paid</option>
         <option value="SHIPPED">Shipped</option>
-        <option value="CANCELLED">Cancelled</option>
+        {/* CANCELLED is removed - use Cancel button instead */}
       </select>
 
-      {currentStatus !== "CANCELLED" && (
+      {selectedStatus !== "CANCELLED" && (
         <button
           onClick={handleCancelOrder}
           disabled={loading}

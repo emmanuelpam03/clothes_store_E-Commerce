@@ -400,12 +400,40 @@ export async function updateOrderStatusAdmin(
     throw new Error("Unauthorized");
   }
 
+  // Reject direct cancellation - must use cancelOrderAdmin
+  if (status === "CANCELLED") {
+    throw new Error(
+      "Cannot set status to CANCELLED directly. Use cancelOrderAdmin to properly handle inventory restoration.",
+    );
+  }
+
   const order = await prisma.order.findUnique({
     where: { id: orderId },
   });
 
   if (!order) {
     throw new Error("Order not found");
+  }
+
+  const currentStatus = order.status;
+
+  // Validate state transitions
+  const validTransitions: Record<string, string[]> = {
+    PENDING: ["PAID", "SHIPPED"],
+    PAID: ["SHIPPED"],
+    SHIPPED: [], // Terminal state
+    CANCELLED: [], // Terminal state
+  };
+
+  const allowedNextStates = validTransitions[currentStatus] || [];
+
+  if (!allowedNextStates.includes(status)) {
+    throw new Error(
+      `Invalid status transition: Cannot change order from ${currentStatus} to ${status}. ` +
+        (allowedNextStates.length > 0
+          ? `Valid transitions: ${allowedNextStates.join(", ")}`
+          : "This order status is final and cannot be changed."),
+    );
   }
 
   const updatedOrder = await prisma.order.update({
@@ -440,15 +468,29 @@ export async function cancelOrderAdmin(orderId: string) {
     await prisma.$transaction(async (tx) => {
       // Restore inventory for cancelled orders
       for (const item of order.items) {
-        await tx.inventory.update({
-          where: { productId: item.productId },
-          data: {
-            quantity: { increment: item.quantity },
-          },
-        });
+        // Use upsert to handle missing inventory records gracefully
+        try {
+          await tx.inventory.upsert({
+            where: { productId: item.productId },
+            update: {
+              quantity: { increment: item.quantity },
+            },
+            create: {
+              productId: item.productId,
+              quantity: item.quantity,
+            },
+          });
+        } catch (error) {
+          // Log warning if inventory restoration fails for a specific item
+          console.warn(
+            `Warning: Failed to restore inventory for product ${item.productId} in cancelled order ${orderId}:`,
+            error,
+          );
+          // Continue processing other items
+        }
       }
 
-      // Update order status
+      // Update order status - always runs even if some inventory updates failed
       await tx.order.update({
         where: { id: orderId },
         data: { status: "CANCELLED" },

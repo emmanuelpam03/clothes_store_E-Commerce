@@ -105,12 +105,18 @@ export default async function OrderDetailsPage({ params }: PageProps) {
                     )}
                   </div>
                   <div className="flex-1">
-                    <Link
-                      href={`/products/${item.product.slug}`}
-                      className="font-semibold text-slate-900 hover:text-blue-600"
-                    >
-                      {item.name || item.product.name}
-                    </Link>
+                    {item.product ? (
+                      <Link
+                        href={`/products/${item.product.slug}`}
+                        className="font-semibold text-slate-900 hover:text-blue-600"
+                      >
+                        {item.name || item.product.name}
+                      </Link>
+                    ) : (
+                      <span className="font-semibold text-slate-900">
+                        {item.name || "Unknown Product"}
+                      </span>
+                    )}
                     <div className="text-sm text-slate-600 mt-1">
                       {item.size && <span>Size: {item.size}</span>}
                       {item.color && (
@@ -120,7 +126,7 @@ export default async function OrderDetailsPage({ params }: PageProps) {
                     <div className="text-sm text-slate-600 mt-1">
                       Quantity: {item.quantity}
                     </div>
-                    {!item.product.active && (
+                    {item.product && !item.product.active && (
                       <span className="text-xs text-red-600 mt-1 inline-block">
                         Product Inactive
                       </span>
@@ -162,7 +168,8 @@ export default async function OrderDetailsPage({ params }: PageProps) {
                   </div>
                 </div>
               </div>
-              {order.updatedAt.getTime() !== order.createdAt.getTime() && (
+              {new Date(order.updatedAt).getTime() !==
+                new Date(order.createdAt).getTime() && (
                 <div className="flex gap-3">
                   <div className="w-2 h-2 rounded-full bg-blue-500 mt-2"></div>
                   <div>

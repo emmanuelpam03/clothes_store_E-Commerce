@@ -88,8 +88,14 @@ export default async function OrdersPage() {
     notFound(); // hides existence of route
   }
 
-  const dbOrders = await getAllOrdersAdmin();
-
+  let dbOrders;
+  try {
+    dbOrders = await getAllOrdersAdmin();
+  } catch (error) {
+    console.error("Failed to fetch orders:", error);
+    // Return error UI or rethrow to trigger error boundary
+    throw error;
+  }
   const orders: Order[] = dbOrders.map((order) => ({
     id: order.id,
     customer: order.user.name || "Unknown",
