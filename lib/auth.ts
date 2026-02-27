@@ -101,6 +101,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
+        // Reject if email is not verified
+        if (!user.emailVerified) {
+          return null;
+        }
+
         // Compare password hash
         const validPassword = await bcrypt.compare(password, user.password);
         if (!validPassword) {

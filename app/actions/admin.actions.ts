@@ -573,7 +573,18 @@ export async function getUserByIdAdmin(userId: string) {
     throw new Error("User not found");
   }
 
-  return user;
+  // Calculate total spent across ALL orders (not just the 10 recent ones)
+  const ordersTotal = await prisma.order.aggregate({
+    where: { userId },
+    _sum: {
+      total: true,
+    },
+  });
+
+  return {
+    ...user,
+    ordersTotal: ordersTotal._sum.total || 0,
+  };
 }
 
 export async function updateUserRoleAdmin(
@@ -588,6 +599,20 @@ export async function updateUserRoleAdmin(
   // Prevent changing own role
   if (session.user.id === userId) {
     throw new Error("Cannot change your own role");
+  }
+
+  // Verify target user exists and is active
+  const targetUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, active: true },
+  });
+
+  if (!targetUser) {
+    throw new Error("User not found");
+  }
+
+  if (!targetUser.active) {
+    throw new Error("Cannot modify role of deleted/inactive user");
   }
 
   const user = await prisma.user.update({
@@ -609,6 +634,20 @@ export async function deleteUserAdmin(userId: string) {
   // Prevent deleting own account
   if (session.user.id === userId) {
     throw new Error("Cannot delete your own account");
+  }
+
+  // Verify user exists and is not already deleted
+  const targetUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, active: true, deletedAt: true },
+  });
+
+  if (!targetUser) {
+    throw new Error("User not found");
+  }
+
+  if (!targetUser.active || targetUser.deletedAt) {
+    throw new Error("User is already deleted");
   }
 
   // Soft delete: mark as inactive and set deletedAt timestamp

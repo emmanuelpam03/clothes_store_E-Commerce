@@ -21,6 +21,7 @@ export default function OrderActions({
 }: OrderActionsProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [confirmingCancel, setConfirmingCancel] = useState(false);
   const [selectedStatus, setSelectedStatus] =
     useState<OrderStatus>(currentStatus);
 
@@ -74,6 +75,10 @@ export default function OrderActions({
   };
 
   const handleCancelOrder = async () => {
+    if (confirmingCancel || loading) return;
+
+    setConfirmingCancel(true);
+
     toast.warning("Are you sure you want to cancel this order?", {
       description: "This action cannot be undone.",
       action: {
@@ -92,12 +97,18 @@ export default function OrderActions({
             );
           } finally {
             setLoading(false);
+            setConfirmingCancel(false);
           }
         },
       },
       cancel: {
         label: "Cancel",
-        onClick: () => {},
+        onClick: () => {
+          setConfirmingCancel(false);
+        },
+      },
+      onDismiss: () => {
+        setConfirmingCancel(false);
       },
     });
   };
@@ -128,10 +139,10 @@ export default function OrderActions({
       {selectedStatus !== "CANCELLED" && selectedStatus !== "DELIVERED" && (
         <button
           onClick={handleCancelOrder}
-          disabled={loading}
+          disabled={loading || confirmingCancel}
           className="px-3 py-1 text-sm text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {loading ? "..." : "Cancel"}
+          {loading ? "..." : confirmingCancel ? "Confirming..." : "Cancel"}
         </button>
       )}
 

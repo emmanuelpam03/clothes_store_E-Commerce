@@ -196,7 +196,10 @@ export async function verifyEmailCodeAction(code: string) {
   // ✅ SUCCESS
   await prisma.user.update({
     where: { id: userId },
-    data: { emailVerified: new Date() },
+    data: {
+      emailVerified: new Date(),
+      active: true, // Activate account upon email verification (for both new and restored accounts)
+    },
   });
 
   await prisma.emailVerificationToken.delete({

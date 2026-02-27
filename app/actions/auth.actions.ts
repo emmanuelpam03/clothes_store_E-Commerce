@@ -5,8 +5,8 @@ import { registerSchema } from "@/lib/validators/register.schema";
 import { signIn, signOut } from "@/lib/auth";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
-// import { createEmailVerificationToken } from "@/lib/auth/email-verification";
-// import { sendVerificationEmail } from "@/lib/email";
+import { createEmailVerificationToken } from "@/lib/auth/email-verification";
+import { sendVerificationEmail } from "@/lib/email";
 
 type RegisterState = {
   name: string;
@@ -105,26 +105,32 @@ export async function registerAction(
   });
 
   if (existingUser) {
-    // If user exists and is deactivated, restore their account
+    // If user exists and is deactivated, prepare restoration but require verification
     if (!existingUser.active) {
       const hashedPassword = await bcrypt.hash(rawData.password, 10);
 
+      // Update password but keep account inactive until email is verified
       await prisma.user.update({
         where: { id: existingUser.id },
         data: {
           name: rawData.name,
           password: hashedPassword,
-          active: true,
           deletedAt: null,
-          emailVerified: null, // Require re-verification
+          emailVerified: null, // Must verify email to restore
+          // active stays false until verification
         },
       });
+
+      // Send verification email to prove ownership
+      const code = await createEmailVerificationToken(existingUser.id);
+      await sendVerificationEmail(rawData.email, code);
 
       return {
         name: "",
         email: "",
         error: null,
-        success: "Account created successfully! Please verify your email.",
+        success:
+          "Account created successfully! Please check your email for verification code.",
         fieldErrors: {},
       };
     }
@@ -161,17 +167,16 @@ export async function registerAction(
     };
   }
 
-  // // create token
-  // const token = await createEmailVerificationToken(user.id);
-
-  // // send email
-  // await sendVerificationEmail(user.email, token);
+  // Create token and send verification email
+  const code = await createEmailVerificationToken(user.id);
+  await sendVerificationEmail(user.email, code);
 
   return {
     name: "",
     email: "",
     error: null,
-    success: "Account created successfully",
+    success:
+      "Account created successfully! Please check your email for verification code.",
     fieldErrors: {},
   };
 }

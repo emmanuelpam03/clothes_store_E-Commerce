@@ -34,11 +34,17 @@ const orderColumns: Column<Order>[] = [
         DELIVERED: "bg-green-100 text-green-700",
         CANCELLED: "bg-red-100 text-red-700",
       };
+
+      const key = String(v);
+      const statusClass =
+        statusStyles[key as keyof typeof statusStyles] ||
+        "bg-gray-100 text-gray-700";
+
       return (
         <span
-          className={`text-xs font-semibold px-3 py-1 rounded-full ${statusStyles[v as keyof typeof statusStyles]}`}
+          className={`text-xs font-semibold px-3 py-1 rounded-full ${statusClass}`}
         >
-          {String(v)}
+          {key}
         </span>
       );
     },

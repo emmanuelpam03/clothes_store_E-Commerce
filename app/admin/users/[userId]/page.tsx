@@ -50,7 +50,14 @@ export default async function UserDetailsPage({ params }: PageProps) {
   if (!user) {
     notFound();
   }
-
+  // Determine the oldest order by finding the minimum createdAt date
+  // This is defensive and doesn't rely on array ordering from the API
+  const oldestOrder =
+    user.orders.length > 0
+      ? user.orders.reduce((oldest, order) =>
+          order.createdAt < oldest.createdAt ? order : oldest,
+        )
+      : null;
   const isCurrentUser = user.id === session.user.id;
 
   return (
@@ -152,7 +159,7 @@ export default async function UserDetailsPage({ params }: PageProps) {
                   </div>
                 </div>
               )}
-              {user.orders.length > 0 && (
+              {oldestOrder && (
                 <div className="flex gap-3">
                   <div className="w-2 h-2 rounded-full bg-green-500 mt-2"></div>
                   <div>
@@ -160,9 +167,7 @@ export default async function UserDetailsPage({ params }: PageProps) {
                       First Order
                     </div>
                     <div className="text-sm text-slate-600">
-                      {formatDate(
-                        user.orders[user.orders.length - 1].createdAt,
-                      )}
+                      {formatDate(oldestOrder.createdAt)}
                     </div>
                   </div>
                 </div>
@@ -231,9 +236,7 @@ export default async function UserDetailsPage({ params }: PageProps) {
               <div className="flex justify-between">
                 <span className="text-slate-600">Total Spent</span>
                 <span className="font-semibold text-slate-900">
-                  {formatCurrency(
-                    user.orders.reduce((sum, order) => sum + order.total, 0),
-                  )}
+                  {formatCurrency(user.ordersTotal)}
                 </span>
               </div>
             </div>
