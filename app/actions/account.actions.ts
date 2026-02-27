@@ -273,7 +273,10 @@ export async function deleteAccountAction() {
     redirect("/login");
   }
 
-  // Soft delete: mark account as inactive
+  // Soft delete: mark account as inactive and record deletion timestamp
+  // Account will remain in database for 90 days before permanent deletion
+  // User can reactivate within 90 days by registering with same email
+  // Permanent deletion is handled by scripts/cleanup-deleted-accounts.ts
   await prisma.user.update({
     where: { id: session.user.id },
     data: {

@@ -47,7 +47,9 @@ export function LoginForm(props: React.ComponentProps<typeof Card>) {
     }
 
     if (searchParams.get("deleted") === "true") {
-      toast.success("Your account has been deleted successfully.");
+      toast.success(
+        "Your account has been deactivated. You can reactivate it within 90 days by registering again with the same email.",
+      );
       router.replace("/login");
     }
   }, [searchParams, router]);

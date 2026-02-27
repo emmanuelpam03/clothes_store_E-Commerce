@@ -190,8 +190,8 @@ export default function ProfileClient({
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3">
           <p className="text-sm font-medium text-red-900">Delete Account</p>
           <p className="text-xs text-red-700 mt-1">
-            Permanently delete your account and all associated data. This action
-            cannot be undone.
+            Deactivate your account immediately. After 90 days of inactivity,
+            your account and all data will be permanently deleted.
           </p>
         </div>
 
@@ -202,7 +202,7 @@ export default function ProfileClient({
           }}
           className="w-full rounded-lg border border-red-500 bg-red-600 py-2 text-sm font-medium text-white hover:bg-red-700 cursor-pointer"
         >
-          Delete Account
+          Deactivate Account
         </button>
       </div>
 
@@ -255,13 +255,24 @@ export default function ProfileClient({
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div className="w-full max-w-sm rounded-xl bg-white p-6 space-y-5">
             <h3 className="text-base font-semibold text-red-600">
-              Delete Account?
+              Deactivate Account?
             </h3>
 
-            <p className="text-sm text-neutral-600">
-              This will permanently delete your account and all associated data.
-              You will be logged out immediately.
-            </p>
+            <div className="space-y-3 text-sm text-neutral-600">
+              <p>
+                Your account will be deactivated immediately and you'll be
+                logged out.
+              </p>
+              <p>
+                <strong className="text-neutral-900">After 90 days</strong>,
+                your account and all associated data will be permanently
+                deleted.
+              </p>
+              <p>
+                You can reactivate your account anytime within 90 days by
+                registering again with the same email.
+              </p>
+            </div>
 
             <label className="flex items-start gap-2 text-sm">
               <input
@@ -270,7 +281,10 @@ export default function ProfileClient({
                 checked={deleteConfirmed}
                 onChange={(e) => setDeleteConfirmed(e.target.checked)}
               />
-              <span>I understand this action cannot be undone.</span>
+              <span>
+                I understand my account will be deactivated for 90 days before
+                permanent deletion.
+              </span>
             </label>
 
             <div className="flex gap-3 pt-2">
@@ -291,7 +305,7 @@ export default function ProfileClient({
                       : "bg-red-300 cursor-not-allowed"
                   }`}
                 >
-                  Delete Account
+                  Deactivate Account
                 </button>
               </form>
             </div>
