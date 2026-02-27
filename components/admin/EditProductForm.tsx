@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import ImageUpload from "@/components/admin/ImageUpload";
+import ColorPicker from "@/components/admin/ColorPicker";
 
 type Product = {
   id: string;
@@ -54,7 +55,7 @@ export default function EditProductForm({ product }: EditProductFormProps) {
     image: product.image || "",
     categoryId: product.categoryId || "",
     sizes: product.sizes.join(", "),
-    colors: product.colors.join(", "),
+    colors: product.colors,
     tags: product.tags.join(", "),
     collection: product.collection || "",
     active: product.active,
@@ -80,6 +81,13 @@ export default function EditProductForm({ product }: EditProductFormProps) {
         [name]: value,
       }));
     }
+  };
+
+  const handleColorsChange = (colors: string[]) => {
+    setFormData((prev) => ({
+      ...prev,
+      colors: colors,
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -124,12 +132,7 @@ export default function EditProductForm({ product }: EditProductFormProps) {
                 .map((s) => s.trim())
                 .filter(Boolean)
             : [],
-          colors: formData.colors
-            ? formData.colors
-                .split(",")
-                .map((c) => c.trim())
-                .filter(Boolean)
-            : [],
+          colors: formData.colors,
           tags: formData.tags
             ? formData.tags
                 .split(",")
@@ -295,13 +298,9 @@ export default function EditProductForm({ product }: EditProductFormProps) {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="colors">Colors</Label>
-                  <Input
-                    id="colors"
-                    type="text"
-                    name="colors"
-                    value={formData.colors}
-                    onChange={handleChange}
-                    placeholder="Black, White, Blue"
+                  <ColorPicker
+                    selectedColors={formData.colors}
+                    onChange={handleColorsChange}
                   />
                 </div>
                 <div className="space-y-2">

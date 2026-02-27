@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import ImageUpload from "@/components/admin/ImageUpload";
+import ColorPicker from "@/components/admin/ColorPicker";
 
 export default function NewProductPage() {
   const router = useRouter();
@@ -31,7 +32,7 @@ export default function NewProductPage() {
     image: "",
     categoryId: "",
     sizes: "",
-    colors: "",
+    colors: [] as string[],
     tags: "",
     collection: "",
     active: true,
@@ -67,6 +68,13 @@ export default function NewProductPage() {
         ...(autoSlug !== undefined && { slug: autoSlug }),
       });
     }
+  };
+
+  const handleColorsChange = (colors: string[]) => {
+    setFormData({
+      ...formData,
+      colors: colors,
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -111,12 +119,7 @@ export default function NewProductPage() {
                 .map((s) => s.trim())
                 .filter(Boolean)
             : [],
-          colors: formData.colors
-            ? formData.colors
-                .split(",")
-                .map((c) => c.trim())
-                .filter(Boolean)
-            : [],
+          colors: formData.colors,
           tags: formData.tags
             ? formData.tags
                 .split(",")
@@ -282,13 +285,9 @@ export default function NewProductPage() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="colors">Colors</Label>
-                  <Input
-                    id="colors"
-                    type="text"
-                    name="colors"
-                    value={formData.colors}
-                    onChange={handleChange}
-                    placeholder="Black, White, Blue"
+                  <ColorPicker
+                    selectedColors={formData.colors}
+                    onChange={handleColorsChange}
                   />
                 </div>
                 <div className="space-y-2">

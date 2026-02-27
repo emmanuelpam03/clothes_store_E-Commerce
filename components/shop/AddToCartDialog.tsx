@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { useCart } from "@/lib/cart/cart";
 import { addToCartAction } from "@/app/actions/cart.actions";
 import { useSession } from "next-auth/react";
+import { parseColor } from "@/components/admin/ColorPicker";
 
 const DEFAULT_SIZES = ["XS", "S", "M", "L", "XL", "2X"];
 
@@ -218,22 +219,26 @@ export default function AddToCartDialog({ product, isOpen, onClose }: Props) {
         {/* color */}
         <div className="mb-5">
           <p className="text-xs uppercase text-neutral-500 mb-2">
-            Color{selectedColor && `: ${selectedColor}`}
+            Color
+            {selectedColor && `: ${parseColor(selectedColor).name}`}
           </p>
           <div className="flex flex-wrap gap-2">
-            {colors.map((color) => (
-              <button
-                key={color}
-                onClick={() => setSelectedColor(color)}
-                title={color}
-                className={`h-7 w-7 border-2 transition-transform ${
-                  selectedColor === color
-                    ? "border-black scale-110 ring-1 ring-black ring-offset-1"
-                    : "border-neutral-200 hover:scale-105"
-                }`}
-                style={{ backgroundColor: getColorValue(color) }}
-              />
-            ))}
+            {colors.map((color) => {
+              const parsed = parseColor(color);
+              return (
+                <button
+                  key={color}
+                  onClick={() => setSelectedColor(color)}
+                  title={parsed.name}
+                  className={`h-7 w-7 border-2 transition-transform ${
+                    selectedColor === color
+                      ? "border-black scale-110 ring-1 ring-black ring-offset-1"
+                      : "border-neutral-200 hover:scale-105"
+                  }`}
+                  style={{ backgroundColor: parsed.value }}
+                />
+              );
+            })}
           </div>
         </div>
 

@@ -24,6 +24,7 @@ import {
 } from "@/app/actions/cart.actions";
 import { getProductsByIds } from "@/app/actions/product.actions";
 import { useFavorites } from "@/lib/favorites/useFavorites";
+import { parseColor } from "@/components/admin/ColorPicker";
 
 const DEFAULT_SIZES = ["XS", "S", "M", "L", "XL", "2X"];
 const DEFAULT_COLORS = ["Black", "White", "Gray", "Blue", "Red", "Green"];
@@ -460,11 +461,13 @@ export default function ShoppingBag() {
                         aria-label="Select color"
                         className="px-3 py-2 min-w-[90px] border border-neutral-300 rounded-md text-xs font-medium cursor-pointer hover:border-black transition-all focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-1 flex items-center justify-between gap-2"
                         style={{
-                          backgroundColor: getColorValue(item.color),
+                          backgroundColor: getColorValue(
+                            parseColor(item.color).value,
+                          ),
                           color: isDarkColor(item.color) ? "white" : "black",
                         }}
                       >
-                        <span>{item.color}</span>
+                        <span>{parseColor(item.color).name}</span>
                         <ChevronDown size={12} />
                       </button>
                       {openDropdown === `color-${item.id}` && (
@@ -476,70 +479,75 @@ export default function ShoppingBag() {
                           {(
                             productsData.get(item.productId)?.colors ||
                             DEFAULT_COLORS
-                          ).map((color, idx) => (
-                            <button
-                              key={color}
-                              ref={(el) => {
-                                const refKey = `color-${item.id}-${idx}`;
-                                if (el) {
-                                  optionRefs.current.set(refKey, el);
-                                } else {
-                                  optionRefs.current.delete(refKey);
-                                }
-                              }}
-                              role="option"
-                              aria-selected={item.color === color}
-                              tabIndex={focusedIndex === idx ? 0 : -1}
-                              onClick={() => {
-                                handleUpdateItem(item.id, "color", color);
-                                setOpenDropdown(null);
-                                setFocusedIndex(-1);
-                              }}
-                              onKeyDown={(e) => {
-                                const colors =
-                                  productsData.get(item.productId)?.colors ||
-                                  DEFAULT_COLORS;
-                                if (e.key === "Enter" || e.key === " ") {
-                                  e.preventDefault();
+                          ).map((color, idx) => {
+                            const parsed = parseColor(color);
+                            return (
+                              <button
+                                key={color}
+                                ref={(el) => {
+                                  const refKey = `color-${item.id}-${idx}`;
+                                  if (el) {
+                                    optionRefs.current.set(refKey, el);
+                                  } else {
+                                    optionRefs.current.delete(refKey);
+                                  }
+                                }}
+                                role="option"
+                                aria-selected={item.color === color}
+                                tabIndex={focusedIndex === idx ? 0 : -1}
+                                onClick={() => {
                                   handleUpdateItem(item.id, "color", color);
                                   setOpenDropdown(null);
                                   setFocusedIndex(-1);
-                                } else if (e.key === "ArrowDown") {
-                                  e.preventDefault();
-                                  setFocusedIndex(
-                                    idx === colors.length - 1 ? 0 : idx + 1,
-                                  );
-                                } else if (e.key === "ArrowUp") {
-                                  e.preventDefault();
-                                  setFocusedIndex(
-                                    idx === 0 ? colors.length - 1 : idx - 1,
-                                  );
-                                } else if (e.key === "Escape") {
-                                  e.preventDefault();
-                                  setOpenDropdown(null);
-                                  setFocusedIndex(-1);
-                                }
-                              }}
-                              onFocus={() => setFocusedIndex(idx)}
-                              className={`w-full px-3 py-2 text-xs font-medium text-left hover:bg-neutral-50 transition flex items-center gap-2 ${
-                                item.color === color
-                                  ? "bg-neutral-50 font-semibold"
-                                  : ""
-                              } ${
-                                focusedIndex === idx
-                                  ? "ring-2 ring-black ring-inset"
-                                  : ""
-                              }`}
-                            >
-                              <div
-                                className="w-4 h-4 rounded-full border border-neutral-300"
-                                style={{
-                                  backgroundColor: getColorValue(color),
                                 }}
-                              />
-                              {color}
-                            </button>
-                          ))}
+                                onKeyDown={(e) => {
+                                  const colors =
+                                    productsData.get(item.productId)?.colors ||
+                                    DEFAULT_COLORS;
+                                  if (e.key === "Enter" || e.key === " ") {
+                                    e.preventDefault();
+                                    handleUpdateItem(item.id, "color", color);
+                                    setOpenDropdown(null);
+                                    setFocusedIndex(-1);
+                                  } else if (e.key === "ArrowDown") {
+                                    e.preventDefault();
+                                    setFocusedIndex(
+                                      idx === colors.length - 1 ? 0 : idx + 1,
+                                    );
+                                  } else if (e.key === "ArrowUp") {
+                                    e.preventDefault();
+                                    setFocusedIndex(
+                                      idx === 0 ? colors.length - 1 : idx - 1,
+                                    );
+                                  } else if (e.key === "Escape") {
+                                    e.preventDefault();
+                                    setOpenDropdown(null);
+                                    setFocusedIndex(-1);
+                                  }
+                                }}
+                                onFocus={() => setFocusedIndex(idx)}
+                                className={`w-full px-3 py-2 text-xs font-medium text-left hover:bg-neutral-50 transition flex items-center gap-2 ${
+                                  item.color === color
+                                    ? "bg-neutral-50 font-semibold"
+                                    : ""
+                                } ${
+                                  focusedIndex === idx
+                                    ? "ring-2 ring-black ring-inset"
+                                    : ""
+                                }`}
+                              >
+                                <div
+                                  className="w-4 h-4 rounded-full border border-neutral-300"
+                                  style={{
+                                    backgroundColor: getColorValue(
+                                      parsed.value,
+                                    ),
+                                  }}
+                                />
+                                {parsed.name}
+                              </button>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
