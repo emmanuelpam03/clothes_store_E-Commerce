@@ -3,7 +3,6 @@ import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import prisma from "@/lib/prisma";
-import bcrypt from "bcryptjs";
 
 /**
  * Main NextAuth configuration
@@ -83,6 +82,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
+        // Lazy import bcrypt to avoid Edge runtime issues in middleware
+        const bcrypt = await import("bcryptjs");
+
         const email = String(credentials.email);
         const password = String(credentials.password);
 
@@ -101,10 +103,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
-        // Reject if email is not verified
-        if (!user.emailVerified) {
-          return null;
-        }
+        // Allow login even if email is not verified
+        // Middleware will redirect to /verify page
 
         // Compare password hash
         const validPassword = await bcrypt.compare(password, user.password);
@@ -232,6 +232,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               },
             });
           }
+
+          // Fetch initial emailVerified status from DB
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.sub },
+            select: { emailVerified: true },
+          });
+          token.emailVerified = dbUser?.emailVerified ?? null;
         }
 
         return token;
@@ -242,13 +249,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         try {
           const dbUser = await prisma.user.findUnique({
             where: { id: token.sub },
-            select: { id: true, active: true },
+            select: { id: true, active: true, emailVerified: true },
           });
 
           // Invalidate session if user doesn't exist or is deactivated
           if (!dbUser || !dbUser.active) {
             return null;
           }
+
+          // Refresh emailVerified from database (important for verification flow)
+          token.emailVerified = dbUser.emailVerified;
         } catch (error) {
           // If database check fails, continue with existing token
           // This prevents sessions from breaking due to transient errors

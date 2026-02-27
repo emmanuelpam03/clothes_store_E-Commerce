@@ -38,8 +38,6 @@ async function cleanupDeletedAccounts() {
       },
       select: {
         id: true,
-        email: true,
-        name: true,
         deletedAt: true,
       },
     });
@@ -50,16 +48,13 @@ async function cleanupDeletedAccounts() {
     }
 
     console.log(
-      `🗑️  Found ${accountsToDelete.length} account(s) to permanently delete:`,
+      `🗑️  Found ${accountsToDelete.length} account(s) to permanently delete`,
     );
+    console.log("   Deletion timestamps:");
     accountsToDelete.forEach(
-      (account: {
-        email: string | null;
-        name: string | null;
-        deletedAt: Date | null;
-      }) => {
+      (account: { id: string; deletedAt: Date | null }) => {
         console.log(
-          `   - ${account.email} (${account.name}) - Deleted on: ${account.deletedAt?.toISOString()}`,
+          `   - Account deleted on: ${account.deletedAt?.toISOString()}`,
         );
       },
     );

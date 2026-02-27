@@ -16,8 +16,14 @@ export async function requireUnverifiedUser() {
     select: { emailVerified: true },
   });
 
-  if (!user || user.emailVerified) {
-    redirect("/profile");
+  // If user doesn't exist in DB, redirect to login
+  if (!user) {
+    redirect("/login");
+  }
+
+  // If email is already verified, redirect to home
+  if (user.emailVerified) {
+    redirect("/");
   }
 
   return session.user;

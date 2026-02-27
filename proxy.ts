@@ -21,8 +21,32 @@ export async function proxy(request: NextRequest) {
     }
   }
 
+  // Public routes that don't require email verification
+  const publicRoutes = ["/login", "/register", "/verify"];
+  const isPublicRoute = publicRoutes.some((route) =>
+    pathname.startsWith(route),
+  );
+
   // Block logged-in users from login & register
   if (validSession && (pathname === "/login" || pathname === "/register")) {
+    return NextResponse.redirect(new URL("/", request.url));
+  }
+
+  // If user is logged in but email is not verified
+  if (validSession && !validSession.user.emailVerified) {
+    // Allow access to public routes (login, register, verify)
+    if (!isPublicRoute) {
+      // Redirect to verify page for all other routes
+      return NextResponse.redirect(new URL("/verify", request.url));
+    }
+  }
+
+  // If email is verified and trying to access /verify, redirect to home
+  if (
+    validSession &&
+    validSession.user.emailVerified &&
+    pathname === "/verify"
+  ) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
@@ -45,6 +69,8 @@ export async function proxy(request: NextRequest) {
 
   return NextResponse.next();
 }
+
+export default proxy;
 
 export const config = {
   matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],

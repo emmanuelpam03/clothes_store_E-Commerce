@@ -1,8 +1,8 @@
 import VerifyEmailClient from "@/components/auth/verifyEmailClient";
-import { requireUnverifiedUser } from "@/lib/auth/require-unverified";
 
 export default async function VerifyEmailPage() {
-  await requireUnverifiedUser();
-
+  // Auth checks handled by proxy.ts - it redirects:
+  // - Unverified users TO /verify (from other pages)
+  // - Verified users AWAY from /verify (to home)
   return <VerifyEmailClient />;
 }

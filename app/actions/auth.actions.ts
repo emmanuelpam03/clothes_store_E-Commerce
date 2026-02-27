@@ -2,11 +2,12 @@
 
 import { loginSchema } from "@/lib/validators/login.schema";
 import { registerSchema } from "@/lib/validators/register.schema";
-import { signIn, signOut } from "@/lib/auth";
+import { signIn, signOut, auth } from "@/lib/auth";
 import bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
 import { createEmailVerificationToken } from "@/lib/auth/email-verification";
 import { sendVerificationEmail } from "@/lib/email";
+import { redirect } from "next/navigation";
 
 type RegisterState = {
   name: string;
@@ -125,12 +126,14 @@ export async function registerAction(
       const code = await createEmailVerificationToken(existingUser.id);
       await sendVerificationEmail(rawData.email, code);
 
+      // Note: Cannot auto-login here because account is still inactive
+      // User must verify email first, which will activate the account
       return {
         name: "",
         email: "",
         error: null,
         success:
-          "Account created successfully! Please check your email for verification code.",
+          "Account reactivation initiated! Please check your email for verification code, then log in.",
         fieldErrors: {},
       };
     }
@@ -176,7 +179,7 @@ export async function registerAction(
     email: "",
     error: null,
     success:
-      "Account created successfully! Please check your email for verification code.",
+      "Account created! Please check your email for the verification code, then log in.",
     fieldErrors: {},
   };
 }
