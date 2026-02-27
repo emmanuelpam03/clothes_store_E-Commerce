@@ -177,12 +177,15 @@ export async function getTopProducts(limit: number = 10) {
   });
 
   // Merge data
-  const topProductsWithDetails = topProducts.map((item) => {
+  const topProductsWithDetails = topProducts.flatMap((item) => {
     const product = products.find((p) => p.id === item.productId);
-    return {
-      ...product,
-      totalSold: item._sum.quantity || 0,
-    };
+    if (!product) return [];
+    return [
+      {
+        ...product,
+        totalSold: item._sum.quantity || 0,
+      },
+    ];
   });
 
   return topProductsWithDetails;

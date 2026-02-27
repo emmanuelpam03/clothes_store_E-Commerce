@@ -35,13 +35,22 @@ export default async function AnalyticsPage() {
     notFound(); // hides existence of route
   }
 
-  // Fetch all analytics data
-  const analyticsData = await getAnalyticsData();
-  const topProducts = await getTopProducts(5);
-  const revenueByMonth = await getRevenueByMonth(6);
-  const categoryStats = await getCategoryStats();
-  const recentOrders = await getRecentOrders(5);
-  const orderStatusDistribution = await getOrderStatusDistribution();
+  // Fetch all analytics data in parallel
+  const [
+    analyticsData,
+    topProducts,
+    revenueByMonth,
+    categoryStats,
+    recentOrders,
+    orderStatusDistribution,
+  ] = await Promise.all([
+    getAnalyticsData(),
+    getTopProducts(5),
+    getRevenueByMonth(6),
+    getCategoryStats(),
+    getRecentOrders(5),
+    getOrderStatusDistribution(),
+  ]);
 
   return (
     <div className="p-8 space-y-8 bg-slate-50 min-h-screen">
@@ -175,21 +184,27 @@ export default async function AnalyticsPage() {
         <h2 className="text-2xl font-bold text-slate-900 mb-6">
           Order Status Distribution
         </h2>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          {orderStatusDistribution.map((statusItem) => (
-            <div
-              key={statusItem.status}
-              className="text-center p-6 bg-slate-50 rounded-lg"
-            >
-              <p className="text-3xl font-bold text-slate-900">
-                {statusItem.count}
-              </p>
-              <p className="text-sm text-slate-600 mt-2 capitalize">
-                {statusItem.status.toLowerCase()}
-              </p>
-            </div>
-          ))}
-        </div>
+        {orderStatusDistribution.length === 0 ? (
+          <p className="text-slate-500 text-center py-8">
+            No order status data available yet
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            {orderStatusDistribution.map((statusItem) => (
+              <div
+                key={statusItem.status}
+                className="text-center p-6 bg-slate-50 rounded-lg"
+              >
+                <p className="text-3xl font-bold text-slate-900">
+                  {statusItem.count}
+                </p>
+                <p className="text-sm text-slate-600 mt-2 capitalize">
+                  {statusItem.status.toLowerCase()}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Recent Orders */}

@@ -60,7 +60,6 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
 
 function formatYAxisRevenue(value: number) {
   if (value >= 100000) return `$${(value / 100000).toFixed(1)}k`;
-  if (value >= 10000) return `$${(value / 10000).toFixed(1)}k`;
   return formatCurrency(value);
 }
 
