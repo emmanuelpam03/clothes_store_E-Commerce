@@ -11,12 +11,14 @@ type User = {
   name: string;
   email: string;
   role: UserRole;
+  status: "Active" | "Deactivated";
   orders: number;
   joinDate: string;
   actions: {
     userId: string;
     currentRole: UserRole;
     isCurrentUser: boolean;
+    isDeactivated: boolean;
   };
 };
 
@@ -42,6 +44,20 @@ function getRoleBadge(role: UserRole) {
   );
 }
 
+function getStatusBadge(status: "Active" | "Deactivated") {
+  return (
+    <span
+      className={`text-xs font-semibold px-3 py-1 rounded-full ${
+        status === "Active"
+          ? "bg-green-100 text-green-700"
+          : "bg-red-100 text-red-700"
+      }`}
+    >
+      {status}
+    </span>
+  );
+}
+
 const columns: Column<User>[] = [
   { key: "name", label: "Name" },
   { key: "email", label: "Email" },
@@ -49,6 +65,11 @@ const columns: Column<User>[] = [
     key: "role",
     label: "Role",
     render: (v) => getRoleBadge(v as UserRole),
+  },
+  {
+    key: "status",
+    label: "Status",
+    render: (v) => getStatusBadge(v as "Active" | "Deactivated"),
   },
   { key: "orders", label: "Orders" },
   { key: "joinDate", label: "Join Date" },
@@ -62,6 +83,7 @@ const columns: Column<User>[] = [
           userId={actions.userId}
           currentRole={actions.currentRole}
           isCurrentUser={actions.isCurrentUser}
+          isDeactivated={actions.isDeactivated}
         />
       );
     },
@@ -81,6 +103,7 @@ export default async function UsersPage() {
     name: user.name || "No name",
     email: user.email || "No email",
     role: user.role,
+    status: user.active ? "Active" : "Deactivated",
     orders: user._count.orders,
     joinDate: user.emailVerified
       ? formatDate(user.emailVerified)
@@ -89,6 +112,7 @@ export default async function UsersPage() {
       userId: user.id,
       currentRole: user.role,
       isCurrentUser: user.id === session.user.id,
+      isDeactivated: !user.active,
     },
   }));
 

@@ -528,9 +528,7 @@ export async function getAllUsersAdmin() {
   }
 
   const users = await prisma.user.findMany({
-    where: {
-      active: true, // Only show active users
-    },
+    // Show all users including deactivated ones
     include: {
       _count: {
         select: {
@@ -539,9 +537,10 @@ export async function getAllUsersAdmin() {
         },
       },
     },
-    orderBy: {
-      email: "asc",
-    },
+    orderBy: [
+      { active: "desc" }, // Active users first
+      { email: "asc" },
+    ],
   });
 
   return users;

@@ -38,6 +38,18 @@ function getRoleBadge(role: UserRole) {
   );
 }
 
+function getStatusBadge(active: boolean) {
+  return (
+    <span
+      className={`text-sm font-semibold px-4 py-2 rounded-full ${
+        active ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
+      }`}
+    >
+      {active ? "Active" : "Deactivated"}
+    </span>
+  );
+}
+
 export default async function UserDetailsPage({ params }: PageProps) {
   const session = await auth();
   if (session?.user.role !== "ADMIN") {
@@ -78,10 +90,12 @@ export default async function UserDetailsPage({ params }: PageProps) {
         </div>
         <div className="flex items-center gap-4">
           {getRoleBadge(user.role)}
+          {getStatusBadge(user.active)}
           <UserActions
             userId={user.id}
             currentRole={user.role}
             isCurrentUser={isCurrentUser}
+            isDeactivated={!user.active}
           />
         </div>
       </div>

@@ -3,6 +3,8 @@ import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import prisma from "@/lib/prisma";
+import { createEmailVerificationToken } from "@/lib/auth/email-verification";
+import { sendVerificationEmail } from "@/lib/email";
 
 /**
  * Main NextAuth configuration
@@ -98,27 +100,34 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return null;
         }
 
-        // Reject if account is deactivated
-        if (!user.active) {
-          return null;
-        }
-
-        // Allow login even if email is not verified
-        // Middleware will redirect to /verify page
-
         // Compare password hash
         const validPassword = await bcrypt.compare(password, user.password);
         if (!validPassword) {
           return null;
         }
 
-        // Successful login → return user payload
+        // If account is deactivated, send verification email for reactivation
+        if (!user.active) {
+          // Clear emailVerified to force verification
+          await prisma.user.update({
+            where: { id: user.id },
+            data: { emailVerified: null, deletedAt: null },
+          });
+
+          // Send verification email
+          const code = await createEmailVerificationToken(user.id);
+          await sendVerificationEmail(email, code);
+        }
+
+        // Successful login → return user payload (including active status)
+        // Deactivated users will be redirected to /verify by proxy
         return {
           id: user.id,
           name: user.name,
           email: user.email,
           image: user.image,
           role: user.role,
+          active: user.active,
         };
       },
     }),
@@ -211,6 +220,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.email = user.email;
         token.image = user.image;
         token.role = user.role;
+        token.active = user.active;
 
         if (token.sub) {
           const hasGoogleAccount = await prisma.account.findFirst({
@@ -233,18 +243,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             });
           }
 
-          // Fetch initial emailVerified status from DB
+          // Fetch initial status from DB
           const dbUser = await prisma.user.findUnique({
             where: { id: token.sub },
-            select: { emailVerified: true },
+            select: { emailVerified: true, active: true },
           });
           token.emailVerified = dbUser?.emailVerified ?? null;
+          token.active = dbUser?.active ?? false;
         }
 
         return token;
       }
 
-      // Validate that user still exists and is active
+      // Validate that user still exists
       if (token.sub) {
         try {
           const dbUser = await prisma.user.findUnique({
@@ -252,12 +263,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             select: { id: true, active: true, emailVerified: true },
           });
 
-          // Invalidate session if user doesn't exist or is deactivated
-          if (!dbUser || !dbUser.active) {
+          // Invalidate session if user doesn't exist
+          if (!dbUser) {
             return null;
           }
 
-          // Refresh emailVerified from database (important for verification flow)
+          // Refresh active and emailVerified from database
+          token.active = dbUser.active;
           token.emailVerified = dbUser.emailVerified;
         } catch (error) {
           // If database check fails, continue with existing token
@@ -285,6 +297,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       session.user.image = token.image as string | null;
       session.user.role = token.role as "USER" | "ADMIN";
       session.user.emailVerified = token.emailVerified as Date | null;
+      session.user.active = token.active as boolean;
 
       return session;
     },

@@ -32,8 +32,13 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
-  // If user is logged in but email is not verified
-  if (validSession && !validSession.user.emailVerified) {
+  // If user is logged in but account is deactivated or email is not verified
+  // Both conditions require verification to proceed
+  const needsVerification =
+    validSession &&
+    (!validSession.user.active || !validSession.user.emailVerified);
+
+  if (needsVerification) {
     // Allow access to public routes (login, register, verify)
     if (!isPublicRoute) {
       // Redirect to verify page for all other routes
@@ -41,9 +46,10 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // If email is verified and trying to access /verify, redirect to home
+  // If account is active, email is verified, and trying to access /verify, redirect to home
   if (
     validSession &&
+    validSession.user.active &&
     validSession.user.emailVerified &&
     pathname === "/verify"
   ) {

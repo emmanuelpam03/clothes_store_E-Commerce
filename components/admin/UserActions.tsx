@@ -14,12 +14,14 @@ interface UserActionsProps {
   userId: string;
   currentRole: UserRole;
   isCurrentUser: boolean;
+  isDeactivated?: boolean;
 }
 
 export default function UserActions({
   userId,
   currentRole,
   isCurrentUser,
+  isDeactivated = false,
 }: UserActionsProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -88,14 +90,14 @@ export default function UserActions({
       <select
         value={selectedRole}
         onChange={(e) => handleRoleChange(e.target.value as UserRole)}
-        disabled={loading || isCurrentUser}
+        disabled={loading || isCurrentUser || isDeactivated}
         className="px-3 py-1 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <option value="USER">User</option>
         <option value="ADMIN">Admin</option>
       </select>
 
-      {!isCurrentUser && (
+      {!isCurrentUser && !isDeactivated && (
         <button
           onClick={handleDeleteUser}
           disabled={loading}
