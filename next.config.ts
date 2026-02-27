@@ -23,8 +23,14 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "plus.unsplash.com",
       },
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+      },
     ],
   },
+  // Ensure server-only packages aren't bundled in client
+  serverExternalPackages: ["cloudinary"],
 };
 
 export default nextConfig;

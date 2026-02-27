@@ -16,6 +16,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import ImageUpload from "@/components/admin/ImageUpload";
 
 export default function NewProductPage() {
   const router = useRouter();
@@ -237,7 +239,7 @@ export default function NewProductPage() {
             <CardContent className="space-y-5">
               <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>
-                <textarea
+                <Textarea
                   id="description"
                   name="description"
                   value={formData.description}
@@ -248,17 +250,13 @@ export default function NewProductPage() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="image">Image URL</Label>
-                <Input
-                  id="image"
-                  type="url"
-                  name="image"
-                  value={formData.image}
-                  onChange={handleChange}
-                  placeholder="https://example.com/image.jpg"
-                />
-              </div>
+              <ImageUpload
+                value={formData.image}
+                onChange={(url) =>
+                  setFormData((prev) => ({ ...prev, image: url }))
+                }
+                disabled={isPending}
+              />
             </CardContent>
           </Card>
 
