@@ -393,7 +393,7 @@ export async function getOrderByIdAdmin(orderId: string) {
 
 export async function updateOrderStatusAdmin(
   orderId: string,
-  status: "PENDING" | "PAID" | "SHIPPED" | "CANCELLED",
+  status: "PENDING" | "PAID" | "SHIPPED" | "DELIVERED" | "CANCELLED",
 ) {
   const session = await auth();
   if (session?.user?.role !== "ADMIN") {
@@ -417,11 +417,12 @@ export async function updateOrderStatusAdmin(
 
   const currentStatus = order.status;
 
-  // Validate state transitions
+  // Validate state transitions - balanced approach
   const validTransitions: Record<string, string[]> = {
-    PENDING: ["PAID", "SHIPPED"],
-    PAID: ["SHIPPED"],
-    SHIPPED: [], // Terminal state
+    PENDING: ["PAID", "SHIPPED"], // Allow skipping payment for COD
+    PAID: ["SHIPPED", "DELIVERED"], // Allow skipping shipped if already delivered
+    SHIPPED: ["DELIVERED"],
+    DELIVERED: [], // Terminal state
     CANCELLED: [], // Terminal state
   };
 
@@ -431,7 +432,7 @@ export async function updateOrderStatusAdmin(
     throw new Error(
       `Invalid status transition: Cannot change order from ${currentStatus} to ${status}. ` +
         (allowedNextStates.length > 0
-          ? `Valid transitions: ${allowedNextStates.join(", ")}`
+          ? `Allowed next step: ${allowedNextStates.join(", ")}`
           : "This order status is final and cannot be changed."),
     );
   }
@@ -461,6 +462,16 @@ export async function cancelOrderAdmin(orderId: string) {
 
   if (!order) {
     throw new Error("Order not found");
+  }
+
+  // Prevent canceling delivered orders
+  if (order.status === "DELIVERED") {
+    throw new Error("Cannot cancel an order that has already been delivered");
+  }
+
+  // Prevent canceling already cancelled orders
+  if (order.status === "CANCELLED") {
+    throw new Error("Order is already cancelled");
   }
 
   // If order was PAID or SHIPPED, we should restore inventory

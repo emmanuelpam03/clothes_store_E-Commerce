@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   updateOrderStatusAdmin,
   cancelOrderAdmin,
 } from "@/app/actions/admin.actions";
 
-type OrderStatus = "PENDING" | "PAID" | "SHIPPED" | "CANCELLED";
+type OrderStatus = "PENDING" | "PAID" | "SHIPPED" | "DELIVERED" | "CANCELLED";
 
 interface OrderActionsProps {
   orderId: string;
@@ -23,12 +24,34 @@ export default function OrderActions({
   const [selectedStatus, setSelectedStatus] =
     useState<OrderStatus>(currentStatus);
 
+  // Define valid state transitions - balanced approach
+  const getValidNextStates = (status: OrderStatus): OrderStatus[] => {
+    const transitions: Record<OrderStatus, OrderStatus[]> = {
+      PENDING: ["PAID", "SHIPPED"], // Allow skipping payment for COD
+      PAID: ["SHIPPED", "DELIVERED"], // Allow skipping shipped if already delivered
+      SHIPPED: ["DELIVERED"],
+      DELIVERED: [],
+      CANCELLED: [],
+    };
+    return transitions[status] || [];
+  };
+
+  const validNextStates = getValidNextStates(selectedStatus);
+
   const handleStatusChange = async (newStatus: OrderStatus) => {
     if (newStatus === selectedStatus || loading) return;
 
     // Prevent selecting CANCELLED from dropdown - must use Cancel button
     if (newStatus === "CANCELLED") {
-      alert("Please use the Cancel button to cancel orders.");
+      toast.error("Please use the Cancel button to cancel orders.");
+      return;
+    }
+
+    // Client-side validation
+    if (!validNextStates.includes(newStatus)) {
+      toast.error(
+        `Cannot change from ${selectedStatus} to ${newStatus}. Next step: ${validNextStates.join(", ") || "None (final state)"}`,
+      );
       return;
     }
 
@@ -36,10 +59,11 @@ export default function OrderActions({
     try {
       await updateOrderStatusAdmin(orderId, newStatus);
       setSelectedStatus(newStatus);
+      toast.success(`Order status updated to ${newStatus}`);
       router.refresh();
     } catch (error) {
       console.error("Failed to update order status:", error);
-      alert(
+      toast.error(
         error instanceof Error
           ? error.message
           : "Failed to update order status",
@@ -62,17 +86,20 @@ export default function OrderActions({
     try {
       await cancelOrderAdmin(orderId);
       setSelectedStatus("CANCELLED");
+      toast.success("Order cancelled successfully");
       router.refresh();
     } catch (error) {
       console.error("Failed to cancel order:", error);
-      alert(error instanceof Error ? error.message : "Failed to cancel order");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to cancel order",
+      );
     } finally {
       setLoading(false);
     }
   };
 
   const isDisabled =
-    selectedStatus === "CANCELLED" || selectedStatus === "SHIPPED" || loading;
+    selectedStatus === "CANCELLED" || selectedStatus === "DELIVERED" || loading;
 
   return (
     <div className="flex items-center gap-2">
@@ -82,13 +109,19 @@ export default function OrderActions({
         disabled={isDisabled}
         className="px-3 py-1 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        <option value="PENDING">Pending</option>
-        <option value="PAID">Paid</option>
-        <option value="SHIPPED">Shipped</option>
-        {/* CANCELLED is removed - use Cancel button instead */}
+        {/* Show current status */}
+        <option value={selectedStatus}>
+          {selectedStatus.charAt(0) + selectedStatus.slice(1).toLowerCase()}
+        </option>
+        {/* Show only valid next states */}
+        {validNextStates.map((status) => (
+          <option key={status} value={status}>
+            {status.charAt(0) + status.slice(1).toLowerCase()}
+          </option>
+        ))}
       </select>
 
-      {selectedStatus !== "CANCELLED" && (
+      {selectedStatus !== "CANCELLED" && selectedStatus !== "DELIVERED" && (
         <button
           onClick={handleCancelOrder}
           disabled={loading}

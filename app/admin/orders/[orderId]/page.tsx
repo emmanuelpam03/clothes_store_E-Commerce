@@ -5,7 +5,7 @@ import OrderActions from "@/components/admin/OrderActions";
 import Image from "next/image";
 import Link from "next/link";
 
-type OrderStatus = "PENDING" | "PAID" | "SHIPPED" | "CANCELLED";
+type OrderStatus = "PENDING" | "PAID" | "SHIPPED" | "DELIVERED" | "CANCELLED";
 
 interface PageProps {
   params: Promise<{ orderId: string }>;
@@ -30,6 +30,7 @@ function getStatusBadge(status: OrderStatus) {
     PAID: "bg-green-100 text-green-700",
     PENDING: "bg-yellow-100 text-yellow-700",
     SHIPPED: "bg-blue-100 text-blue-700",
+    DELIVERED: "bg-green-100 text-green-800",
     CANCELLED: "bg-red-100 text-red-700",
   };
 

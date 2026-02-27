@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import { getAllOrdersAdmin } from "@/app/actions/admin.actions";
 
-type OrderStatus = "PENDING" | "PAID" | "SHIPPED" | "CANCELLED";
+type OrderStatus = "PENDING" | "PAID" | "SHIPPED" | "DELIVERED" | "CANCELLED";
 
 type Order = {
   id: string;
@@ -37,6 +37,7 @@ function getStatusBadge(status: OrderStatus) {
     PAID: "bg-green-100 text-green-700",
     PENDING: "bg-yellow-100 text-yellow-700",
     SHIPPED: "bg-blue-100 text-blue-700",
+    DELIVERED: "bg-green-100 text-green-800",
     CANCELLED: "bg-red-100 text-red-700",
   };
 
