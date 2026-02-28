@@ -288,3 +288,83 @@ export async function deleteAccountAction() {
   // Sign the user out
   await signOut({ redirectTo: "/login?deleted=true" });
 }
+
+/**
+ * CHANGE PASSWORD ON FIRST LOGIN
+ * For users created by admin with temporary passwords
+ */
+export async function changePasswordFirstLogin(
+  currentPassword: string,
+  newPassword: string,
+): Promise<{ success: boolean; error?: string }> {
+  const session = await auth();
+
+  if (!session?.user?.id || !session.user.email) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: {
+      id: true,
+      password: true,
+      requirePasswordChange: true,
+      passwordChangeDeadline: true,
+    },
+  });
+
+  if (!user) {
+    return { success: false, error: "User not found" };
+  }
+
+  // Check if user is required to change password
+  if (!user.requirePasswordChange) {
+    return { success: false, error: "Password change not required" };
+  }
+
+  // Check if temporary password has expired
+  if (user.passwordChangeDeadline && user.passwordChangeDeadline < new Date()) {
+    return {
+      success: false,
+      error: "Temporary password has expired. Please contact an administrator.",
+    };
+  }
+
+  // Verify current password
+  if (!user.password) {
+    return { success: false, error: "No password set for this account" };
+  }
+
+  const isValidPassword = await bcrypt.compare(currentPassword, user.password);
+  if (!isValidPassword) {
+    return { success: false, error: "Current password is incorrect" };
+  }
+
+  // Validate new password
+  const validation = setPasswordSchema.safeParse({
+    password: newPassword,
+    confirmPassword: newPassword,
+  });
+  if (!validation.success) {
+    const errors = validation.error.flatten().fieldErrors;
+    return {
+      success: false,
+      error: errors.password?.[0] || "Invalid password",
+    };
+  }
+
+  // Hash new password
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  // Update password and clear password change requirement
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      password: hashedPassword,
+      requirePasswordChange: false,
+      passwordChangeDeadline: null,
+    },
+  });
+
+  return { success: true };
+}

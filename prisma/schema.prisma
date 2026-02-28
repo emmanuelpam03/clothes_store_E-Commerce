@@ -53,6 +53,8 @@ model User {
   password                String?
   active                  Boolean                  @default(true)
   deletedAt               DateTime?                @map("deleted_at")
+  requirePasswordChange   Boolean                  @default(false) @map("require_password_change")
+  passwordChangeDeadline  DateTime?                @map("password_change_deadline")
   accounts                Account[]
   sessions                Session[]
   emailVerificationTokens EmailVerificationToken[]

@@ -13,19 +13,49 @@ export async function proxy(request: NextRequest) {
   if (session?.user?.id) {
     const userExists = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { id: true },
+      select: {
+        id: true,
+        requirePasswordChange: true,
+        passwordChangeDeadline: true,
+      },
     });
 
     if (!userExists) {
       validSession = null;
+    } else {
+      // Add password change info to session
+      if (validSession && validSession.user) {
+        (validSession.user as any).requirePasswordChange =
+          userExists.requirePasswordChange;
+        (validSession.user as any).passwordChangeDeadline =
+          userExists.passwordChangeDeadline;
+      }
     }
   }
 
   // Public routes that don't require email verification
-  const publicRoutes = ["/login", "/register", "/verify"];
+  const publicRoutes = ["/login", "/register", "/verify", "/set-password"];
   const isPublicRoute = publicRoutes.some((route) =>
     pathname.startsWith(route),
   );
+
+  // Check if user needs to change password (admin-created accounts)
+  if (
+    validSession &&
+    (validSession.user as any).requirePasswordChange &&
+    pathname !== "/set-password"
+  ) {
+    // Check if temp password expired
+    const deadline = (validSession.user as any).passwordChangeDeadline;
+    if (deadline && new Date(deadline) < new Date()) {
+      // Redirect to login with expired message
+      return NextResponse.redirect(
+        new URL("/login?error=password-expired", request.url),
+      );
+    }
+    // Redirect to set-password page
+    return NextResponse.redirect(new URL("/set-password", request.url));
+  }
 
   // Block logged-in users from login & register
   if (validSession && (pathname === "/login" || pathname === "/register")) {

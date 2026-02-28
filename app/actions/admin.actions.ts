@@ -3,6 +3,9 @@
 import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { revalidatePath } from "next/cache";
+import { hash } from "bcryptjs";
+import { generateTemporaryPassword } from "@/lib/utils";
+import { sendEmail } from "@/lib/email/send-email";
 
 // Admin Products
 export async function getAllProductsAdmin() {
@@ -660,4 +663,87 @@ export async function deleteUserAdmin(userId: string) {
 
   revalidatePath("/admin/users");
   return { success: true };
+}
+
+// Create User by Admin
+export async function createUserAdmin(data: {
+  email: string;
+  name: string;
+  role: "USER" | "ADMIN";
+  sendEmail?: boolean;
+}) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN") {
+    throw new Error("Unauthorized");
+  }
+
+  // Check if user already exists
+  const existingUser = await prisma.user.findUnique({
+    where: { email: data.email },
+  });
+
+  if (existingUser) {
+    throw new Error("User with this email already exists");
+  }
+
+  // Generate secure temporary password
+  const temporaryPassword = generateTemporaryPassword();
+  const hashedPassword = await hash(temporaryPassword, 10);
+
+  // Create user with temporary password
+  // Admin-created accounts are auto-verified but require password change
+  const user = await prisma.user.create({
+    data: {
+      email: data.email,
+      name: data.name,
+      password: hashedPassword,
+      role: data.role,
+      emailVerified: new Date(), // Auto-verify for admin-created accounts
+      requirePasswordChange: true,
+      passwordChangeDeadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+    },
+  });
+
+  // Send credentials via email if requested
+  if (data.sendEmail) {
+    try {
+      await sendEmail({
+        to: data.email,
+        subject: "Your Account Has Been Created",
+        html: `
+          <h2>Welcome to the platform!</h2>
+          <p>An administrator has created an account for you.</p>
+          <p><strong>Your login credentials:</strong></p>
+          <ul>
+            <li>Email: ${data.email}</li>
+            <li>Temporary Password: <code>${temporaryPassword}</code></li>
+          </ul>
+          <p><strong>Important:</strong> You must change your password when you first log in.</p>
+          <p>For security reasons, this temporary password will expire in 7 days.</p>
+          <p><a href="${process.env.NEXTAUTH_URL}/login">Log in now</a></p>
+        `,
+      });
+    } catch (error) {
+      console.error("Failed to send email:", error);
+      // Don't fail the user creation if email fails
+      // Return the password so admin can manually share it
+    }
+  }
+
+  revalidatePath("/admin/users");
+
+  // Return temporary password so admin can share it
+  return {
+    success: true,
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+    },
+    temporaryPassword: temporaryPassword,
+    message: data.sendEmail
+      ? "User created and credentials sent via email"
+      : "User created successfully. Share the temporary password with the user.",
+  };
 }

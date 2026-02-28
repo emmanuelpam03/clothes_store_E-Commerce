@@ -3,6 +3,8 @@ import UserActions from "@/components/admin/UserActions";
 import { auth } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import { getAllUsersAdmin } from "@/app/actions/admin.actions";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 type UserRole = "USER" | "ADMIN";
 
@@ -118,11 +120,16 @@ export default async function UsersPage() {
 
   return (
     <div className="p-8 space-y-8 bg-slate-50 min-h-screen">
-      <div>
-        <h1 className="text-4xl font-bold text-slate-900">Users</h1>
-        <p className="text-slate-600 mt-1">
-          Manage your customer base and track their activity.
-        </p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-4xl font-bold text-slate-900">Users</h1>
+          <p className="text-slate-600 mt-1">
+            Manage your customer base and track their activity.
+          </p>
+        </div>
+        <Link href="/admin/users/new">
+          <Button>Create User</Button>
+        </Link>
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 p-8">

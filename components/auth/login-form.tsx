@@ -46,6 +46,13 @@ export function LoginForm(props: React.ComponentProps<typeof Card>) {
       router.replace("/login");
     }
 
+    if (searchParams.get("error") === "password-expired") {
+      toast.error(
+        "Your temporary password has expired. Please contact an administrator to reset your account.",
+      );
+      router.replace("/login");
+    }
+
     if (searchParams.get("deleted") === "true") {
       toast.success(
         "Your account has been deactivated. You can reactivate it within 90 days by registering again with the same email.",
