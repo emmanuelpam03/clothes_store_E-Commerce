@@ -264,228 +264,126 @@ export default function ShoppingBag() {
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-16">
             {/* CART ITEMS */}
             <div className="flex flex-wrap gap-12 py-5 border-y border-neutral-300 justify-center">
-              {optimisticItems.map((item) => (
-                <div key={item.id} className="flex gap-6 w-fit sm:w-[320px]">
-                  {/* PRODUCT */}
-                  <div>
-                    <div className="relative w-[220px] h-[300px] border bg-white">
-                      <Image
-                        src={item.image ?? "/placeholder.png"}
-                        alt={item.title}
-                        fill
-                        className="object-cover"
-                      />
-
-                      <button
-                        onClick={(e) => handleToggleFavorite(item.productId, e)}
-                        className="absolute bottom-3 right-3 bg-white p-2 rounded-full shadow-md"
-                      >
-                        <Heart
-                          width={16}
-                          height={16}
-                          className={
-                            isFavorited(item.productId)
-                              ? "fill-red-500 text-red-500"
-                              : "text-black"
-                          }
+              {optimisticItems.map((item) => {
+                const parsedItemColor = parseColor(item.color);
+                return (
+                  <div key={item.id} className="flex gap-6 w-fit sm:w-[320px]">
+                    {/* PRODUCT */}
+                    <div>
+                      <div className="relative w-[220px] h-[300px] border bg-white">
+                        <Image
+                          src={item.image ?? "/placeholder.png"}
+                          alt={item.title}
+                          fill
+                          className="object-cover"
                         />
-                      </button>
-                    </div>
 
-                    <div className="mt-4 text-sm">
-                      <p className="font-medium text-neutral-500">
-                        {item.title}
-                      </p>
-                      <div className="flex justify-between mt-1">
-                        <p className="text-xs text-black">{item.subtitle}</p>
-                        <p>${item.price / 100}</p>
+                        <button
+                          onClick={(e) =>
+                            handleToggleFavorite(item.productId, e)
+                          }
+                          className="absolute bottom-3 right-3 bg-white p-2 rounded-full shadow-md"
+                        >
+                          <Heart
+                            width={16}
+                            height={16}
+                            className={
+                              isFavorited(item.productId)
+                                ? "fill-red-500 text-red-500"
+                                : "text-black"
+                            }
+                          />
+                        </button>
+                      </div>
+
+                      <div className="mt-4 text-sm">
+                        <p className="font-medium text-neutral-500">
+                          {item.title}
+                        </p>
+                        <div className="flex justify-between mt-1">
+                          <p className="text-xs text-black">{item.subtitle}</p>
+                          <p>${item.price / 100}</p>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* ACTIONS */}
-                  <div className="flex flex-col items-center gap-4 text-xs">
-                    {/* DELETE */}
-                    {pendingId === item.id ? (
-                      <span className="text-red-600 text-sm">Deleting...</span>
-                    ) : (
-                      <button
-                        onClick={() =>
-                          startTransition(async () => {
-                            setPendingId(item.id);
+                    {/* ACTIONS */}
+                    <div className="flex flex-col items-center gap-4 text-xs">
+                      {/* DELETE */}
+                      {pendingId === item.id ? (
+                        <span className="text-red-600 text-sm">
+                          Deleting...
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() =>
+                            startTransition(async () => {
+                              setPendingId(item.id);
 
-                            removeOptimistic(item.id);
-                            removeItem(item.id);
+                              removeOptimistic(item.id);
+                              removeItem(item.id);
 
-                            if (isLoggedIn) {
-                              try {
-                                await removeFromCart(item.id);
+                              if (isLoggedIn) {
+                                try {
+                                  await removeFromCart(item.id);
+                                  toast.success("Item removed");
+                                } catch {
+                                  toast.error("Failed to remove item");
+                                }
+                              } else {
                                 toast.success("Item removed");
-                              } catch {
-                                toast.error("Failed to remove item");
                               }
-                            } else {
-                              toast.success("Item removed");
-                            }
-                            setPendingId(null);
-                          })
-                        }
-                      >
-                        <XIcon className="text-neutral-400 cursor-pointer" />
-                      </button>
-                    )}
-
-                    {/* SIZE */}
-                    <div className="relative dropdown-container">
-                      <button
-                        onClick={() => {
-                          const isOpen = openDropdown === `size-${item.id}`;
-                          setOpenDropdown(isOpen ? null : `size-${item.id}`);
-                          setFocusedIndex(-1);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-                            e.preventDefault();
-                            setOpenDropdown(`size-${item.id}`);
-                            setFocusedIndex(0);
-                          } else if (
-                            e.key === "Escape" &&
-                            openDropdown === `size-${item.id}`
-                          ) {
-                            setOpenDropdown(null);
-                            setFocusedIndex(-1);
+                              setPendingId(null);
+                            })
                           }
-                        }}
-                        aria-haspopup="listbox"
-                        aria-expanded={openDropdown === `size-${item.id}`}
-                        aria-label="Select size"
-                        className="px-3 py-2 min-w-[60px] border border-neutral-300 rounded-md text-xs font-medium cursor-pointer hover:border-black transition-all focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-1 flex items-center justify-between gap-2"
-                      >
-                        <span>{item.size}</span>
-                        <ChevronDown size={12} />
-                      </button>
-                      {openDropdown === `size-${item.id}` && (
-                        <div
-                          role="listbox"
-                          aria-label="Size options"
-                          className="absolute z-10 mt-1 w-full bg-white border border-neutral-300 rounded-md shadow-lg max-h-48 overflow-auto"
                         >
-                          {(
-                            productsData.get(item.productId)?.sizes ||
-                            DEFAULT_SIZES
-                          ).map((size, idx) => (
-                            <button
-                              key={size}
-                              ref={(el) => {
-                                const refKey = `size-${item.id}-${idx}`;
-                                if (el) {
-                                  optionRefs.current.set(refKey, el);
-                                } else {
-                                  optionRefs.current.delete(refKey);
-                                }
-                              }}
-                              role="option"
-                              aria-selected={item.size === size}
-                              tabIndex={focusedIndex === idx ? 0 : -1}
-                              onClick={() => {
-                                handleUpdateItem(item.id, "size", size);
-                                setOpenDropdown(null);
-                                setFocusedIndex(-1);
-                              }}
-                              onKeyDown={(e) => {
-                                const sizes =
-                                  productsData.get(item.productId)?.sizes ||
-                                  DEFAULT_SIZES;
-                                if (e.key === "Enter" || e.key === " ") {
-                                  e.preventDefault();
-                                  handleUpdateItem(item.id, "size", size);
-                                  setOpenDropdown(null);
-                                  setFocusedIndex(-1);
-                                } else if (e.key === "ArrowDown") {
-                                  e.preventDefault();
-                                  setFocusedIndex(
-                                    idx === sizes.length - 1 ? 0 : idx + 1,
-                                  );
-                                } else if (e.key === "ArrowUp") {
-                                  e.preventDefault();
-                                  setFocusedIndex(
-                                    idx === 0 ? sizes.length - 1 : idx - 1,
-                                  );
-                                } else if (e.key === "Escape") {
-                                  e.preventDefault();
-                                  setOpenDropdown(null);
-                                  setFocusedIndex(-1);
-                                }
-                              }}
-                              onFocus={() => setFocusedIndex(idx)}
-                              className={`w-full px-3 py-2 text-xs font-medium text-left hover:bg-neutral-100 transition ${
-                                item.size === size
-                                  ? "bg-neutral-100 font-semibold"
-                                  : ""
-                              } ${
-                                focusedIndex === idx
-                                  ? "ring-2 ring-black ring-inset"
-                                  : ""
-                              }`}
-                            >
-                              {size}
-                            </button>
-                          ))}
-                        </div>
+                          <XIcon className="text-neutral-400 cursor-pointer" />
+                        </button>
                       )}
-                    </div>
 
-                    {/* COLOR */}
-                    <div className="relative dropdown-container">
-                      <button
-                        onClick={() => {
-                          const isOpen = openDropdown === `color-${item.id}`;
-                          setOpenDropdown(isOpen ? null : `color-${item.id}`);
-                          setFocusedIndex(-1);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-                            e.preventDefault();
-                            setOpenDropdown(`color-${item.id}`);
-                            setFocusedIndex(0);
-                          } else if (
-                            e.key === "Escape" &&
-                            openDropdown === `color-${item.id}`
-                          ) {
-                            setOpenDropdown(null);
+                      {/* SIZE */}
+                      <div className="relative dropdown-container">
+                        <button
+                          onClick={() => {
+                            const isOpen = openDropdown === `size-${item.id}`;
+                            setOpenDropdown(isOpen ? null : `size-${item.id}`);
                             setFocusedIndex(-1);
-                          }
-                        }}
-                        aria-haspopup="listbox"
-                        aria-expanded={openDropdown === `color-${item.id}`}
-                        aria-label="Select color"
-                        className="px-3 py-2 min-w-[90px] border border-neutral-300 rounded-md text-xs font-medium cursor-pointer hover:border-black transition-all focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-1 flex items-center justify-between gap-2"
-                        style={{
-                          backgroundColor: getColorValue(
-                            parseColor(item.color).value,
-                          ),
-                          color: isDarkColor(item.color) ? "white" : "black",
-                        }}
-                      >
-                        <span>{parseColor(item.color).name}</span>
-                        <ChevronDown size={12} />
-                      </button>
-                      {openDropdown === `color-${item.id}` && (
-                        <div
-                          role="listbox"
-                          aria-label="Color options"
-                          className="absolute z-10 mt-1 w-full bg-white border border-neutral-300 rounded-md shadow-lg max-h-48 overflow-auto"
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+                              e.preventDefault();
+                              setOpenDropdown(`size-${item.id}`);
+                              setFocusedIndex(0);
+                            } else if (
+                              e.key === "Escape" &&
+                              openDropdown === `size-${item.id}`
+                            ) {
+                              setOpenDropdown(null);
+                              setFocusedIndex(-1);
+                            }
+                          }}
+                          aria-haspopup="listbox"
+                          aria-expanded={openDropdown === `size-${item.id}`}
+                          aria-label="Select size"
+                          className="px-3 py-2 min-w-[60px] border border-neutral-300 rounded-md text-xs font-medium cursor-pointer hover:border-black transition-all focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-1 flex items-center justify-between gap-2"
                         >
-                          {(
-                            productsData.get(item.productId)?.colors ||
-                            DEFAULT_COLORS
-                          ).map((color, idx) => {
-                            const parsed = parseColor(color);
-                            return (
+                          <span>{item.size}</span>
+                          <ChevronDown size={12} />
+                        </button>
+                        {openDropdown === `size-${item.id}` && (
+                          <div
+                            role="listbox"
+                            aria-label="Size options"
+                            className="absolute z-10 mt-1 w-full bg-white border border-neutral-300 rounded-md shadow-lg max-h-48 overflow-auto"
+                          >
+                            {(
+                              productsData.get(item.productId)?.sizes ||
+                              DEFAULT_SIZES
+                            ).map((size, idx) => (
                               <button
-                                key={color}
+                                key={size}
                                 ref={(el) => {
-                                  const refKey = `color-${item.id}-${idx}`;
+                                  const refKey = `size-${item.id}-${idx}`;
                                   if (el) {
                                     optionRefs.current.set(refKey, el);
                                   } else {
@@ -493,31 +391,31 @@ export default function ShoppingBag() {
                                   }
                                 }}
                                 role="option"
-                                aria-selected={item.color === color}
+                                aria-selected={item.size === size}
                                 tabIndex={focusedIndex === idx ? 0 : -1}
                                 onClick={() => {
-                                  handleUpdateItem(item.id, "color", color);
+                                  handleUpdateItem(item.id, "size", size);
                                   setOpenDropdown(null);
                                   setFocusedIndex(-1);
                                 }}
                                 onKeyDown={(e) => {
-                                  const colors =
-                                    productsData.get(item.productId)?.colors ||
-                                    DEFAULT_COLORS;
+                                  const sizes =
+                                    productsData.get(item.productId)?.sizes ||
+                                    DEFAULT_SIZES;
                                   if (e.key === "Enter" || e.key === " ") {
                                     e.preventDefault();
-                                    handleUpdateItem(item.id, "color", color);
+                                    handleUpdateItem(item.id, "size", size);
                                     setOpenDropdown(null);
                                     setFocusedIndex(-1);
                                   } else if (e.key === "ArrowDown") {
                                     e.preventDefault();
                                     setFocusedIndex(
-                                      idx === colors.length - 1 ? 0 : idx + 1,
+                                      idx === sizes.length - 1 ? 0 : idx + 1,
                                     );
                                   } else if (e.key === "ArrowUp") {
                                     e.preventDefault();
                                     setFocusedIndex(
-                                      idx === 0 ? colors.length - 1 : idx - 1,
+                                      idx === 0 ? sizes.length - 1 : idx - 1,
                                     );
                                   } else if (e.key === "Escape") {
                                     e.preventDefault();
@@ -526,9 +424,9 @@ export default function ShoppingBag() {
                                   }
                                 }}
                                 onFocus={() => setFocusedIndex(idx)}
-                                className={`w-full px-3 py-2 text-xs font-medium text-left hover:bg-neutral-50 transition flex items-center gap-2 ${
-                                  item.color === color
-                                    ? "bg-neutral-50 font-semibold"
+                                className={`w-full px-3 py-2 text-xs font-medium text-left hover:bg-neutral-100 transition ${
+                                  item.size === size
+                                    ? "bg-neutral-100 font-semibold"
                                     : ""
                                 } ${
                                   focusedIndex === idx
@@ -536,47 +434,160 @@ export default function ShoppingBag() {
                                     : ""
                                 }`}
                               >
-                                <div
-                                  className="w-4 h-4 rounded-full border border-neutral-300"
-                                  style={{
-                                    backgroundColor: getColorValue(
-                                      parsed.value,
-                                    ),
-                                  }}
-                                />
-                                {parsed.name}
+                                {size}
                               </button>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
 
-                    {/* QTY */}
-                    <div className="flex flex-col items-center gap-1">
-                      <button
-                        onClick={() =>
-                          handleQtyChange(item.id, "inc", item.qty)
-                        }
-                        className="w-7 h-7 flex items-center justify-center border border-neutral-300 rounded-md text-sm font-semibold hover:bg-black hover:text-white hover:border-black transition-all"
-                      >
-                        +
-                      </button>
-                      <span className="text-sm font-medium my-1">
-                        {item.qty}
-                      </span>
-                      <button
-                        onClick={() =>
-                          handleQtyChange(item.id, "dec", item.qty)
-                        }
-                        className="w-7 h-7 flex items-center justify-center border border-neutral-300 rounded-md text-sm font-semibold hover:bg-black hover:text-white hover:border-black transition-all"
-                      >
-                        -
-                      </button>
+                      {/* COLOR */}
+                      <div className="relative dropdown-container">
+                        <button
+                          onClick={() => {
+                            const isOpen = openDropdown === `color-${item.id}`;
+                            setOpenDropdown(isOpen ? null : `color-${item.id}`);
+                            setFocusedIndex(-1);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+                              e.preventDefault();
+                              setOpenDropdown(`color-${item.id}`);
+                              setFocusedIndex(0);
+                            } else if (
+                              e.key === "Escape" &&
+                              openDropdown === `color-${item.id}`
+                            ) {
+                              setOpenDropdown(null);
+                              setFocusedIndex(-1);
+                            }
+                          }}
+                          aria-haspopup="listbox"
+                          aria-expanded={openDropdown === `color-${item.id}`}
+                          aria-label="Select color"
+                          className="px-3 py-2 min-w-[90px] border border-neutral-300 rounded-md text-xs font-medium cursor-pointer hover:border-black transition-all focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-1 flex items-center justify-between gap-2"
+                          style={{
+                            backgroundColor: getColorValue(
+                              parsedItemColor.value,
+                            ),
+                            color: isDarkColor(
+                              parsedItemColor.name || parsedItemColor.value,
+                            )
+                              ? "white"
+                              : "black",
+                          }}
+                        >
+                          <span>{parsedItemColor.name}</span>
+                          <ChevronDown size={12} />
+                        </button>
+                        {openDropdown === `color-${item.id}` && (
+                          <div
+                            role="listbox"
+                            aria-label="Color options"
+                            className="absolute z-10 mt-1 w-full bg-white border border-neutral-300 rounded-md shadow-lg max-h-48 overflow-auto"
+                          >
+                            {(
+                              productsData.get(item.productId)?.colors ||
+                              DEFAULT_COLORS
+                            ).map((color, idx) => {
+                              const parsed = parseColor(color);
+                              return (
+                                <button
+                                  key={color}
+                                  ref={(el) => {
+                                    const refKey = `color-${item.id}-${idx}`;
+                                    if (el) {
+                                      optionRefs.current.set(refKey, el);
+                                    } else {
+                                      optionRefs.current.delete(refKey);
+                                    }
+                                  }}
+                                  role="option"
+                                  aria-selected={item.color === color}
+                                  tabIndex={focusedIndex === idx ? 0 : -1}
+                                  onClick={() => {
+                                    handleUpdateItem(item.id, "color", color);
+                                    setOpenDropdown(null);
+                                    setFocusedIndex(-1);
+                                  }}
+                                  onKeyDown={(e) => {
+                                    const colors =
+                                      productsData.get(item.productId)
+                                        ?.colors || DEFAULT_COLORS;
+                                    if (e.key === "Enter" || e.key === " ") {
+                                      e.preventDefault();
+                                      handleUpdateItem(item.id, "color", color);
+                                      setOpenDropdown(null);
+                                      setFocusedIndex(-1);
+                                    } else if (e.key === "ArrowDown") {
+                                      e.preventDefault();
+                                      setFocusedIndex(
+                                        idx === colors.length - 1 ? 0 : idx + 1,
+                                      );
+                                    } else if (e.key === "ArrowUp") {
+                                      e.preventDefault();
+                                      setFocusedIndex(
+                                        idx === 0 ? colors.length - 1 : idx - 1,
+                                      );
+                                    } else if (e.key === "Escape") {
+                                      e.preventDefault();
+                                      setOpenDropdown(null);
+                                      setFocusedIndex(-1);
+                                    }
+                                  }}
+                                  onFocus={() => setFocusedIndex(idx)}
+                                  className={`w-full px-3 py-2 text-xs font-medium text-left hover:bg-neutral-50 transition flex items-center gap-2 ${
+                                    item.color === color
+                                      ? "bg-neutral-50 font-semibold"
+                                      : ""
+                                  } ${
+                                    focusedIndex === idx
+                                      ? "ring-2 ring-black ring-inset"
+                                      : ""
+                                  }`}
+                                >
+                                  <div
+                                    className="w-4 h-4 rounded-full border border-neutral-300"
+                                    style={{
+                                      backgroundColor: getColorValue(
+                                        parsed.value,
+                                      ),
+                                    }}
+                                  />
+                                  {parsed.name}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* QTY */}
+                      <div className="flex flex-col items-center gap-1">
+                        <button
+                          onClick={() =>
+                            handleQtyChange(item.id, "inc", item.qty)
+                          }
+                          className="w-7 h-7 flex items-center justify-center border border-neutral-300 rounded-md text-sm font-semibold hover:bg-black hover:text-white hover:border-black transition-all"
+                        >
+                          +
+                        </button>
+                        <span className="text-sm font-medium my-1">
+                          {item.qty}
+                        </span>
+                        <button
+                          onClick={() =>
+                            handleQtyChange(item.id, "dec", item.qty)
+                          }
+                          className="w-7 h-7 flex items-center justify-center border border-neutral-300 rounded-md text-sm font-semibold hover:bg-black hover:text-white hover:border-black transition-all"
+                        >
+                          -
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* SUMMARY */}

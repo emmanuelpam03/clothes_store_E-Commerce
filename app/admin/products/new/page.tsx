@@ -286,6 +286,7 @@ export default function NewProductPage() {
                 <div className="space-y-2">
                   <Label htmlFor="colors">Colors</Label>
                   <ColorPicker
+                    id="colors"
                     selectedColors={formData.colors}
                     onChange={handleColorsChange}
                   />

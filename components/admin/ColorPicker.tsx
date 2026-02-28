@@ -51,36 +51,63 @@ const PREDEFINED_COLORS = [
 interface ColorPickerProps {
   selectedColors: string[];
   onChange: (colors: string[]) => void;
+  id?: string;
 }
 
 /**
  * Parse a color string to extract name and hex value
  * Format: "Name:#hex" or just "#hex"
+ * Handles color names that may contain colons by using '#' marker or lastIndexOf(':')
  */
 export const parseColor = (color: string): { name: string; value: string } => {
+  // If color contains '#', use it as the delimiter between name and hex value
+  const hashIndex = color.indexOf("#");
+  if (hashIndex !== -1) {
+    const name = color.substring(0, hashIndex);
+    const value = color.substring(hashIndex);
+    // If there's a name part (not just a hex value), return both
+    if (name) {
+      return { name, value };
+    }
+    // Just a hex value without name prefix
+    return { name: value, value };
+  }
+
+  // If no '#' but contains ':', use the last colon to split
   if (color.includes(":")) {
-    const [name, value] = color.split(":");
+    const lastColonIndex = color.lastIndexOf(":");
+    const name = color.substring(0, lastColonIndex);
+    const value = color.substring(lastColonIndex + 1);
     return { name, value };
   }
-  // If no colon, it's just a hex value
+
+  // Fallback: return the whole string for both name and value
   return { name: color, value: color };
 };
 
 /**
  * Format a color for storage
- * Returns "Name:#hex" format
+ * Returns "Name#hex" format (name directly followed by hex with # marker)
+ * or just "#hex" if name equals value to avoid duplication
  */
 export const formatColor = (name: string, value: string): string => {
-  return `${name}:${value}`;
+  // Don't duplicate if name is the same as the hex value
+  if (name === value) {
+    return value;
+  }
+  // Use the hex # as separator, no colon needed
+  return `${name}${value}`;
 };
 
 export default function ColorPicker({
   selectedColors,
   onChange,
+  id,
 }: ColorPickerProps) {
   const [showCustomPicker, setShowCustomPicker] = useState(false);
   const [customColor, setCustomColor] = useState("#3b82f6");
   const [customColorName, setCustomColorName] = useState("");
+  const [customColorError, setCustomColorError] = useState("");
 
   const handleToggleColor = (name: string, value: string) => {
     const formattedColor = formatColor(name, value);
@@ -94,26 +121,46 @@ export default function ColorPicker({
   const handleAddCustomColor = () => {
     if (!customColor) return;
 
-    // Use custom name if provided, otherwise use hex value
-    const name = customColorName.trim() || customColor;
-    const formattedColor = formatColor(name, customColor);
+    // Clear previous error
+    setCustomColorError("");
+
+    // Validate hex format
+    const hexRegex = /^#?([0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})$/;
+    const normalizedColor = customColor.trim();
+
+    if (!hexRegex.test(normalizedColor)) {
+      setCustomColorError("Invalid hex color. Use format: #RRGGBB or #RGB");
+      return;
+    }
+
+    // Ensure hex has # prefix
+    const validHex = normalizedColor.startsWith("#")
+      ? normalizedColor
+      : `#${normalizedColor}`;
 
     // Check if color already exists (by hex value)
     const existingColor = selectedColors.find((c) => {
       const parsed = parseColor(c);
-      return parsed.value.toLowerCase() === customColor.toLowerCase();
+      return parsed.value.toLowerCase() === validHex.toLowerCase();
     });
 
     if (existingColor) {
-      setShowCustomPicker(false);
-      setCustomColorName("");
+      const parsed = parseColor(existingColor);
+      setCustomColorError(`Color already added as "${parsed.name}"`);
       return;
     }
 
+    // Use custom name if provided, otherwise use hex value
+    const name = customColorName.trim() || validHex;
+    const formattedColor = formatColor(name, validHex);
+
     onChange([...selectedColors, formattedColor]);
+
+    // Reset state only after successful addition
     setShowCustomPicker(false);
     setCustomColorName("");
     setCustomColor("#3b82f6");
+    setCustomColorError("");
   };
 
   const handleRemoveColor = (color: string) => {
@@ -167,11 +214,12 @@ export default function ColorPicker({
           Choose from predefined colors:
         </p>
         <div className="grid grid-cols-8 gap-2">
-          {PREDEFINED_COLORS.map((color) => {
+          {PREDEFINED_COLORS.map((color, index) => {
             const isSelected = isColorSelected(color.value);
             return (
               <button
                 key={color.value}
+                id={index === 0 ? id : undefined}
                 type="button"
                 onClick={() => handleToggleColor(color.name, color.value)}
                 title={color.name}
@@ -213,6 +261,7 @@ export default function ColorPicker({
                 onClick={() => {
                   setShowCustomPicker(false);
                   setCustomColorName("");
+                  setCustomColorError("");
                 }}
                 className="text-slate-400 hover:text-slate-600"
               >
@@ -222,7 +271,13 @@ export default function ColorPicker({
 
             <div className="flex gap-4">
               <div className="shrink-0">
-                <HexColorPicker color={customColor} onChange={setCustomColor} />
+                <HexColorPicker
+                  color={customColor}
+                  onChange={(color) => {
+                    setCustomColor(color);
+                    setCustomColorError("");
+                  }}
+                />
               </div>
 
               <div className="flex-1 space-y-3">
@@ -243,7 +298,10 @@ export default function ColorPicker({
                   <input
                     type="text"
                     value={customColor}
-                    onChange={(e) => setCustomColor(e.target.value)}
+                    onChange={(e) => {
+                      setCustomColor(e.target.value);
+                      setCustomColorError("");
+                    }}
                     className="w-full px-3 py-2 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="#3b82f6"
                   />
@@ -261,6 +319,12 @@ export default function ColorPicker({
                     placeholder="e.g., Navy Blue"
                   />
                 </div>
+
+                {customColorError && (
+                  <div className="px-3 py-2 bg-red-50 border border-red-200 rounded text-xs text-red-600">
+                    {customColorError}
+                  </div>
+                )}
 
                 <button
                   type="button"
