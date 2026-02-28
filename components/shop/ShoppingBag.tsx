@@ -320,20 +320,23 @@ export default function ShoppingBag() {
                             startTransition(async () => {
                               setPendingId(item.id);
 
-                              removeOptimistic(item.id);
-                              removeItem(item.id);
-
                               if (isLoggedIn) {
                                 try {
                                   await removeFromCart(item.id);
+                                  removeOptimistic(item.id);
+                                  removeItem(item.id);
                                   toast.success("Item removed");
                                 } catch {
                                   toast.error("Failed to remove item");
+                                } finally {
+                                  setPendingId(null);
                                 }
                               } else {
+                                removeOptimistic(item.id);
+                                removeItem(item.id);
                                 toast.success("Item removed");
+                                setPendingId(null);
                               }
-                              setPendingId(null);
                             })
                           }
                         >

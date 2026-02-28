@@ -56,15 +56,18 @@ interface ColorPickerProps {
 
 /**
  * Parse a color string to extract name and hex value
- * Format: "Name:#hex" or just "#hex"
+ * Accepts formats: "Name#hex" (current) and "Name:#hex" (legacy)
  * Handles color names that may contain colons by using '#' marker or lastIndexOf(':')
+ * Strips trailing ':' from names for backward compatibility with legacy format
  */
 export const parseColor = (color: string): { name: string; value: string } => {
   // If color contains '#', use it as the delimiter between name and hex value
   const hashIndex = color.indexOf("#");
   if (hashIndex !== -1) {
-    const name = color.substring(0, hashIndex);
+    let name = color.substring(0, hashIndex);
     const value = color.substring(hashIndex);
+    // Strip trailing colon for backward compatibility with legacy "Name:#hex" format
+    name = name.replace(/:$/, "");
     // If there's a name part (not just a hex value), return both
     if (name) {
       return { name, value };
