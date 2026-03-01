@@ -16,6 +16,7 @@ type RateLimitResult = {
  * Database-backed rate limiter with optional lockout support
  * Works across serverless invocations and multiple instances
  * Includes automatic cleanup of expired records (5% chance per call)
+ * Uses atomic operations to prevent race conditions
  */
 export async function rateLimit({
   key,
@@ -33,12 +34,46 @@ export async function rateLimit({
     });
   }
 
+  // Step 1: Try atomic increment (only if not locked, under limit, and within window)
+  const atomicIncrement = await prisma.rateLimit.updateMany({
+    where: {
+      key,
+      resetAt: { gt: now }, // Within window
+      count: { lt: limit }, // Under limit
+      OR: [
+        { lockedUntil: null }, // Not locked
+        { lockedUntil: { lte: now } }, // Lockout expired
+      ],
+    },
+    data: {
+      count: { increment: 1 },
+    },
+  });
+
+  // Success: atomic increment worked
+  if (atomicIncrement.count > 0) {
+    return { allowed: true };
+  }
+
+  // Step 2: Atomic increment failed - fetch record to determine why
   const record = await prisma.rateLimit.findUnique({
     where: { key },
   });
 
-  // Check if locked
-  if (record?.lockedUntil && record.lockedUntil > now) {
+  // Case 1: Record doesn't exist - create new record
+  if (!record) {
+    await prisma.rateLimit.create({
+      data: {
+        key,
+        count: 1,
+        resetAt: new Date(now.getTime() + windowMs),
+      },
+    });
+    return { allowed: true };
+  }
+
+  // Case 2: Currently locked
+  if (record.lockedUntil && record.lockedUntil > now) {
     const minutesLeft = Math.ceil(
       (record.lockedUntil.getTime() - now.getTime()) / 60000,
     );
@@ -48,8 +83,8 @@ export async function rateLimit({
     };
   }
 
-  // First request or expired window
-  if (!record || record.resetAt < now) {
+  // Case 3: Window expired - reset with atomic upsert
+  if (record.resetAt < now) {
     await prisma.rateLimit.upsert({
       where: { key },
       update: {
@@ -63,11 +98,10 @@ export async function rateLimit({
         resetAt: new Date(now.getTime() + windowMs),
       },
     });
-
     return { allowed: true };
   }
 
-  // Over limit - apply lockout if configured
+  // Case 4: Over limit - apply lockout if configured
   if (record.count >= limit) {
     if (lockoutMs) {
       await prisma.rateLimit.update({
@@ -89,13 +123,29 @@ export async function rateLimit({
     };
   }
 
-  // Increment
-  await prisma.rateLimit.update({
-    where: { key },
-    data: { count: { increment: 1 } },
+  // Case 5: Race condition - another request just incremented or locked
+  // Re-attempt atomic increment once
+  const retryIncrement = await prisma.rateLimit.updateMany({
+    where: {
+      key,
+      resetAt: { gt: now },
+      count: { lt: limit },
+      OR: [{ lockedUntil: null }, { lockedUntil: { lte: now } }],
+    },
+    data: {
+      count: { increment: 1 },
+    },
   });
 
-  return { allowed: true };
+  if (retryIncrement.count > 0) {
+    return { allowed: true };
+  }
+
+  // Deny by default if retry also failed
+  return {
+    allowed: false,
+    error: "Too many requests. Please try again later.",
+  };
 }
 
 /**
