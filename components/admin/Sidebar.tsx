@@ -37,8 +37,9 @@ export default function Sidebar() {
       <nav className="space-y-2 flex-1">
         {links.map((l) => {
           const Icon = l.icon;
-          const isActive = pathname === l.href;
-          return (
+          const isActive = l.href === "/admin"
+            ? pathname === l.href
+            : pathname.startsWith(l.href);          return (
             <Link
               key={l.name}
               href={l.href}
