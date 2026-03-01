@@ -17,12 +17,12 @@ async function permanentlyDeleteUser(userId: string) {
   // Use transaction to ensure all operations succeed together
   await prisma.$transaction(async (tx) => {
     // 1. Anonymize user's personal data
+    // Note: Preserve existing deletedAt to maintain original 90-day countdown
     const anonymizedEmail = `deleted_${userId}@deleted.local`;
     await tx.user.update({
       where: { id: userId },
       data: {
         active: false,
-        deletedAt: new Date(),
         email: anonymizedEmail,
         name: "Deleted User",
         image: null,
@@ -101,7 +101,6 @@ async function cleanupDeletedAccounts() {
       },
       select: {
         id: true,
-        email: true,
         deletedAt: true,
       },
     });
@@ -113,7 +112,7 @@ async function cleanupDeletedAccounts() {
       console.log("   Deletion details:");
       deactivatedAccounts.forEach((account) => {
         console.log(
-          `   - Account ${account.id} (${account.email}) deactivated on: ${account.deletedAt?.toISOString()}`,
+          `   - Account ${account.id} deactivated on: ${account.deletedAt?.toISOString()}`,
         );
       });
 
@@ -121,7 +120,7 @@ async function cleanupDeletedAccounts() {
       for (const account of deactivatedAccounts) {
         await permanentlyDeleteUser(account.id);
         console.log(
-          `   ✅ Anonymized and permanently deleted: ${account.email}`,
+          `   ✅ Anonymized and permanently deleted account: ${account.id}`,
         );
       }
 
@@ -160,7 +159,7 @@ async function cleanupDeletedAccounts() {
       console.log("   Removal details:");
       anonymizedAccounts.forEach((account) => {
         console.log(
-          `   - Account ${account.id} (${account.email}) deleted on: ${account.deletedAt?.toISOString()}`,
+          `   - Account ${account.id} deleted on: ${account.deletedAt?.toISOString()}`,
         );
       });
 

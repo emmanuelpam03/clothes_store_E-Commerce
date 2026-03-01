@@ -76,7 +76,50 @@ This dual approach balances user control, privacy rights, and business requireme
 **What happens after 90 days:**
 
 - Anonymized user record is deleted (cleanup script)
-- Order history remains intact
+- Order history remains intact with orphaned `userId` references
+
+## Referential Integrity
+
+**Prisma Schema Relationship:**
+
+```prisma
+model Order {
+  userId String
+  user   User @relation(fields: [userId], references: [id])
+  // Note: No onDelete clause = default Restrict behavior
+}
+```
+
+**Strategy Implemented: In-Place Anonymization (Strategy A)**
+
+The system preserves referential integrity by **anonymizing User records in-place** rather than deleting them:
+
+1. **During Anonymization** (immediate):
+   - User PII is cleared (`email`, `name`, `image`, `password` → anonymized values)
+   - **`User.id` is preserved** (never changed)
+   - `Order.userId` continues to point to the same User record
+   - No foreign key constraints are violated
+
+2. **After 90 Days** (cleanup script):
+   - Anonymized User record is deleted from database
+   - Orders remain with their `userId` values (now orphaned references)
+   - This is acceptable because:
+     - Order PII was already anonymized in step 1
+     - `userId` becomes a meaningless identifier
+     - No `onDelete: Cascade` means orders persist independently
+
+3. **Why This Approach:**
+   - **No `onDelete` clause** in schema = default `Restrict` behavior
+   - Cannot delete User with existing Orders (would violate constraint)
+   - Anonymization satisfies GDPR (PII removed) while respecting DB constraints
+   - Orders preserved for business/legal requirements (financial records, tax compliance)
+
+**Enforcement in Code:**
+
+- `deleteAccountPermanently()` in `app/actions/account.actions.ts` (lines 386-465)
+- `adminDeleteUserPermanentlyAction()` in `app/actions/account.actions.ts` (lines 580-680)
+- `permanentlyDeleteUser()` in `scripts/cleanup-deleted-accounts.ts` (lines 16-73)
+- All use Prisma transactions to atomically: anonymize User + anonymize Orders + delete related records
 
 **Cannot be undone**: Once data is anonymized, it cannot be restored
 
@@ -317,7 +360,7 @@ model Order {
 
 ```tsx
 // Check if account is deactivated
-if (user && !user.active && !user.email.startsWith("deleted_")) {
+if (user && !user.active && user.email && !user.email.startsWith("deleted_")) {
   // Offer reactivation if within 90 days
   const canReactivate = /* check deletedAt */;
   if (canReactivate) {
@@ -337,7 +380,7 @@ if (user && !user.active && !user.email.startsWith("deleted_")) {
   <DropdownMenuItem onClick={() => permanentlyDeleteUser(userId)}>
     Permanently Delete
   </DropdownMenuItem>
-  {user.deletedAt && !user.email.startsWith("deleted_") && (
+  {user.deletedAt && user.email && !user.email.startsWith("deleted_") && (
     <DropdownMenuItem onClick={() => reactivateUser(userId)}>
       Reactivate Account
     </DropdownMenuItem>

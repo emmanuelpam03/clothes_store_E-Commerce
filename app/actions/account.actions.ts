@@ -400,13 +400,23 @@ export async function deleteAccountPermanently() {
 
   // Use transaction to ensure all operations succeed together
   await prisma.$transaction(async (tx) => {
+    // Fetch current user to check if deletedAt already exists
+    const currentUser = await tx.user.findUnique({
+      where: { id: userId },
+      select: { deletedAt: true },
+    });
+
+    // Preserve existing deletedAt (if account was deactivated earlier)
+    // or set new timestamp (if this is first deletion action)
+    const deletedAtValue = currentUser?.deletedAt || new Date();
+
     // 1. Anonymize user's personal data
     const anonymizedEmail = `deleted_${userId}@deleted.local`;
     await tx.user.update({
       where: { id: userId },
       data: {
         active: false,
-        deletedAt: new Date(),
+        deletedAt: deletedAtValue,
         email: anonymizedEmail,
         name: "Deleted User",
         image: null,
@@ -494,13 +504,23 @@ export async function reactivateAccountAction(email: string, password: string) {
     }
   }
 
+  // Rate limiting: Check password verification attempts
+  const rateLimitCheck = checkPasswordAttemptLimit(user.id);
+  if (!rateLimitCheck.allowed) {
+    return { success: false, error: rateLimitCheck.error };
+  }
+
   // Verify password
   const bcrypt = await import("bcryptjs");
   const isValidPassword = await bcrypt.compare(password, user.password);
 
   if (!isValidPassword) {
+    // Failed attempt - rate limiter already incremented
     return { success: false, error: "Invalid credentials" };
   }
+
+  // Success - clear rate limit attempts
+  clearPasswordAttempts(user.id);
 
   // Reactivate account
   await prisma.user.update({
@@ -589,13 +609,23 @@ export async function adminDeleteUserPermanentlyAction(userId: string) {
 
   // Use transaction to ensure all operations succeed together
   await prisma.$transaction(async (tx) => {
+    // Fetch current user to check if deletedAt already exists
+    const currentUser = await tx.user.findUnique({
+      where: { id: userId },
+      select: { deletedAt: true },
+    });
+
+    // Preserve existing deletedAt (if account was deactivated earlier)
+    // or set new timestamp (if this is first deletion action)
+    const deletedAtValue = currentUser?.deletedAt || new Date();
+
     // 1. Anonymize user's personal data
     const anonymizedEmail = `deleted_${userId}@deleted.local`;
     await tx.user.update({
       where: { id: userId },
       data: {
         active: false,
-        deletedAt: new Date(),
+        deletedAt: deletedAtValue,
         email: anonymizedEmail,
         name: "Deleted User",
         image: null,

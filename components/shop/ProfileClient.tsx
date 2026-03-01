@@ -364,8 +364,8 @@ export default function ProfileClient({
                     <li>All linked accounts (Google, etc.)</li>
                   </ul>
                   <p className="text-xs">
-                    You will NOT be able to recover this account or create a new
-                    one with the same email.
+                    This account cannot be recovered. Your email will be freed
+                    and can be used to create a new account.
                   </p>
                 </div>
 
