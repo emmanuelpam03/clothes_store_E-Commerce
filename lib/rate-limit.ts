@@ -62,8 +62,12 @@ export async function rateLimit({
 
   // Case 1: Record doesn't exist - create new record
   if (!record) {
-    await prisma.rateLimit.create({
-      data: {
+    await prisma.rateLimit.upsert({
+      where: { key },
+      update: {
+        count: { increment: 1 },
+      },
+      create: {
         key,
         count: 1,
         resetAt: new Date(now.getTime() + windowMs),
@@ -71,7 +75,6 @@ export async function rateLimit({
     });
     return { allowed: true };
   }
-
   // Case 2: Currently locked
   if (record.lockedUntil && record.lockedUntil > now) {
     const minutesLeft = Math.ceil(
