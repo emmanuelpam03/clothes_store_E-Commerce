@@ -294,7 +294,7 @@ export default function ProfileClient({
 
                 <div className="space-y-3 text-sm text-neutral-600">
                   <p>
-                    Your account will be deactivated immediately and you'll be
+                    Your account will be deactivated immediately and you&apos;ll be
                     logged out.
                   </p>
                   <p>
