@@ -44,6 +44,9 @@ export async function addToCartAction(
   size = "M",
   color = "",
 ) {
+  // Get user ID before transaction to avoid session I/O inside transaction
+  const userId = await getUserId();
+
   // Use transaction to prevent TOCTOU race conditions
   await prisma.$transaction(async (tx) => {
     // Check product stock within transaction
@@ -61,7 +64,6 @@ export async function addToCartAction(
     }
 
     // Get or create cart within transaction
-    const userId = await getUserId();
     const cart = await tx.cart.upsert({
       where: { userId },
       update: {},

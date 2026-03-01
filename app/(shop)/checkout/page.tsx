@@ -21,6 +21,8 @@ export default function CheckoutPage() {
       return;
     }
 
+    let cancelled = false;
+
     // Validate stock before allowing checkout
     const validateStock = async () => {
       try {
@@ -28,6 +30,8 @@ export default function CheckoutPage() {
           new Set(items.map((item) => item.productId)),
         );
         const products = await getProductsByIds(productIds);
+
+        if (cancelled) return;
 
         const stockIssues: string[] = [];
 
@@ -44,6 +48,8 @@ export default function CheckoutPage() {
           }
         });
 
+        if (cancelled) return;
+
         if (stockIssues.length > 0) {
           toast.error("Stock issues detected. Please update your cart.", {
             description: stockIssues[0],
@@ -52,13 +58,21 @@ export default function CheckoutPage() {
           return;
         }
 
-        setIsValidating(false);
-      } catch (error) {
+        if (!cancelled) {
+          setIsValidating(false);
+        }
+      } catch {
+        if (cancelled) return;
         toast.error("Failed to validate cart. Please try again.");
         router.replace("/cart");
       }
     };
+
     validateStock();
+
+    return () => {
+      cancelled = true;
+    };
   }, [items, router]);
 
   if (items.length === 0 || isValidating) {

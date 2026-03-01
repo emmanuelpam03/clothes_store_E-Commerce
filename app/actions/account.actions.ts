@@ -8,12 +8,6 @@ import { setPasswordSchema } from "@/lib/validators/set-password.schema";
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
 
-// TODO: Replace in-memory rate limiter with distributed solution (Redis/Upstash or DB-backed)
-// Current implementation has limitations:
-// - Not suitable for serverless/horizontal deployments (each instance has separate state)
-// - Potential memory leak without cleanup
-// - Consider: Upstash Redis, Vercel KV, or database-backed rate limiting
-// Issue: https://github.com/yourorg/yourrepo/issues/XXX (replace with actual issue tracker)
 
 // Simple in-memory rate limiter for password verification attempts
 const passwordAttempts = new Map<
