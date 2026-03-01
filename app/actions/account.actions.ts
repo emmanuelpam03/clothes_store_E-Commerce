@@ -8,6 +8,65 @@ import { setPasswordSchema } from "@/lib/validators/set-password.schema";
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
 
+// Simple in-memory rate limiter for password verification attempts
+const passwordAttempts = new Map<
+  string,
+  { count: number; resetAt: number; lockedUntil?: number }
+>();
+
+function checkPasswordAttemptLimit(userId: string): {
+  allowed: boolean;
+  error?: string;
+} {
+  const now = Date.now();
+  const key = `password-verify:${userId}`;
+  const record = passwordAttempts.get(key);
+
+  // Check if locked
+  if (record?.lockedUntil && record.lockedUntil > now) {
+    const minutesLeft = Math.ceil((record.lockedUntil - now) / 60000);
+    return {
+      allowed: false,
+      error: `Too many failed attempts. Please try again in ${minutesLeft} minute(s).`,
+    };
+  }
+
+  // Reset if window expired
+  if (!record || record.resetAt < now) {
+    passwordAttempts.set(key, {
+      count: 1,
+      resetAt: now + 10 * 60 * 1000, // 10 minutes
+    });
+    return { allowed: true };
+  }
+
+  // Check limit (5 attempts)
+  if (record.count >= 5) {
+    // Lock for 15 minutes
+    passwordAttempts.set(key, {
+      ...record,
+      lockedUntil: now + 15 * 60 * 1000,
+    });
+    return {
+      allowed: false,
+      error: "Too many failed attempts. Account locked for 15 minutes.",
+    };
+  }
+
+  // Increment attempt
+  passwordAttempts.set(key, {
+    ...record,
+    count: record.count + 1,
+  });
+
+  return { allowed: true };
+}
+
+function clearPasswordAttempts(userId: string) {
+  const key = `password-verify:${userId}`;
+  passwordAttempts.delete(key);
+}
+
 type SetPasswordState = {
   error: string | null;
   success: boolean;
@@ -330,6 +389,12 @@ export async function changePasswordFirstLogin(
     };
   }
 
+  // Rate limiting: Check password verification attempts
+  const rateLimitCheck = checkPasswordAttemptLimit(user.id);
+  if (!rateLimitCheck.allowed) {
+    return { success: false, error: rateLimitCheck.error };
+  }
+
   // Verify current password
   if (!user.password) {
     return { success: false, error: "No password set for this account" };
@@ -337,8 +402,12 @@ export async function changePasswordFirstLogin(
 
   const isValidPassword = await bcrypt.compare(currentPassword, user.password);
   if (!isValidPassword) {
+    // Failed attempt - rate limiter already incremented
     return { success: false, error: "Current password is incorrect" };
   }
+
+  // Success - clear rate limit attempts
+  clearPasswordAttempts(user.id);
 
   // Validate new password
   const validation = setPasswordSchema.safeParse({

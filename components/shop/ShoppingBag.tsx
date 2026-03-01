@@ -70,6 +70,11 @@ type ProductData = {
   id: string;
   sizes: string[];
   colors: string[];
+  inventory: {
+    id: string;
+    productId: string;
+    quantity: number;
+  } | null;
 };
 
 export default function ShoppingBag() {
@@ -115,6 +120,7 @@ export default function ShoppingBag() {
           id: p.id,
           sizes: p.sizes && p.sizes.length > 0 ? p.sizes : DEFAULT_SIZES,
           colors: p.colors && p.colors.length > 0 ? p.colors : DEFAULT_COLORS,
+          inventory: p.inventory,
         });
       });
       setProductsData(dataMap);
@@ -218,6 +224,13 @@ export default function ShoppingBag() {
   const shipping = subtotal > 0 ? config.shippingCostCents : 0;
   const total = subtotal + shipping;
 
+  // Check if any items have stock issues
+  const hasStockIssues = optimisticItems.some((item) => {
+    const productData = productsData.get(item.productId);
+    const stockQuantity = productData?.inventory?.quantity ?? 0;
+    return stockQuantity < item.qty;
+  });
+
   // block render until hydrated (prevents empty flash)
   if (!isHydrated) {
     return null;
@@ -266,6 +279,11 @@ export default function ShoppingBag() {
             <div className="flex flex-wrap gap-12 py-5 border-y border-neutral-300 justify-center">
               {optimisticItems.map((item) => {
                 const parsedItemColor = parseColor(item.color);
+                const productData = productsData.get(item.productId);
+                const stockQuantity = productData?.inventory?.quantity ?? 0;
+                const hasStockIssue = stockQuantity < item.qty;
+                const isOutOfStock = stockQuantity === 0;
+
                 return (
                   <div key={item.id} className="flex gap-6 w-fit sm:w-[320px]">
                     {/* PRODUCT */}
@@ -304,6 +322,16 @@ export default function ShoppingBag() {
                           <p className="text-xs text-black">{item.subtitle}</p>
                           <p>${item.price / 100}</p>
                         </div>
+                        {/* Stock Warning */}
+                        {isOutOfStock ? (
+                          <p className="text-xs text-red-600 font-medium mt-2">
+                            Out of stock
+                          </p>
+                        ) : hasStockIssue ? (
+                          <p className="text-xs text-orange-600 font-medium mt-2">
+                            Only {stockQuantity} available
+                          </p>
+                        ) : null}
                       </div>
                     </div>
 
@@ -613,8 +641,27 @@ export default function ShoppingBag() {
                 <span>${total / 100}</span>
               </div>
 
-              <Link href="/checkout">
-                <button className="w-full mt-6 bg-neutral-300 py-3 uppercase">
+              {hasStockIssues && (
+                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                  <p className="text-xs text-red-600">
+                    Some items in your cart are out of stock or exceed available
+                    quantity. Please update your cart before proceeding.
+                  </p>
+                </div>
+              )}
+
+              <Link
+                href="/checkout"
+                className={hasStockIssues ? "pointer-events-none" : ""}
+              >
+                <button
+                  disabled={hasStockIssues}
+                  className={`w-full mt-6 py-3 uppercase ${
+                    hasStockIssues
+                      ? "bg-neutral-200 text-neutral-400 cursor-not-allowed"
+                      : "bg-neutral-300 hover:bg-neutral-400 transition"
+                  }`}
+                >
                   Continue
                 </button>
               </Link>

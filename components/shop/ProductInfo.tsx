@@ -39,6 +39,11 @@ type ProductInfoProps = {
     price: number; // cents
     image: string | null;
     active: boolean;
+    inventory: {
+      id: string;
+      productId: string;
+      quantity: number;
+    } | null;
   };
 };
 
@@ -53,10 +58,18 @@ export default function ProductInfo({ product }: ProductInfoProps) {
   const { isFavorited, toggleFavorite, isLoading: isPending } = useFavorites();
 
   const displayPrice = (product.price / 100).toFixed(2);
+  const stockQuantity = product.inventory?.quantity ?? 0;
+  const isOutOfStock = stockQuantity === 0;
+  const isLowStock = stockQuantity > 0 && stockQuantity <= 5;
 
   const handleAddToCart = async () => {
     if (!activeSize || activeColor === null) {
       toast.error("Please select size and color");
+      return;
+    }
+
+    if (isOutOfStock) {
+      toast.error("This product is out of stock");
       return;
     }
 
@@ -80,7 +93,9 @@ export default function ProductInfo({ product }: ProductInfoProps) {
       addItem(cartItem);
       toast.success("Added to cart!");
     } catch (error) {
-      toast.error("Failed to add to cart");
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to add to cart";
+      toast.error(errorMessage);
       console.error(error);
     } finally {
       setIsLoading(false);
@@ -165,6 +180,19 @@ export default function ProductInfo({ product }: ProductInfoProps) {
               <p className="mt-2 text-sm">${displayPrice}</p>
               <p className="text-xs text-neutral-500">MRP incl. of all taxes</p>
 
+              {/* Stock Status */}
+              {isOutOfStock ? (
+                <p className="mt-2 text-xs text-red-600 font-medium uppercase">
+                  Out of Stock
+                </p>
+              ) : isLowStock ? (
+                <p className="mt-2 text-xs text-orange-600 font-medium">
+                  Only {stockQuantity} left in stock
+                </p>
+              ) : (
+                <p className="mt-2 text-xs text-green-600">In Stock</p>
+              )}
+
               {product.description && (
                 <p className="mt-6 text-sm leading-relaxed text-neutral-700">
                   {product.description}
@@ -219,7 +247,9 @@ export default function ProductInfo({ product }: ProductInfoProps) {
             {/* ADD TO CART */}
             <button
               onClick={handleAddToCart}
-              disabled={!activeSize || activeColor === null || isLoading}
+              disabled={
+                !activeSize || activeColor === null || isLoading || isOutOfStock
+              }
               className="
                 mt-8 w-full bg-black text-white py-3
                 text-xs uppercase tracking-wide
@@ -227,7 +257,11 @@ export default function ProductInfo({ product }: ProductInfoProps) {
                 hover:bg-neutral-800 transition
               "
             >
-              {isLoading ? "Adding..." : "Add to cart"}
+              {isOutOfStock
+                ? "Out of Stock"
+                : isLoading
+                  ? "Adding..."
+                  : "Add to cart"}
             </button>
           </div>
         </div>

@@ -43,17 +43,9 @@ export async function proxy(request: NextRequest) {
   if (
     validSession &&
     (validSession.user as any).requirePasswordChange &&
-    pathname !== "/set-password"
+    !pathname.startsWith("/set-password")
   ) {
-    // Check if temp password expired
-    const deadline = (validSession.user as any).passwordChangeDeadline;
-    if (deadline && new Date(deadline) < new Date()) {
-      // Redirect to login with expired message
-      return NextResponse.redirect(
-        new URL("/login?error=password-expired", request.url),
-      );
-    }
-    // Redirect to set-password page
+    // Redirect to set-password page (action will handle expired deadline)
     return NextResponse.redirect(new URL("/set-password", request.url));
   }
 

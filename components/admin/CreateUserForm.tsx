@@ -15,12 +15,16 @@ export default function CreateUserForm() {
   const [sendEmail, setSendEmail] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+  const [wasEmailSent, setWasEmailSent] = useState(false);
   const [tempPassword, setTempPassword] = useState("");
   const [copied, setCopied] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+    setSuccess(false);
+    setWasEmailSent(false);
     setTempPassword("");
     setLoading(true);
 
@@ -32,8 +36,14 @@ export default function CreateUserForm() {
         sendEmail,
       });
 
-      if (result.success && result.temporaryPassword) {
-        setTempPassword(result.temporaryPassword);
+      if (result.success) {
+        setSuccess(true);
+        // Capture whether email was sent before resetting form
+        setWasEmailSent(sendEmail);
+        // Set temporary password if provided
+        if (result.temporaryPassword) {
+          setTempPassword(result.temporaryPassword);
+        }
         // Reset form
         setEmail("");
         setName("");
@@ -42,9 +52,7 @@ export default function CreateUserForm() {
       }
     } catch (err) {
       setError(
-        err instanceof Error
-          ? err.message
-          : "An unexpected error error occurred",
+        err instanceof Error ? err.message : "An unexpected error occurred",
       );
     } finally {
       setLoading(false);
@@ -136,7 +144,7 @@ export default function CreateUserForm() {
         </CardContent>
       </Card>
 
-      {tempPassword && (
+      {success && (
         <Card className="mt-6 bg-green-50 border-green-200">
           <CardHeader>
             <CardTitle className="text-green-800">
@@ -145,36 +153,38 @@ export default function CreateUserForm() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-green-700 mb-4">
-              {sendEmail
+              {wasEmailSent
                 ? "An email has been sent to the user with their login credentials."
                 : "Please share the following temporary password with the user:"}
             </p>
-            <div className="bg-white border border-green-300 rounded-md p-4">
-              <div className="flex items-center justify-between">
-                <code className="text-lg font-mono font-semibold">
-                  {tempPassword}
-                </code>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={copyToClipboard}
-                  className="ml-4"
-                >
-                  {copied ? (
-                    <>
-                      <Check className="w-4 h-4 mr-2" />
-                      Copied!
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="w-4 h-4 mr-2" />
-                      Copy
-                    </>
-                  )}
-                </Button>
+            {tempPassword && (
+              <div className="bg-white border border-green-300 rounded-md p-4">
+                <div className="flex items-center justify-between">
+                  <code className="text-lg font-mono font-semibold">
+                    {tempPassword}
+                  </code>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={copyToClipboard}
+                    className="ml-4"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="w-4 h-4 mr-2" />
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4 mr-2" />
+                        Copy
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
-            </div>
+            )}
             <p className="text-xs text-green-700 mt-4">
               The user will be required to change this password when they first
               log in. The temporary password expires in 7 days.

@@ -7,6 +7,21 @@ import { hash } from "bcryptjs";
 import { generateTemporaryPassword } from "@/lib/utils";
 import { sendEmail } from "@/lib/email/send-email";
 
+/**
+ * Escape HTML special characters to prevent HTML injection
+ */
+function escapeHtml(text: string): string {
+  const map: Record<string, string> = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#x27;",
+    "/": "&#x2F;",
+  };
+  return text.replace(/[&<>"'/]/g, (char) => map[char] || char);
+}
+
 // Admin Products
 export async function getAllProductsAdmin() {
   const session = await auth();
@@ -707,6 +722,12 @@ export async function createUserAdmin(data: {
   // Send credentials via email if requested
   if (data.sendEmail) {
     try {
+      // Escape values to prevent HTML injection
+      const escapedEmail = escapeHtml(data.email);
+      const escapedPassword = escapeHtml(temporaryPassword);
+      const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+      const loginUrl = `${baseUrl}/login`;
+
       await sendEmail({
         to: data.email,
         subject: "Your Account Has Been Created",
@@ -715,12 +736,12 @@ export async function createUserAdmin(data: {
           <p>An administrator has created an account for you.</p>
           <p><strong>Your login credentials:</strong></p>
           <ul>
-            <li>Email: ${data.email}</li>
-            <li>Temporary Password: <code>${temporaryPassword}</code></li>
+            <li>Email: ${escapedEmail}</li>
+            <li>Temporary Password: <code>${escapedPassword}</code></li>
           </ul>
           <p><strong>Important:</strong> You must change your password when you first log in.</p>
           <p>For security reasons, this temporary password will expire in 7 days.</p>
-          <p><a href="${process.env.NEXTAUTH_URL}/login">Log in now</a></p>
+          <p><a href="${escapeHtml(loginUrl)}">Log in now</a></p>
         `,
       });
     } catch (error) {

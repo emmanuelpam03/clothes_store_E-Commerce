@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { changePasswordFirstLogin } from "@/app/actions/account.actions";
@@ -26,6 +26,22 @@ export default function SetPasswordClient() {
     newPassword?: string;
     confirmPassword?: string;
   }>({});
+
+  // Refs to store timeout IDs for cleanup
+  const successTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const errorTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (successTimeoutRef.current) {
+        clearTimeout(successTimeoutRef.current);
+      }
+      if (errorTimeoutRef.current) {
+        clearTimeout(errorTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -61,12 +77,15 @@ export default function SetPasswordClient() {
     }
 
     try {
-      const result = await changePasswordFirstLogin(currentPassword, newPassword);
+      const result = await changePasswordFirstLogin(
+        currentPassword,
+        newPassword,
+      );
 
       if (result.success) {
         toast.success("Password changed successfully! Redirecting...");
         // Redirect to home or dashboard after a short delay
-        setTimeout(() => {
+        successTimeoutRef.current = setTimeout(() => {
           router.push("/");
           router.refresh();
         }, 1000);
@@ -74,7 +93,7 @@ export default function SetPasswordClient() {
         toast.error(result.error || "Failed to change password");
         if (result.error?.includes("expired")) {
           // If temp password expired, redirect to login
-          setTimeout(() => {
+          errorTimeoutRef.current = setTimeout(() => {
             router.push("/login");
           }, 2000);
         }
@@ -104,7 +123,10 @@ export default function SetPasswordClient() {
             <FieldGroup className="space-y-4">
               {/* Current Password */}
               <Field>
-                <FieldLabel htmlFor="currentPassword" className="text-slate-700">
+                <FieldLabel
+                  htmlFor="currentPassword"
+                  className="text-slate-700"
+                >
                   Current (Temporary) Password
                 </FieldLabel>
                 <div className="relative">
@@ -129,7 +151,9 @@ export default function SetPasswordClient() {
                   </button>
                 </div>
                 {errors.currentPassword && (
-                  <p className="text-sm text-red-600">{errors.currentPassword}</p>
+                  <p className="text-sm text-red-600">
+                    {errors.currentPassword}
+                  </p>
                 )}
               </Field>
 
@@ -152,11 +176,7 @@ export default function SetPasswordClient() {
                     onClick={() => setShowNewPassword(!showNewPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700"
                   >
-                    {showNewPassword ? (
-                      <EyeOff size={18} />
-                    ) : (
-                      <Eye size={18} />
-                    )}
+                    {showNewPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
                 <FieldDescription className="text-slate-600">
@@ -169,7 +189,10 @@ export default function SetPasswordClient() {
 
               {/* Confirm Password */}
               <Field>
-                <FieldLabel htmlFor="confirmPassword" className="text-slate-700">
+                <FieldLabel
+                  htmlFor="confirmPassword"
+                  className="text-slate-700"
+                >
                   Confirm New Password
                 </FieldLabel>
                 <div className="relative">
@@ -194,7 +217,9 @@ export default function SetPasswordClient() {
                   </button>
                 </div>
                 {errors.confirmPassword && (
-                  <p className="text-sm text-red-600">{errors.confirmPassword}</p>
+                  <p className="text-sm text-red-600">
+                    {errors.confirmPassword}
+                  </p>
                 )}
               </Field>
             </FieldGroup>
@@ -209,9 +234,7 @@ export default function SetPasswordClient() {
           </form>
 
           <div className="text-center text-sm text-slate-600">
-            <p>
-              Having trouble? Contact an administrator for assistance.
-            </p>
+            <p>Having trouble? Contact an administrator for assistance.</p>
           </div>
         </CardContent>
       </Card>

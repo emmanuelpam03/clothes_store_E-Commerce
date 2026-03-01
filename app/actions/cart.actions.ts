@@ -44,7 +44,41 @@ export async function addToCartAction(
   size = "M",
   color = "",
 ) {
+  // Check product stock before adding
+  const product = await prisma.product.findUnique({
+    where: { id: productId },
+    include: { inventory: true },
+  });
+
+  if (!product) {
+    throw new Error("Product not found");
+  }
+
+  if (!product.inventory) {
+    throw new Error("Product inventory not available");
+  }
+
+  // Calculate total quantity in cart for this product (all sizes/colors)
   const cart = await getOrCreateCart();
+  const existingItem = await prisma.cartItem.findUnique({
+    where: {
+      cartId_productId_size_color: {
+        cartId: cart.id,
+        productId,
+        size,
+        color,
+      },
+    },
+  });
+
+  const currentQtyInCart = existingItem ? existingItem.quantity : 0;
+  const newTotalQty = currentQtyInCart + qty;
+
+  if (product.inventory.quantity < newTotalQty) {
+    throw new Error(
+      `Only ${product.inventory.quantity} item(s) available. You already have ${currentQtyInCart} in your cart.`,
+    );
+  }
 
   await prisma.cartItem.upsert({
     where: {
@@ -97,6 +131,30 @@ export async function updateCartQtyAction(
       },
     });
     return;
+  }
+
+  // Check stock before updating quantity
+  const cartItem = await prisma.cartItem.findUnique({
+    where: { id: cartItemId },
+    include: {
+      product: {
+        include: { inventory: true },
+      },
+    },
+  });
+
+  if (!cartItem) {
+    throw new Error("Cart item not found");
+  }
+
+  if (!cartItem.product.inventory) {
+    throw new Error("Product inventory not available");
+  }
+
+  if (cartItem.product.inventory.quantity < quantity) {
+    throw new Error(
+      `Only ${cartItem.product.inventory.quantity} item(s) available`,
+    );
   }
 
   await prisma.cartItem.update({
