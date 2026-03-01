@@ -23,37 +23,41 @@ export default function CheckoutPage() {
 
     // Validate stock before allowing checkout
     const validateStock = async () => {
-      const productIds = Array.from(
-        new Set(items.map((item) => item.productId)),
-      );
-      const products = await getProductsByIds(productIds);
+      try {
+        const productIds = Array.from(
+          new Set(items.map((item) => item.productId)),
+        );
+        const products = await getProductsByIds(productIds);
 
-      const stockIssues: string[] = [];
+        const stockIssues: string[] = [];
 
-      items.forEach((item) => {
-        const product = products.find((p) => p.id === item.productId);
-        const stockQuantity = product?.inventory?.quantity ?? 0;
+        items.forEach((item) => {
+          const product = products.find((p) => p.id === item.productId);
+          const stockQuantity = product?.inventory?.quantity ?? 0;
 
-        if (stockQuantity === 0) {
-          stockIssues.push(`${item.title} is out of stock`);
-        } else if (stockQuantity < item.qty) {
-          stockIssues.push(
-            `${item.title} - only ${stockQuantity} available (you have ${item.qty} in cart)`,
-          );
-        }
-      });
-
-      if (stockIssues.length > 0) {
-        toast.error("Stock issues detected. Please update your cart.", {
-          description: stockIssues[0],
+          if (stockQuantity === 0) {
+            stockIssues.push(`${item.title} is out of stock`);
+          } else if (stockQuantity < item.qty) {
+            stockIssues.push(
+              `${item.title} - only ${stockQuantity} available (you have ${item.qty} in cart)`,
+            );
+          }
         });
+
+        if (stockIssues.length > 0) {
+          toast.error("Stock issues detected. Please update your cart.", {
+            description: stockIssues[0],
+          });
+          router.replace("/cart");
+          return;
+        }
+
+        setIsValidating(false);
+      } catch (error) {
+        toast.error("Failed to validate cart. Please try again.");
         router.replace("/cart");
-        return;
       }
-
-      setIsValidating(false);
     };
-
     validateStock();
   }, [items, router]);
 

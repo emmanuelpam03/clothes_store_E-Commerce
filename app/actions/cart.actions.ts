@@ -44,61 +44,73 @@ export async function addToCartAction(
   size = "M",
   color = "",
 ) {
-  // Check product stock before adding
-  const product = await prisma.product.findUnique({
-    where: { id: productId },
-    include: { inventory: true },
-  });
+  // Use transaction to prevent TOCTOU race conditions
+  await prisma.$transaction(async (tx) => {
+    // Check product stock within transaction
+    const product = await tx.product.findUnique({
+      where: { id: productId },
+      include: { inventory: true },
+    });
 
-  if (!product) {
-    throw new Error("Product not found");
-  }
+    if (!product) {
+      throw new Error("Product not found");
+    }
 
-  if (!product.inventory) {
-    throw new Error("Product inventory not available");
-  }
+    if (!product.inventory) {
+      throw new Error("Product inventory not available");
+    }
 
-  // Calculate total quantity in cart for this product (all sizes/colors)
-  const cart = await getOrCreateCart();
-  const existingItem = await prisma.cartItem.findUnique({
-    where: {
-      cartId_productId_size_color: {
+    // Get or create cart within transaction
+    const userId = await getUserId();
+    const cart = await tx.cart.upsert({
+      where: { userId },
+      update: {},
+      create: { userId },
+    });
+
+    // Check existing cart item within transaction
+    const existingItem = await tx.cartItem.findUnique({
+      where: {
+        cartId_productId_size_color: {
+          cartId: cart.id,
+          productId,
+          size,
+          color,
+        },
+      },
+    });
+
+    // Recalculate quantities inside transaction
+    const currentQtyInCart = existingItem ? existingItem.quantity : 0;
+    const newTotalQty = currentQtyInCart + qty;
+
+    if (product.inventory.quantity < newTotalQty) {
+      throw new Error(
+        `Only ${product.inventory.quantity} item(s) available. You already have ${currentQtyInCart} in your cart.`,
+      );
+    }
+
+    // Perform upsert within transaction
+    await tx.cartItem.upsert({
+      where: {
+        cartId_productId_size_color: {
+          cartId: cart.id,
+          productId,
+          size,
+          color,
+        },
+      },
+      update: {
+        quantity: { increment: qty },
+      },
+      create: {
         cartId: cart.id,
         productId,
+        quantity: qty,
         size,
         color,
       },
-    },
-  });
-
-  const currentQtyInCart = existingItem ? existingItem.quantity : 0;
-  const newTotalQty = currentQtyInCart + qty;
-
-  if (product.inventory.quantity < newTotalQty) {
-    throw new Error(
-      `Only ${product.inventory.quantity} item(s) available. You already have ${currentQtyInCart} in your cart.`,
-    );
-  }
-
-  await prisma.cartItem.upsert({
-    where: {
-      cartId_productId_size_color: {
-        cartId: cart.id,
-        productId,
-        size,
-        color,
-      },
-    },
-    update: {
-      quantity: { increment: qty },
-    },
-    create: {
-      cartId: cart.id,
-      productId,
-      quantity: qty,
-      size,
-      color,
-    },
+    });
   });
 
   return getOrCreateCart();
@@ -124,7 +136,23 @@ export async function updateCartQtyAction(
   cartItemId: string,
   quantity: number,
 ) {
+  const userId = await getUserId();
+
   if (quantity <= 0) {
+    // Verify ownership before deletion
+    const cartItem = await prisma.cartItem.findUnique({
+      where: { id: cartItemId },
+      include: { cart: true },
+    });
+
+    if (!cartItem) {
+      throw new Error("Cart item not found");
+    }
+
+    if (cartItem.cart.userId !== userId) {
+      throw new Error("Unauthorized");
+    }
+
     await prisma.cartItem.delete({
       where: {
         id: cartItemId,
@@ -133,35 +161,46 @@ export async function updateCartQtyAction(
     return;
   }
 
-  // Check stock before updating quantity
-  const cartItem = await prisma.cartItem.findUnique({
-    where: { id: cartItemId },
-    include: {
-      product: {
-        include: { inventory: true },
+  // Use transaction to prevent TOCTOU race conditions
+  await prisma.$transaction(async (tx) => {
+    // Check stock within transaction and verify ownership
+    const cartItem = await tx.cartItem.findUnique({
+      where: { id: cartItemId },
+      include: {
+        cart: true,
+        product: {
+          include: { inventory: true },
+        },
       },
-    },
-  });
+    });
 
-  if (!cartItem) {
-    throw new Error("Cart item not found");
-  }
+    if (!cartItem) {
+      throw new Error("Cart item not found");
+    }
 
-  if (!cartItem.product.inventory) {
-    throw new Error("Product inventory not available");
-  }
+    // Verify ownership
+    if (cartItem.cart.userId !== userId) {
+      throw new Error("Unauthorized");
+    }
 
-  if (cartItem.product.inventory.quantity < quantity) {
-    throw new Error(
-      `Only ${cartItem.product.inventory.quantity} item(s) available`,
-    );
-  }
+    if (!cartItem.product.inventory) {
+      throw new Error("Product inventory not available");
+    }
 
-  await prisma.cartItem.update({
-    where: {
-      id: cartItemId,
-    },
-    data: { quantity },
+    // Validate stock within transaction
+    if (cartItem.product.inventory.quantity < quantity) {
+      throw new Error(
+        `Only ${cartItem.product.inventory.quantity} item(s) available`,
+      );
+    }
+
+    // Update within transaction
+    await tx.cartItem.update({
+      where: {
+        id: cartItemId,
+      },
+      data: { quantity },
+    });
   });
 }
 

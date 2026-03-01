@@ -88,6 +88,7 @@ export default function ShoppingBag() {
   const [productsData, setProductsData] = useState<Map<string, ProductData>>(
     new Map(),
   );
+  const [isLoadingProducts, setIsLoadingProducts] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const optionRefs = useRef<Map<string, HTMLElement>>(new Map());
@@ -108,10 +109,13 @@ export default function ShoppingBag() {
   // Fetch product data for sizes and colors
   useEffect(() => {
     if (uniqueProductIds.length === 0) {
+      setProductsData(new Map());
+      setIsLoadingProducts(false);
       return;
     }
 
     const fetchProductData = async () => {
+      setIsLoadingProducts(true);
       const products = await getProductsByIds(uniqueProductIds);
 
       const dataMap = new Map<string, ProductData>();
@@ -124,6 +128,7 @@ export default function ShoppingBag() {
         });
       });
       setProductsData(dataMap);
+      setIsLoadingProducts(false);
     };
 
     fetchProductData();
@@ -224,12 +229,16 @@ export default function ShoppingBag() {
   const shipping = subtotal > 0 ? config.shippingCostCents : 0;
   const total = subtotal + shipping;
 
-  // Check if any items have stock issues
-  const hasStockIssues = optimisticItems.some((item) => {
-    const productData = productsData.get(item.productId);
-    const stockQuantity = productData?.inventory?.quantity ?? 0;
-    return stockQuantity < item.qty;
-  });
+  // Check if any items have stock issues (only when products are loaded)
+  const hasStockIssues =
+    !isLoadingProducts &&
+    optimisticItems.some((item) => {
+      const productData = productsData.get(item.productId);
+      // Skip items with missing product data (shouldn't happen when loaded)
+      if (!productData) return false;
+      const stockQuantity = productData.inventory?.quantity ?? 0;
+      return stockQuantity < item.qty;
+    });
 
   // block render until hydrated (prevents empty flash)
   if (!isHydrated) {

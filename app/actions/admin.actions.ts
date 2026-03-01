@@ -741,7 +741,7 @@ export async function createUserAdmin(data: {
           </ul>
           <p><strong>Important:</strong> You must change your password when you first log in.</p>
           <p>For security reasons, this temporary password will expire in 7 days.</p>
-          <p><a href="${escapeHtml(loginUrl)}">Log in now</a></p>
+          <p><a href="${loginUrl}">Log in now</a></p>
         `,
       });
     } catch (error) {

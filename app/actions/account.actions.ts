@@ -8,16 +8,59 @@ import { setPasswordSchema } from "@/lib/validators/set-password.schema";
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
 
+// TODO: Replace in-memory rate limiter with distributed solution (Redis/Upstash or DB-backed)
+// Current implementation has limitations:
+// - Not suitable for serverless/horizontal deployments (each instance has separate state)
+// - Potential memory leak without cleanup
+// - Consider: Upstash Redis, Vercel KV, or database-backed rate limiting
+// Issue: https://github.com/yourorg/yourrepo/issues/XXX (replace with actual issue tracker)
+
 // Simple in-memory rate limiter for password verification attempts
 const passwordAttempts = new Map<
   string,
   { count: number; resetAt: number; lockedUntil?: number }
 >();
 
+// Cleanup expired entries to prevent memory leaks
+function cleanupExpiredAttempts() {
+  const now = Date.now();
+  const entriesToDelete: string[] = [];
+
+  for (const [key, record] of passwordAttempts.entries()) {
+    // Remove if both resetAt and lockedUntil (if exists) are expired
+    const resetExpired = record.resetAt < now;
+    const lockExpired = !record.lockedUntil || record.lockedUntil < now;
+
+    if (resetExpired && lockExpired) {
+      entriesToDelete.push(key);
+    }
+  }
+
+  entriesToDelete.forEach((key) => passwordAttempts.delete(key));
+}
+
+// Guard against unbounded growth
+const MAX_ENTRIES = 10000;
+function guardMapGrowth() {
+  if (passwordAttempts.size > MAX_ENTRIES) {
+    // Remove oldest 20% of entries when limit exceeded
+    const entriesToRemove = Math.floor(MAX_ENTRIES * 0.2);
+    const keys = Array.from(passwordAttempts.keys());
+    for (let i = 0; i < entriesToRemove && i < keys.length; i++) {
+      passwordAttempts.delete(keys[i]);
+    }
+  }
+}
+
 function checkPasswordAttemptLimit(userId: string): {
   allowed: boolean;
   error?: string;
 } {
+  // Periodically clean up expired entries (10% chance on each check)
+  if (Math.random() < 0.1) {
+    cleanupExpiredAttempts();
+  }
+
   const now = Date.now();
   const key = `password-verify:${userId}`;
   const record = passwordAttempts.get(key);
@@ -33,6 +76,7 @@ function checkPasswordAttemptLimit(userId: string): {
 
   // Reset if window expired
   if (!record || record.resetAt < now) {
+    guardMapGrowth(); // Check size before adding
     passwordAttempts.set(key, {
       count: 1,
       resetAt: now + 10 * 60 * 1000, // 10 minutes
