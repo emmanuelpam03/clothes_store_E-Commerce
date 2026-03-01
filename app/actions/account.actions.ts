@@ -8,7 +8,6 @@ import { setPasswordSchema } from "@/lib/validators/set-password.schema";
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
 
-
 // Simple in-memory rate limiter for password verification attempts
 const passwordAttempts = new Map<
   string,
@@ -360,20 +359,20 @@ export async function resendVerificationCodeAction() {
 }
 
 /**
- * DELETE ACCOUNT ACTION (SOFT DELETE)
- * Deactivates the user's account and signs them out
+ * DEACTIVATE ACCOUNT (SOFT DELETE WITH 90-DAY GRACE PERIOD)
+ * User can reactivate within 90 days by logging in again
+ * After 90 days, account is permanently deleted by cleanup script
  */
-export async function deleteAccountAction() {
+export async function deactivateAccountAction() {
   const session = await auth();
 
   if (!session?.user?.id) {
     redirect("/login");
   }
 
-  // Soft delete: mark account as inactive and record deletion timestamp
-  // Account will remain in database for 90 days before permanent deletion
-  // User can reactivate within 90 days by registering with same email
-  // Permanent deletion is handled by scripts/cleanup-deleted-accounts.ts
+  // Soft delete: mark account as inactive
+  // User can reactivate within 90 days
+  // Cleanup script will permanently delete after 90 days
   await prisma.user.update({
     where: { id: session.user.id },
     data: {
@@ -383,7 +382,339 @@ export async function deleteAccountAction() {
   });
 
   // Sign the user out
+  await signOut({ redirectTo: "/login?deactivated=true" });
+}
+
+/**
+ * PERMANENTLY DELETE ACCOUNT (IMMEDIATE GDPR-COMPLIANT DELETION)
+ * Immediately anonymizes user's personal data - cannot be undone
+ */
+export async function deleteAccountPermanently() {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    redirect("/login");
+  }
+
+  const userId = session.user.id;
+
+  // Use transaction to ensure all operations succeed together
+  await prisma.$transaction(async (tx) => {
+    // 1. Anonymize user's personal data
+    const anonymizedEmail = `deleted_${userId}@deleted.local`;
+    await tx.user.update({
+      where: { id: userId },
+      data: {
+        active: false,
+        deletedAt: new Date(),
+        email: anonymizedEmail,
+        name: "Deleted User",
+        image: null,
+        password: null, // Remove password
+        emailVerified: null,
+      },
+    });
+
+    // 2. Anonymize personal data in all orders (preserve order records)
+    await tx.order.updateMany({
+      where: { userId },
+      data: {
+        email: anonymizedEmail,
+        phone: "DELETED",
+        firstName: "Deleted",
+        lastName: "User",
+        address: "DELETED",
+        city: "DELETED",
+        zipCode: "00000",
+        country: "DELETED",
+      },
+    });
+
+    // 3. Delete cart (will cascade to cart items)
+    await tx.cart.deleteMany({
+      where: { userId },
+    });
+
+    // 4. Delete favorites
+    await tx.favorite.deleteMany({
+      where: { userId },
+    });
+
+    // 5. Delete sessions
+    await tx.session.deleteMany({
+      where: { userId },
+    });
+
+    // 6. Delete OAuth accounts (Google, etc.)
+    await tx.account.deleteMany({
+      where: { userId },
+    });
+
+    // 7. Delete email verification tokens
+    await tx.emailVerificationToken.deleteMany({
+      where: { userId },
+    });
+  });
+
+  // Sign the user out
   await signOut({ redirectTo: "/login?deleted=true" });
+}
+
+/**
+ * REACTIVATE ACCOUNT (RESTORE DEACTIVATED ACCOUNT)
+ * Can only be used within 90 days of deactivation
+ */
+export async function reactivateAccountAction(email: string, password: string) {
+  // Find user by email
+  const user = await prisma.user.findUnique({
+    where: { email },
+  });
+
+  if (!user || !user.password) {
+    return { success: false, error: "Invalid credentials" };
+  }
+
+  // Check if account is deactivated
+  if (user.active) {
+    return { success: false, error: "Account is already active" };
+  }
+
+  // Check if account is within 90-day grace period
+  if (user.deletedAt) {
+    const daysSinceDeactivation = Math.floor(
+      (Date.now() - user.deletedAt.getTime()) / (1000 * 60 * 60 * 24),
+    );
+
+    if (daysSinceDeactivation > 90) {
+      return {
+        success: false,
+        error:
+          "Account deactivation period expired. Account will be permanently deleted.",
+      };
+    }
+  }
+
+  // Verify password
+  const bcrypt = await import("bcryptjs");
+  const isValidPassword = await bcrypt.compare(password, user.password);
+
+  if (!isValidPassword) {
+    return { success: false, error: "Invalid credentials" };
+  }
+
+  // Reactivate account
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      active: true,
+      deletedAt: null,
+    },
+  });
+
+  return { success: true };
+}
+
+// ======================================================
+// ADMIN ACCOUNT MANAGEMENT ACTIONS
+// ======================================================
+
+/**
+ * ADMIN: DEACTIVATE USER ACCOUNT
+ * Soft delete with 90-day grace period
+ */
+export async function adminDeactivateUserAction(userId: string) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    redirect("/login");
+  }
+
+  // Check if user is admin
+  const adminUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { role: true },
+  });
+
+  if (adminUser?.role !== "ADMIN") {
+    throw new Error("Unauthorized: Admin access required");
+  }
+
+  // Prevent admin from deactivating themselves
+  if (userId === session.user.id) {
+    throw new Error("Cannot deactivate your own account");
+  }
+
+  // Deactivate user account
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      active: false,
+      deletedAt: new Date(),
+    },
+  });
+
+  // Delete user's sessions (force logout)
+  await prisma.session.deleteMany({
+    where: { userId },
+  });
+
+  return { success: true };
+}
+
+/**
+ * ADMIN: PERMANENTLY DELETE USER ACCOUNT
+ * Immediately anonymizes user's personal data - cannot be undone
+ */
+export async function adminDeleteUserPermanentlyAction(userId: string) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    redirect("/login");
+  }
+
+  // Check if user is admin
+  const adminUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { role: true },
+  });
+
+  if (adminUser?.role !== "ADMIN") {
+    throw new Error("Unauthorized: Admin access required");
+  }
+
+  // Prevent admin from deleting themselves
+  if (userId === session.user.id) {
+    throw new Error("Cannot delete your own account");
+  }
+
+  // Use transaction to ensure all operations succeed together
+  await prisma.$transaction(async (tx) => {
+    // 1. Anonymize user's personal data
+    const anonymizedEmail = `deleted_${userId}@deleted.local`;
+    await tx.user.update({
+      where: { id: userId },
+      data: {
+        active: false,
+        deletedAt: new Date(),
+        email: anonymizedEmail,
+        name: "Deleted User",
+        image: null,
+        password: null,
+        emailVerified: null,
+      },
+    });
+
+    // 2. Anonymize personal data in all orders
+    await tx.order.updateMany({
+      where: { userId },
+      data: {
+        email: anonymizedEmail,
+        phone: "DELETED",
+        firstName: "Deleted",
+        lastName: "User",
+        address: "DELETED",
+        city: "DELETED",
+        zipCode: "00000",
+        country: "DELETED",
+      },
+    });
+
+    // 3. Delete cart
+    await tx.cart.deleteMany({
+      where: { userId },
+    });
+
+    // 4. Delete favorites
+    await tx.favorite.deleteMany({
+      where: { userId },
+    });
+
+    // 5. Delete sessions
+    await tx.session.deleteMany({
+      where: { userId },
+    });
+
+    // 6. Delete OAuth accounts
+    await tx.account.deleteMany({
+      where: { userId },
+    });
+
+    // 7. Delete email verification tokens
+    await tx.emailVerificationToken.deleteMany({
+      where: { userId },
+    });
+  });
+
+  return { success: true };
+}
+
+/**
+ * ADMIN: REACTIVATE USER ACCOUNT
+ * Restore deactivated account (must be within 90-day grace period)
+ */
+export async function adminReactivateUserAction(userId: string) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    redirect("/login");
+  }
+
+  // Check if user is admin
+  const adminUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { role: true },
+  });
+
+  if (adminUser?.role !== "ADMIN") {
+    throw new Error("Unauthorized: Admin access required");
+  }
+
+  // Find user
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  // Check if account is already active
+  if (user.active) {
+    return { success: false, error: "Account is already active" };
+  }
+
+  // Check if account was permanently deleted (anonymized)
+  if (user.email && user.email.startsWith("deleted_")) {
+    return {
+      success: false,
+      error: "Cannot reactivate permanently deleted account",
+    };
+  }
+
+  // Check if account is within 90-day grace period
+  if (user.deletedAt) {
+    const daysSinceDeactivation = Math.floor(
+      (Date.now() - user.deletedAt.getTime()) / (1000 * 60 * 60 * 24),
+    );
+
+    if (daysSinceDeactivation > 90) {
+      return {
+        success: false,
+        error: "Account deactivation period expired",
+      };
+    }
+  }
+
+  // Reactivate account
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      active: true,
+      deletedAt: null,
+    },
+  });
+
+  return { success: true };
 }
 
 /**

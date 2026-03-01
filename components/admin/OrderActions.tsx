@@ -136,7 +136,8 @@ export default function OrderActions({
         ))}
       </select>
 
-      {selectedStatus !== "CANCELLED" && selectedStatus !== "DELIVERED" && (
+      {/* Only allow cancellation for PENDING orders - once PAID or SHIPPED, cannot cancel */}
+      {selectedStatus === "PENDING" && (
         <button
           onClick={handleCancelOrder}
           disabled={loading || confirmingCancel}

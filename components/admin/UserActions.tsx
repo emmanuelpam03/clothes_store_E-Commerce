@@ -7,6 +7,11 @@ import {
   updateUserRoleAdmin,
   deleteUserAdmin,
 } from "@/app/actions/admin.actions";
+import {
+  adminDeactivateUserAction,
+  adminDeleteUserPermanentlyAction,
+  adminReactivateUserAction,
+} from "@/app/actions/account.actions";
 
 type UserRole = "USER" | "ADMIN";
 
@@ -85,6 +90,100 @@ export default function UserActions({
     });
   };
 
+  const handleDeactivateUser = async () => {
+    if (isCurrentUser) {
+      toast.error("Cannot deactivate your own account");
+      return;
+    }
+
+    toast.warning("Deactivate this user account?", {
+      description:
+        "User can reactivate within 90 days. After 90 days, account will be permanently deleted.",
+      action: {
+        label: "Deactivate",
+        onClick: async () => {
+          setLoading(true);
+          try {
+            await adminDeactivateUserAction(userId);
+            toast.success("User account deactivated");
+            router.refresh();
+          } catch (error) {
+            console.error("Failed to deactivate user:", error);
+            toast.error(
+              error instanceof Error
+                ? error.message
+                : "Failed to deactivate user",
+            );
+          } finally {
+            setLoading(false);
+          }
+        },
+      },
+      cancel: {
+        label: "Cancel",
+        onClick: () => {},
+      },
+    });
+  };
+
+  const handlePermanentlyDeleteUser = async () => {
+    if (isCurrentUser) {
+      toast.error("Cannot delete your own account");
+      return;
+    }
+
+    toast.error("Permanently delete this user?", {
+      description:
+        "This immediately anonymizes all personal data and CANNOT be undone.",
+      action: {
+        label: "Permanently Delete",
+        onClick: async () => {
+          setLoading(true);
+          try {
+            await adminDeleteUserPermanentlyAction(userId);
+            toast.success("User account permanently deleted");
+            router.refresh();
+          } catch (error) {
+            console.error("Failed to permanently delete user:", error);
+            toast.error(
+              error instanceof Error
+                ? error.message
+                : "Failed to permanently delete user",
+            );
+          } finally {
+            setLoading(false);
+          }
+        },
+      },
+      cancel: {
+        label: "Cancel",
+        onClick: () => {},
+      },
+    });
+  };
+
+  const handleReactivateUser = async () => {
+    setLoading(true);
+    try {
+      const result = await adminReactivateUserAction(userId);
+      if (result.success) {
+        toast.success("User account reactivated");
+        router.refresh();
+      } else {
+        toast.error(result.error || "Failed to reactivate user");
+      }
+    } catch (error) {
+      console.error("Failed to reactivate user:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to reactivate user",
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const [showActionsMenu, setShowActionsMenu] = useState(false);
+
   return (
     <div className="flex items-center gap-2">
       <select
@@ -97,21 +196,54 @@ export default function UserActions({
         <option value="ADMIN">Admin</option>
       </select>
 
-      {!isCurrentUser && !isDeactivated && (
-        <button
-          onClick={handleDeleteUser}
-          disabled={loading}
-          className="px-3 py-1 text-sm text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loading ? "..." : "Delete"}
-        </button>
+      {!isCurrentUser && (
+        <div className="relative">
+          <button
+            onClick={() => setShowActionsMenu(!showActionsMenu)}
+            onBlur={() => setTimeout(() => setShowActionsMenu(false), 200)}
+            disabled={loading}
+            className="px-3 py-1 text-sm text-slate-700 border border-slate-300 rounded-md hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Actions ▾
+          </button>
+          {showActionsMenu && (
+            <div className="absolute right-0 mt-1 w-48 bg-white border border-slate-200 rounded-md shadow-lg z-10">
+              {isDeactivated ? (
+                <button
+                  onClick={handleReactivateUser}
+                  disabled={loading}
+                  className="w-full px-4 py-2 text-left text-sm text-green-600 hover:bg-green-50 disabled:opacity-50"
+                >
+                  Reactivate Account
+                </button>
+              ) : (
+                <>
+                  <button
+                    onClick={handleDeactivateUser}
+                    disabled={loading}
+                    className="w-full px-4 py-2 text-left text-sm text-orange-600 hover:bg-orange-50 disabled:opacity-50"
+                  >
+                    Deactivate Account
+                  </button>
+                  <button
+                    onClick={handlePermanentlyDeleteUser}
+                    disabled={loading}
+                    className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 disabled:opacity-50 border-t border-slate-200"
+                  >
+                    Permanently Delete
+                  </button>
+                </>
+              )}
+            </div>
+          )}
+        </div>
       )}
 
       <button
         onClick={() => router.push(`/admin/users/${userId}`)}
         className="px-3 py-1 text-sm text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
-        View Details
+        View
       </button>
     </div>
   );

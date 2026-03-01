@@ -7,7 +7,8 @@ import {
   unlinkGoogleAction,
   canLinkGoogleAction,
   resendVerificationCodeAction,
-  deleteAccountAction,
+  deactivateAccountAction,
+  deleteAccountPermanently,
 } from "@/app/actions/account.actions";
 import { toast } from "sonner";
 import SetPasswordModal from "@/app/(shop)/setPasswordModal";
@@ -31,6 +32,9 @@ export default function ProfileClient({
 }: Props) {
   const [showUnlinkConfirm, setShowUnlinkConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteType, setDeleteType] = useState<"deactivate" | "permanent">(
+    "deactivate",
+  );
   const [confirmed, setConfirmed] = useState(false);
   const [deleteConfirmed, setDeleteConfirmed] = useState(false);
   const [showSetPassword, setShowSetPassword] = useState(false);
@@ -187,23 +191,51 @@ export default function ProfileClient({
       <div className="space-y-4 pt-4 border-t border-red-200">
         <h2 className="text-base font-medium text-red-600">Danger Zone</h2>
 
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3">
-          <p className="text-sm font-medium text-red-900">Delete Account</p>
-          <p className="text-xs text-red-700 mt-1">
-            Deactivate your account immediately. After 90 days of inactivity,
-            your account and all data will be permanently deleted.
-          </p>
-        </div>
+        <div className="space-y-3">
+          {/* DEACTIVATE ACCOUNT */}
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+            <p className="text-sm font-medium text-amber-900">
+              Deactivate Account
+            </p>
+            <p className="text-xs text-amber-700 mt-1">
+              Temporarily disable your account. You can reactivate within 90
+              days by logging in again.
+            </p>
+          </div>
 
-        <button
-          onClick={() => {
-            setDeleteConfirmed(false);
-            setShowDeleteConfirm(true);
-          }}
-          className="w-full rounded-lg border border-red-500 bg-red-600 py-2 text-sm font-medium text-white hover:bg-red-700 cursor-pointer"
-        >
-          Deactivate Account
-        </button>
+          <button
+            onClick={() => {
+              setDeleteType("deactivate");
+              setDeleteConfirmed(false);
+              setShowDeleteConfirm(true);
+            }}
+            className="w-full rounded-lg border border-amber-500 bg-amber-600 py-2 text-sm font-medium text-white hover:bg-amber-700 cursor-pointer"
+          >
+            Deactivate Account
+          </button>
+
+          {/* PERMANENTLY DELETE ACCOUNT */}
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+            <p className="text-sm font-medium text-red-900">
+              Permanently Delete Account
+            </p>
+            <p className="text-xs text-red-700 mt-1">
+              Immediately delete all your personal data. This action cannot be
+              undone.
+            </p>
+          </div>
+
+          <button
+            onClick={() => {
+              setDeleteType("permanent");
+              setDeleteConfirmed(false);
+              setShowDeleteConfirm(true);
+            }}
+            className="w-full rounded-lg border border-red-500 bg-red-600 py-2 text-sm font-medium text-white hover:bg-red-700 cursor-pointer"
+          >
+            Permanently Delete Account
+          </button>
+        </div>
       </div>
 
       {/* CONFIRM MODAL */}
@@ -254,61 +286,126 @@ export default function ProfileClient({
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
           <div className="w-full max-w-sm rounded-xl bg-white p-6 space-y-5">
-            <h3 className="text-base font-semibold text-red-600">
-              Deactivate Account?
-            </h3>
+            {deleteType === "deactivate" ? (
+              <>
+                <h3 className="text-base font-semibold text-amber-600">
+                  Deactivate Account?
+                </h3>
 
-            <div className="space-y-3 text-sm text-neutral-600">
-              <p>
-                Your account will be deactivated immediately and you'll be
-                logged out.
-              </p>
-              <p>
-                <strong className="text-neutral-900">After 90 days</strong>,
-                your account and all associated data will be permanently
-                deleted.
-              </p>
-              <p>
-                You can reactivate your account anytime within 90 days by
-                registering again with the same email.
-              </p>
-            </div>
+                <div className="space-y-3 text-sm text-neutral-600">
+                  <p>
+                    Your account will be deactivated immediately and you'll be
+                    logged out.
+                  </p>
+                  <p>
+                    <strong className="text-neutral-900">Within 90 days</strong>
+                    , you can reactivate by logging in with your email and
+                    password.
+                  </p>
+                  <p>
+                    <strong className="text-neutral-900">After 90 days</strong>,
+                    your account will be permanently deleted if not reactivated.
+                  </p>
+                </div>
 
-            <label className="flex items-start gap-2 text-sm">
-              <input
-                type="checkbox"
-                className="mt-1"
-                checked={deleteConfirmed}
-                onChange={(e) => setDeleteConfirmed(e.target.checked)}
-              />
-              <span>
-                I understand my account will be deactivated for 90 days before
-                permanent deletion.
-              </span>
-            </label>
+                <label className="flex items-start gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    className="mt-1"
+                    checked={deleteConfirmed}
+                    onChange={(e) => setDeleteConfirmed(e.target.checked)}
+                  />
+                  <span>
+                    I understand my account can be reactivated within 90 days.
+                  </span>
+                </label>
 
-            <div className="flex gap-3 pt-2">
-              <button
-                onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 rounded-lg border py-2 text-sm hover:bg-neutral-50 cursor-pointer"
-              >
-                Cancel
-              </button>
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    className="flex-1 rounded-lg border py-2 text-sm hover:bg-neutral-50 cursor-pointer"
+                  >
+                    Cancel
+                  </button>
 
-              <form action={deleteAccountAction} className="flex-1">
-                <button
-                  type="submit"
-                  disabled={!deleteConfirmed}
-                  className={`w-full rounded-lg py-2 text-sm text-white cursor-pointer ${
-                    deleteConfirmed
-                      ? "bg-red-600 hover:bg-red-700"
-                      : "bg-red-300 cursor-not-allowed"
-                  }`}
-                >
-                  Deactivate Account
-                </button>
-              </form>
-            </div>
+                  <form action={deactivateAccountAction} className="flex-1">
+                    <button
+                      type="submit"
+                      disabled={!deleteConfirmed}
+                      className={`w-full rounded-lg py-2 text-sm text-white cursor-pointer ${
+                        deleteConfirmed
+                          ? "bg-amber-600 hover:bg-amber-700"
+                          : "bg-amber-300 cursor-not-allowed"
+                      }`}
+                    >
+                      Deactivate Account
+                    </button>
+                  </form>
+                </div>
+              </>
+            ) : (
+              <>
+                <h3 className="text-base font-semibold text-red-600">
+                  Permanently Delete Account?
+                </h3>
+
+                <div className="space-y-3 text-sm text-neutral-600">
+                  <p className="font-semibold text-red-600">
+                    ⚠️ This action cannot be undone!
+                  </p>
+                  <p>
+                    All your personal data will be{" "}
+                    <strong>immediately and permanently deleted</strong>:
+                  </p>
+                  <ul className="list-disc list-inside space-y-1 text-xs">
+                    <li>Your email, name, and profile information</li>
+                    <li>Your cart and favorites</li>
+                    <li>Personal data in order history</li>
+                    <li>All linked accounts (Google, etc.)</li>
+                  </ul>
+                  <p className="text-xs">
+                    You will NOT be able to recover this account or create a new
+                    one with the same email.
+                  </p>
+                </div>
+
+                <label className="flex items-start gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    className="mt-1"
+                    checked={deleteConfirmed}
+                    onChange={(e) => setDeleteConfirmed(e.target.checked)}
+                  />
+                  <span>
+                    I understand this will permanently delete all my data and
+                    cannot be undone.
+                  </span>
+                </label>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    className="flex-1 rounded-lg border py-2 text-sm hover:bg-neutral-50 cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+
+                  <form action={deleteAccountPermanently} className="flex-1">
+                    <button
+                      type="submit"
+                      disabled={!deleteConfirmed}
+                      className={`w-full rounded-lg py-2 text-sm text-white cursor-pointer ${
+                        deleteConfirmed
+                          ? "bg-red-600 hover:bg-red-700"
+                          : "bg-red-300 cursor-not-allowed"
+                      }`}
+                    >
+                      Permanently Delete
+                    </button>
+                  </form>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

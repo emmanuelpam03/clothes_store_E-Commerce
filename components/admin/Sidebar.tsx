@@ -37,9 +37,13 @@ export default function Sidebar() {
       <nav className="space-y-2 flex-1">
         {links.map((l) => {
           const Icon = l.icon;
-          const isActive = l.href === "/admin"
-            ? pathname === l.href
-            : pathname.startsWith(l.href);          return (
+          // Special handling for dashboard root to avoid matching all /admin/* routes
+          // For other routes, match exact path or sub-routes (with trailing slash)
+          const isActive =
+            l.href === "/admin"
+              ? pathname === l.href
+              : pathname === l.href || pathname.startsWith(l.href + "/");
+          return (
             <Link
               key={l.name}
               href={l.href}

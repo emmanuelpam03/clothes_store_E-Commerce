@@ -1,13 +1,9 @@
 /**
- * Cleanup Script: Permanently Delete Deactivated Accounts After 90 Days
+ * Cleanup Script: Handle Deleted Accounts After 90 Days
  *
- * This script should be run periodically (e.g., daily via cron job) to permanently
- * delete user accounts that have been deactivated for more than 90 days.
- *
- * Accounts are only deleted if:
- * - active is false
- * - deletedAt is set
- * - deletedAt is older than 90 days from now
+ * This script handles two types of deleted accounts:
+ * 1. Deactivated accounts (soft delete) - permanently deletes after 90 days
+ * 2. Already anonymized accounts - removes user record after 90 days
  *
  * Run manually with:
  * npx tsx scripts/cleanup-deleted-accounts.ts
@@ -17,9 +13,69 @@
 
 import prisma from "@/lib/prisma";
 
+async function permanentlyDeleteUser(userId: string) {
+  // Use transaction to ensure all operations succeed together
+  await prisma.$transaction(async (tx) => {
+    // 1. Anonymize user's personal data
+    const anonymizedEmail = `deleted_${userId}@deleted.local`;
+    await tx.user.update({
+      where: { id: userId },
+      data: {
+        active: false,
+        deletedAt: new Date(),
+        email: anonymizedEmail,
+        name: "Deleted User",
+        image: null,
+        password: null,
+        emailVerified: null,
+      },
+    });
+
+    // 2. Anonymize personal data in all orders
+    await tx.order.updateMany({
+      where: { userId },
+      data: {
+        email: anonymizedEmail,
+        phone: "DELETED",
+        firstName: "Deleted",
+        lastName: "User",
+        address: "DELETED",
+        city: "DELETED",
+        zipCode: "00000",
+        country: "DELETED",
+      },
+    });
+
+    // 3. Delete cart
+    await tx.cart.deleteMany({
+      where: { userId },
+    });
+
+    // 4. Delete favorites
+    await tx.favorite.deleteMany({
+      where: { userId },
+    });
+
+    // 5. Delete sessions
+    await tx.session.deleteMany({
+      where: { userId },
+    });
+
+    // 6. Delete OAuth accounts
+    await tx.account.deleteMany({
+      where: { userId },
+    });
+
+    // 7. Delete email verification tokens
+    await tx.emailVerificationToken.deleteMany({
+      where: { userId },
+    });
+  });
+}
+
 async function cleanupDeletedAccounts() {
   try {
-    console.log("🧹 Starting cleanup of deactivated accounts...");
+    console.log("🧹 Starting cleanup of deleted accounts...");
 
     // Calculate the cutoff date (90 days ago)
     const ninetyDaysAgo = new Date();
@@ -27,59 +83,115 @@ async function cleanupDeletedAccounts() {
 
     console.log(`📅 Cutoff date: ${ninetyDaysAgo.toISOString()}`);
 
-    // Find accounts that meet the deletion criteria
-    const accountsToDelete = await prisma.user.findMany({
+    // ======================================================
+    // PART 1: Handle deactivated accounts (not anonymized)
+    // ======================================================
+    const deactivatedAccounts = await prisma.user.findMany({
       where: {
         active: false,
         deletedAt: {
-          lte: ninetyDaysAgo, // deletedAt is less than or equal to 90 days ago
+          lte: ninetyDaysAgo,
           not: null,
+        },
+        email: {
+          not: {
+            startsWith: "deleted_",
+          },
         },
       },
       select: {
         id: true,
+        email: true,
         deletedAt: true,
       },
     });
 
-    if (accountsToDelete.length === 0) {
-      console.log("✨ No accounts to delete. All clear!");
-      return;
+    if (deactivatedAccounts.length > 0) {
+      console.log(
+        `\n🔄 Found ${deactivatedAccounts.length} deactivated account(s) to permanently delete`,
+      );
+      console.log("   Deletion details:");
+      deactivatedAccounts.forEach((account) => {
+        console.log(
+          `   - Account ${account.id} (${account.email}) deactivated on: ${account.deletedAt?.toISOString()}`,
+        );
+      });
+
+      // Permanently delete each deactivated account (anonymize and cleanup)
+      for (const account of deactivatedAccounts) {
+        await permanentlyDeleteUser(account.id);
+        console.log(
+          `   ✅ Anonymized and permanently deleted: ${account.email}`,
+        );
+      }
+
+      console.log(
+        `\n✅ Successfully permanently deleted ${deactivatedAccounts.length} deactivated account(s).`,
+      );
+    } else {
+      console.log("\n✨ No deactivated accounts to process.");
     }
 
-    console.log(
-      `🗑️  Found ${accountsToDelete.length} account(s) to permanently delete`,
-    );
-    console.log("   Deletion timestamps:");
-    accountsToDelete.forEach((account) => {
-      console.log(
-        `   - Account ${account.id} deleted on: ${account.deletedAt?.toISOString()}`,
-      );
-    });
-
-    // Confirm deletion (in production, you might want to skip this prompt)
-    console.log(
-      "\n⚠️  PERMANENT DELETION - These accounts will be completely removed.",
-    );
-    console.log("   This includes all orders, favorites, and cart data.");
-
-    // Extract user IDs for deletion
-    const userIds = accountsToDelete.map(
-      (account: { id: string }) => account.id,
-    );
-
-    // Perform cascade deletion
-    // Note: Prisma will handle cascade deletion based on your schema's onDelete rules
-    const deletedCount = await prisma.user.deleteMany({
+    // ======================================================
+    // PART 2: Remove already anonymized accounts
+    // ======================================================
+    const anonymizedAccounts = await prisma.user.findMany({
       where: {
-        id: {
-          in: userIds,
+        active: false,
+        deletedAt: {
+          lte: ninetyDaysAgo,
+          not: null,
         },
+        email: {
+          startsWith: "deleted_",
+        },
+      },
+      select: {
+        id: true,
+        email: true,
+        deletedAt: true,
       },
     });
 
-    console.log(`\n✅ Successfully deleted ${deletedCount.count} account(s).`);
-    console.log("🎉 Cleanup complete!");
+    if (anonymizedAccounts.length > 0) {
+      console.log(
+        `\n🗑️  Found ${anonymizedAccounts.length} anonymized account(s) to remove`,
+      );
+      console.log("   Removal details:");
+      anonymizedAccounts.forEach((account) => {
+        console.log(
+          `   - Account ${account.id} (${account.email}) deleted on: ${account.deletedAt?.toISOString()}`,
+        );
+      });
+
+      const userIds = anonymizedAccounts.map((account) => account.id);
+
+      // Delete the anonymized user records
+      const deletedCount = await prisma.user.deleteMany({
+        where: {
+          id: {
+            in: userIds,
+          },
+          active: false,
+          email: {
+            startsWith: "deleted_",
+          },
+        },
+      });
+
+      console.log(
+        `\n✅ Successfully removed ${deletedCount.count} anonymized account(s).`,
+      );
+    } else {
+      console.log("\n✨ No anonymized accounts to remove.");
+    }
+
+    if (deactivatedAccounts.length === 0 && anonymizedAccounts.length === 0) {
+      console.log("\n✨ All clear! No accounts to process.");
+    } else {
+      console.log("\n📊 Order history preserved for business records.");
+      console.log("🎉 Cleanup complete!");
+    }
   } catch (error) {
     console.error("❌ Error during cleanup:", error);
     throw error;
