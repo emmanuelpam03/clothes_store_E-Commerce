@@ -76,7 +76,7 @@ This dual approach balances user control, privacy rights, and business requireme
 **What happens after 90 days:**
 
 - Anonymized user record is deleted (cleanup script)
-- Order history remains intact with orphaned `userId` references
+- Orders remain intact with `userId` set to `null`
 
 ## Referential Integrity
 
@@ -84,35 +84,37 @@ This dual approach balances user control, privacy rights, and business requireme
 
 ```prisma
 model Order {
-  userId String
-  user   User @relation(fields: [userId], references: [id])
-  // Note: No onDelete clause = default Restrict behavior
+  userId String?  // Nullable
+  user   User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 }
 ```
 
-**Strategy Implemented: In-Place Anonymization (Strategy A)**
+**Strategy Implemented: Hybrid Approach (Anonymization + Deferred Deletion)**
 
-The system preserves referential integrity by **anonymizing User records in-place** rather than deleting them:
+The system uses a two-phase deletion strategy that preserves orders while allowing complete user removal:
 
 1. **During Anonymization** (immediate):
    - User PII is cleared (`email`, `name`, `image`, `password` → anonymized values)
-   - **`User.id` is preserved** (never changed)
-   - `Order.userId` continues to point to the same User record
+   - Order PII is cleared (all personal shipping/contact data → "DELETED")
+   - **`User.id` is preserved** temporarily (90-day grace period)
+   - `Order.userId` continues to point to the anonymized User record
    - No foreign key constraints are violated
 
 2. **After 90 Days** (cleanup script):
    - Anonymized User record is deleted from database
-   - Orders remain with their `userId` values (now orphaned references)
+   - Database automatically sets `Order.userId` to `null` (via `onDelete: SetNull`)
+   - Orders remain with all data intact except the user reference
    - This is acceptable because:
      - Order PII was already anonymized in step 1
-     - `userId` becomes a meaningless identifier
-     - No `onDelete: Cascade` means orders persist independently
+     - `userId` becomes `null` (no orphaned references)
+     - Orders preserved for business/legal requirements (financial records, tax compliance)
 
 3. **Why This Approach:**
-   - **No `onDelete` clause** in schema = default `Restrict` behavior
-   - Cannot delete User with existing Orders (would violate constraint)
-   - Anonymization satisfies GDPR (PII removed) while respecting DB constraints
-   - Orders preserved for business/legal requirements (financial records, tax compliance)
+   - **`onDelete: SetNull`** allows User deletion while preserving Orders
+   - **Nullable `userId`** permits orders to exist without a user reference
+   - Satisfies GDPR (all PII removed) and business requirements (order history retained)
+   - No risk of foreign key constraint violations
+   - Complete removal of user data after retention period
 
 **Enforcement in Code:**
 
@@ -120,6 +122,7 @@ The system preserves referential integrity by **anonymizing User records in-plac
 - `adminDeleteUserPermanentlyAction()` in `app/actions/account.actions.ts` (lines 580-680)
 - `permanentlyDeleteUser()` in `scripts/cleanup-deleted-accounts.ts` (lines 16-73)
 - All use Prisma transactions to atomically: anonymize User + anonymize Orders + delete related records
+- Cleanup script deletes User after 90 days; database automatically nullifies `Order.userId`
 
 **Cannot be undone**: Once data is anonymized, it cannot be restored
 

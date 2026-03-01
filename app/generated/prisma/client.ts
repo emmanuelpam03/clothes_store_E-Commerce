@@ -98,3 +98,8 @@ export type Favorite = Prisma.FavoriteModel
  * 
  */
 export type Category = Prisma.CategoryModel
+/**
+ * Model RateLimit
+ * 
+ */
+export type RateLimit = Prisma.RateLimitModel

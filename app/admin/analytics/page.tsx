@@ -233,7 +233,7 @@ export default async function AnalyticsPage() {
               >
                 <div className="flex-1">
                   <p className="font-semibold text-slate-900">
-                    {order.user.name || order.email}
+                    {order.user?.name || order.email}
                   </p>
                   <p className="text-sm text-slate-600">
                     {order.items.length} items •{" "}

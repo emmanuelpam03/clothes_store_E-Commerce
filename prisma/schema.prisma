@@ -126,7 +126,7 @@ enum OrderStatus {
 
 model Order {
   id     String      @id @default(cuid())
-  userId String
+  userId String?
   status OrderStatus @default(PENDING)
   total  Int // computed at creation
 
@@ -143,7 +143,7 @@ model Order {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user  User        @relation(fields: [userId], references: [id])
+  user  User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
   items OrderItem[]
 }
 
@@ -207,5 +207,19 @@ model Category {
   slug  String   @unique
 
   products Product[]
+}
+
+model RateLimit {
+  id          String    @id @default(cuid())
+  key         String    @unique // e.g., "password-verify:userId"
+  count       Int       @default(0)
+  resetAt     DateTime
+  lockedUntil DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([key])
+  @@index([resetAt])
+  @@map("rate_limits")
 }
 

@@ -147,7 +147,6 @@ async function cleanupDeletedAccounts() {
       },
       select: {
         id: true,
-        email: true,
         deletedAt: true,
       },
     });

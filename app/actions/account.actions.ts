@@ -3,106 +3,10 @@
 import { auth, signOut } from "@/lib/auth";
 import { sendVerificationEmail } from "@/lib/email";
 import prisma from "@/lib/prisma";
-// import { rateLimit } from "@/lib/rate-limit";
+import { rateLimit, clearRateLimit } from "@/lib/rate-limit";
 import { setPasswordSchema } from "@/lib/validators/set-password.schema";
 import bcrypt from "bcryptjs";
 import { redirect } from "next/navigation";
-
-// Simple in-memory rate limiter for password verification attempts
-const passwordAttempts = new Map<
-  string,
-  { count: number; resetAt: number; lockedUntil?: number }
->();
-
-// Cleanup expired entries to prevent memory leaks
-function cleanupExpiredAttempts() {
-  const now = Date.now();
-  const entriesToDelete: string[] = [];
-
-  for (const [key, record] of passwordAttempts.entries()) {
-    // Remove if both resetAt and lockedUntil (if exists) are expired
-    const resetExpired = record.resetAt < now;
-    const lockExpired = !record.lockedUntil || record.lockedUntil < now;
-
-    if (resetExpired && lockExpired) {
-      entriesToDelete.push(key);
-    }
-  }
-
-  entriesToDelete.forEach((key) => passwordAttempts.delete(key));
-}
-
-// Guard against unbounded growth
-const MAX_ENTRIES = 10000;
-function guardMapGrowth() {
-  if (passwordAttempts.size > MAX_ENTRIES) {
-    // Remove oldest 20% of entries when limit exceeded
-    const entriesToRemove = Math.floor(MAX_ENTRIES * 0.2);
-    const keys = Array.from(passwordAttempts.keys());
-    for (let i = 0; i < entriesToRemove && i < keys.length; i++) {
-      passwordAttempts.delete(keys[i]);
-    }
-  }
-}
-
-function checkPasswordAttemptLimit(userId: string): {
-  allowed: boolean;
-  error?: string;
-} {
-  // Periodically clean up expired entries (10% chance on each check)
-  if (Math.random() < 0.1) {
-    cleanupExpiredAttempts();
-  }
-
-  const now = Date.now();
-  const key = `password-verify:${userId}`;
-  const record = passwordAttempts.get(key);
-
-  // Check if locked
-  if (record?.lockedUntil && record.lockedUntil > now) {
-    const minutesLeft = Math.ceil((record.lockedUntil - now) / 60000);
-    return {
-      allowed: false,
-      error: `Too many failed attempts. Please try again in ${minutesLeft} minute(s).`,
-    };
-  }
-
-  // Reset if window expired
-  if (!record || record.resetAt < now) {
-    guardMapGrowth(); // Check size before adding
-    passwordAttempts.set(key, {
-      count: 1,
-      resetAt: now + 10 * 60 * 1000, // 10 minutes
-    });
-    return { allowed: true };
-  }
-
-  // Check limit (5 attempts)
-  if (record.count >= 5) {
-    // Lock for 15 minutes
-    passwordAttempts.set(key, {
-      ...record,
-      lockedUntil: now + 15 * 60 * 1000,
-    });
-    return {
-      allowed: false,
-      error: "Too many failed attempts. Account locked for 15 minutes.",
-    };
-  }
-
-  // Increment attempt
-  passwordAttempts.set(key, {
-    ...record,
-    count: record.count + 1,
-  });
-
-  return { allowed: true };
-}
-
-function clearPasswordAttempts(userId: string) {
-  const key = `password-verify:${userId}`;
-  passwordAttempts.delete(key);
-}
 
 type SetPasswordState = {
   error: string | null;
@@ -504,8 +408,15 @@ export async function reactivateAccountAction(email: string, password: string) {
     }
   }
 
-  // Rate limiting: Check password verification attempts
-  const rateLimitCheck = checkPasswordAttemptLimit(user.id);
+  // Rate limiting: Check password verification attempts (distributed)
+  const rateLimitKey = `password-verify:${user.id}`;
+  const rateLimitCheck = await rateLimit({
+    key: rateLimitKey,
+    limit: 5, // 5 attempts
+    windowMs: 10 * 60 * 1000, // 10 minutes
+    lockoutMs: 15 * 60 * 1000, // 15 minute lockout
+  });
+
   if (!rateLimitCheck.allowed) {
     return { success: false, error: rateLimitCheck.error };
   }
@@ -520,7 +431,7 @@ export async function reactivateAccountAction(email: string, password: string) {
   }
 
   // Success - clear rate limit attempts
-  clearPasswordAttempts(user.id);
+  await clearRateLimit(rateLimitKey);
 
   // Reactivate account
   await prisma.user.update({
@@ -788,8 +699,15 @@ export async function changePasswordFirstLogin(
     };
   }
 
-  // Rate limiting: Check password verification attempts
-  const rateLimitCheck = checkPasswordAttemptLimit(user.id);
+  // Rate limiting: Check password verification attempts (distributed)
+  const rateLimitKey = `password-verify:${user.id}`;
+  const rateLimitCheck = await rateLimit({
+    key: rateLimitKey,
+    limit: 5, // 5 attempts
+    windowMs: 10 * 60 * 1000, // 10 minutes
+    lockoutMs: 15 * 60 * 1000, // 15 minute lockout
+  });
+
   if (!rateLimitCheck.allowed) {
     return { success: false, error: rateLimitCheck.error };
   }
@@ -806,7 +724,7 @@ export async function changePasswordFirstLogin(
   }
 
   // Success - clear rate limit attempts
-  clearPasswordAttempts(user.id);
+  await clearRateLimit(rateLimitKey);
 
   // Validate new password
   const validation = setPasswordSchema.safeParse({

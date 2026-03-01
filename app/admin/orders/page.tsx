@@ -99,8 +99,8 @@ export default async function OrdersPage() {
   }
   const orders: Order[] = dbOrders.map((order) => ({
     id: order.id,
-    customer: order.user.name || "Unknown",
-    email: order.user.email || "N/A",
+    customer: order.user?.name || "Unknown",
+    email: order.user?.email || "N/A",
     status: order.status,
     items: order.items.length,
     amount: formatCurrency(order.total),

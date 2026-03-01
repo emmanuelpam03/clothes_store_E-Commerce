@@ -196,23 +196,25 @@ export default async function OrderDetailsPage({ params }: PageProps) {
               <div>
                 <div className="text-sm text-slate-600">Name</div>
                 <div className="font-semibold text-slate-900">
-                  {order.user.name || "N/A"}
+                  {order.user?.name || "N/A"}
                 </div>
               </div>
               <div>
                 <div className="text-sm text-slate-600">Email</div>
                 <div className="font-semibold text-slate-900">
-                  {order.user.email || "N/A"}
+                  {order.user?.email || "N/A"}
                 </div>
               </div>
-              <div>
-                <Link
-                  href={`/admin/users?userId=${order.user.id}`}
-                  className="text-sm text-blue-600 hover:text-blue-700"
-                >
-                  View Customer Profile →
-                </Link>
-              </div>
+              {order.user && (
+                <div>
+                  <Link
+                    href={`/admin/users?userId=${order.user.id}`}
+                    className="text-sm text-blue-600 hover:text-blue-700"
+                  >
+                    View Customer Profile →
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
 

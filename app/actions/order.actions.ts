@@ -194,7 +194,7 @@ export async function getOrderById(orderId: string) {
     },
   });
 
-  if (!order || order.userId !== session.user.id) {
+  if (!order || !order.userId || order.userId !== session.user.id) {
     throw new Error("Order not found");
   }
 
@@ -223,7 +223,7 @@ export async function cancelOrder(orderId: string) {
   }
 
   // check if the order belongs to the user
-  if (order.userId !== session.user.id) {
+  if (!order.userId || order.userId !== session.user.id) {
     throw new Error("Forbidden");
   }
 
