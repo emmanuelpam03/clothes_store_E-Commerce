@@ -18,10 +18,10 @@ export default async function AdminLayout({
     redirect("/");
   }
   return (
-    <div className="min-h-screen bg-[#F6F6F4] text-[#0A0A0A] flex">
+    <div className="min-h-screen bg-[#F6F6F4] text-[#0A0A0A]">
       <Sidebar />
 
-      <main className="flex-1 px-14 py-12">
+      <main className="ml-64 px-14 py-12">
         <Topbar />
         {children}
       </main>

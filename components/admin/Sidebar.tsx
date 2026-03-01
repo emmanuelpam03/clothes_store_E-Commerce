@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Package,
@@ -18,8 +21,10 @@ const links = [
 ];
 
 export default function Sidebar() {
+  const pathname = usePathname();
+
   return (
-    <aside className="w-64 bg-linear-to-b from-slate-900 to-slate-800 text-white px-6 py-8 flex flex-col">
+    <aside className="fixed left-0 top-0 h-screen w-64 bg-linear-to-b from-slate-900 to-slate-800 text-white px-6 py-8 flex flex-col overflow-y-auto">
       <div className="mb-12">
         <h1 className="text-2xl font-bold bg-linear-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
           AdminHub
@@ -32,13 +37,23 @@ export default function Sidebar() {
       <nav className="space-y-2 flex-1">
         {links.map((l) => {
           const Icon = l.icon;
+          const isActive = pathname === l.href;
           return (
             <Link
               key={l.name}
               href={l.href}
-              className="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-slate-700 hover:text-white transition-all duration-200 group"
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group ${
+                isActive
+                  ? "bg-blue-600 text-white shadow-lg"
+                  : "text-slate-300 hover:bg-slate-700 hover:text-white"
+              }`}
             >
-              <Icon size={18} className="group-hover:text-blue-400 transition" />
+              <Icon
+                size={18}
+                className={`transition ${
+                  isActive ? "text-white" : "group-hover:text-blue-400"
+                }`}
+              />
               <span className="text-sm font-medium">{l.name}</span>
             </Link>
           );
