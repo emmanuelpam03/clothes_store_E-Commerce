@@ -19,29 +19,28 @@ type ShippingDetails = {
 };
 
 const SHIPPING_DETAILS_KEY = "checkout-shipping-details";
+const CLEAR_CART_AFTER_ORDER_KEY = "clear-cart-after-order";
 
 export default function PaymentPage() {
-  const { items, clearCart } = useCart();
+  const { items } = useCart();
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
-  const [shippingDetails, setShippingDetails] =
-    useState<ShippingDetails | null>(null);
-
-  useEffect(() => {
+  const [shippingDetails] = useState<ShippingDetails | null>(() => {
     try {
       const raw = sessionStorage.getItem(SHIPPING_DETAILS_KEY);
-      if (!raw) {
-        toast.error("Please complete checkout first");
-        router.replace("/checkout");
-        return;
-      }
-      setShippingDetails(JSON.parse(raw) as ShippingDetails);
+      if (!raw) return null;
+      return JSON.parse(raw) as ShippingDetails;
     } catch {
-      toast.error("Please complete checkout first");
-      router.replace("/checkout");
+      return null;
     }
-  }, [router]);
+  });
+
+  useEffect(() => {
+    if (shippingDetails) return;
+    toast.error("Please complete checkout first");
+    router.replace("/checkout");
+  }, [router, shippingDetails]);
 
   const orderItems = items.map((item) => ({
     productId: item.productId,
@@ -75,11 +74,24 @@ export default function PaymentPage() {
                   orderItems,
                   shippingDetails,
                 );
-                clearCart();
                 toast.success("Order placed");
+
+                try {
+                  sessionStorage.setItem(
+                    CLEAR_CART_AFTER_ORDER_KEY,
+                    String(order.id),
+                  );
+                } catch {
+                  // Ignore storage errors
+                }
+
                 router.push(`/order/${order.id}`);
-              } catch (e: any) {
-                toast.error(e.message);
+              } catch (error: unknown) {
+                toast.error(
+                  error instanceof Error
+                    ? error.message
+                    : "Something went wrong",
+                );
               }
             })
           }

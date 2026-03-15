@@ -2,6 +2,14 @@ import { NextResponse } from "next/server";
 import { NextRequest } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import type { Session } from "next-auth";
+
+type SessionUserWithPasswordChange = {
+  requirePasswordChange?: boolean;
+  passwordChangeDeadline?: Date | null;
+};
+
+type SessionUser = Session["user"];
 
 export async function proxy(request: NextRequest) {
   const session = await auth();
@@ -25,13 +33,17 @@ export async function proxy(request: NextRequest) {
     } else {
       // Add password change info to session
       if (validSession && validSession.user) {
-        (validSession.user as any).requirePasswordChange =
-          userExists.requirePasswordChange;
-        (validSession.user as any).passwordChangeDeadline =
-          userExists.passwordChangeDeadline;
+        const user = validSession.user as SessionUser &
+          SessionUserWithPasswordChange;
+        user.requirePasswordChange = userExists.requirePasswordChange;
+        user.passwordChangeDeadline = userExists.passwordChangeDeadline;
       }
     }
   }
+
+  const sessionUser = validSession?.user as
+    | (SessionUser & SessionUserWithPasswordChange)
+    | undefined;
 
   // Public routes that don't require email verification
   const publicRoutes = ["/login", "/register", "/verify", "/set-password"];
@@ -42,7 +54,7 @@ export async function proxy(request: NextRequest) {
   // Check if user needs to change password (admin-created accounts)
   if (
     validSession &&
-    (validSession.user as any).requirePasswordChange &&
+    sessionUser?.requirePasswordChange &&
     !pathname.startsWith("/set-password")
   ) {
     // Redirect to set-password page (action will handle expired deadline)

@@ -1,6 +1,7 @@
 import { getOrderById } from "@/app/actions/order.actions";
 import { getPublicStoreSettingsAction } from "@/app/actions/store-settings.actions";
 import CancelOrderButton from "@/components/shop/cancelOrderButton";
+import ClearCartAfterOrder from "@/components/shop/ClearCartAfterOrder";
 import RequestReturnButton from "@/components/shop/RequestReturnButton";
 import { formatCurrencyFromCents } from "@/lib/money";
 import Image from "next/image";
@@ -30,6 +31,9 @@ export default async function OrderSuccessPage({ params }: PageProps) {
     order.returnRequests?.some((request) =>
       ["REQUESTED", "APPROVED", "RECEIVED"].includes(request.status),
     ) ?? false;
+  const hasRefundedReturnRequest =
+    order.returnRequests?.some((request) => request.status === "REFUNDED") ??
+    false;
   const itemsSubtotal = order.items.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0,
@@ -264,11 +268,21 @@ export default async function OrderSuccessPage({ params }: PageProps) {
           </div>
         )}
 
-        {order.status === "DELIVERED" && !hasActiveReturnRequest && (
-          <div className="mt-4">
-            <RequestReturnButton orderId={order.id} />
+        {order.status === "DELIVERED" &&
+          !hasActiveReturnRequest &&
+          !hasRefundedReturnRequest && (
+            <div className="mt-4">
+              <RequestReturnButton orderId={order.id} />
+            </div>
+          )}
+
+        {order.status === "DELIVERED" && hasRefundedReturnRequest && (
+          <div className="mt-6 border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+            This order has been refunded.
           </div>
         )}
+
+        <ClearCartAfterOrder orderId={order.id} />
       </div>
     </div>
   );

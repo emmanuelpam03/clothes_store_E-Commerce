@@ -94,8 +94,7 @@ export default async function OrdersPage() {
   }
 
   const storeSettings = await getStoreSettings();
-  const currency = storeSettings.currency;
-
+  const currency = storeSettings?.currency ?? "USD";
   let dbOrders;
   try {
     dbOrders = await getAllOrdersAdmin();

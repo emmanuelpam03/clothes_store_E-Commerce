@@ -44,8 +44,7 @@ export default async function AnalyticsPage() {
   }
 
   const storeSettings = await getStoreSettings();
-  const currency = storeSettings.currency;
-
+  const currency = storeSettings.currency ?? "USD";
   // Fetch all analytics data in parallel
   const [
     analyticsData,

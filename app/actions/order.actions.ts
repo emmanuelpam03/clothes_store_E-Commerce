@@ -354,6 +354,19 @@ export async function createReturnRequest(orderId: string, reason: string) {
     );
   }
 
+  const existingRefundedRequest = await prisma.$queryRaw<{ id: string }[]>`
+    SELECT "id"
+    FROM "return_requests"
+    WHERE "order_id" = ${orderId}
+      AND "user_id" = ${session.user.id}
+      AND "status" = CAST(${ReturnRequestStatus.REFUNDED} AS "ReturnRequestStatus")
+    LIMIT 1
+  `;
+
+  if (existingRefundedRequest.length > 0) {
+    throw new Error("This order has already been refunded");
+  }
+
   const existingOpenRequest = await prisma.$queryRaw<{ id: string }[]>`
     SELECT "id"
     FROM "return_requests"
