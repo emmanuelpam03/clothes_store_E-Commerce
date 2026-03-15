@@ -17,6 +17,7 @@ import { useSession } from "next-auth/react";
 import { favouritesIcon } from "@/public/assets/images/images";
 import { useCart } from "@/lib/cart/cart";
 import { config } from "@/constants/config";
+import { getPublicStoreSettingsAction } from "@/app/actions/store-settings.actions";
 import {
   removeFromCart,
   updateCartQtyAction,
@@ -92,12 +93,36 @@ export default function ShoppingBag() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const optionRefs = useRef<Map<string, HTMLElement>>(new Map());
+  const [storeSettings, setStoreSettings] = useState({
+    shippingCostCents: config.shippingCostCents,
+    freeShippingThresholdCents: config.freeShippingThresholdCents,
+    lowStockThreshold: config.lowStockThreshold,
+    returnWindowDays: config.returnWindowDays,
+  });
 
   // prevent empty flash
   const [isHydrated, setIsHydrated] = useState(false);
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    const loadStoreSettings = async () => {
+      try {
+        const settings = await getPublicStoreSettingsAction();
+        setStoreSettings({
+          shippingCostCents: settings.shippingCostCents,
+          freeShippingThresholdCents: settings.freeShippingThresholdCents,
+          lowStockThreshold: settings.lowStockThreshold,
+          returnWindowDays: settings.returnWindowDays,
+        });
+      } catch {
+        // Keep fallback settings from config
+      }
+    };
+
+    loadStoreSettings();
   }, []);
 
   // Memoize unique product IDs to track when to refetch product data
@@ -226,7 +251,14 @@ export default function ShoppingBag() {
     (acc, item) => acc + item.price * item.qty,
     0,
   );
-  const shipping = subtotal > 0 ? config.shippingCostCents : 0;
+  const qualifiesForFreeShipping =
+    subtotal >= storeSettings.freeShippingThresholdCents;
+  const shipping =
+    subtotal > 0
+      ? qualifiesForFreeShipping
+        ? 0
+        : storeSettings.shippingCostCents
+      : 0;
   const total = subtotal + shipping;
 
   // Check if any items have stock issues (only when products are loaded)
@@ -292,12 +324,15 @@ export default function ShoppingBag() {
                 const stockQuantity = productData?.inventory?.quantity ?? 0;
                 const hasStockIssue = stockQuantity < item.qty;
                 const isOutOfStock = stockQuantity === 0;
+                const isLowStock =
+                  !isOutOfStock &&
+                  stockQuantity <= storeSettings.lowStockThreshold;
 
                 return (
                   <div key={item.id} className="flex gap-6 w-fit sm:w-[320px]">
                     {/* PRODUCT */}
                     <div>
-                      <div className="relative w-[220px] h-[300px] border bg-white">
+                      <div className="relative w-55 h-75 border bg-white">
                         <Image
                           src={item.image ?? "/placeholder.png"}
                           alt={item.title}
@@ -339,6 +374,10 @@ export default function ShoppingBag() {
                         ) : hasStockIssue ? (
                           <p className="text-xs text-orange-600 font-medium mt-2">
                             Only {stockQuantity} available
+                          </p>
+                        ) : isLowStock ? (
+                          <p className="text-xs text-amber-600 font-medium mt-2">
+                            Low stock: {stockQuantity} left
                           </p>
                         ) : null}
                       </div>
@@ -405,7 +444,7 @@ export default function ShoppingBag() {
                           aria-haspopup="listbox"
                           aria-expanded={openDropdown === `size-${item.id}`}
                           aria-label="Select size"
-                          className="px-3 py-2 min-w-[60px] border border-neutral-300 rounded-md text-xs font-medium cursor-pointer hover:border-black transition-all focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-1 flex items-center justify-between gap-2"
+                          className="px-3 py-2 min-w-15 border border-neutral-300 rounded-md text-xs font-medium cursor-pointer hover:border-black transition-all focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-1 flex items-center justify-between gap-2"
                         >
                           <span>{item.size}</span>
                           <ChevronDown size={12} />
@@ -505,7 +544,7 @@ export default function ShoppingBag() {
                           aria-haspopup="listbox"
                           aria-expanded={openDropdown === `color-${item.id}`}
                           aria-label="Select color"
-                          className="px-3 py-2 min-w-[90px] border border-neutral-300 rounded-md text-xs font-medium cursor-pointer hover:border-black transition-all focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-1 flex items-center justify-between gap-2"
+                          className="px-3 py-2 min-w-22.5 border border-neutral-300 rounded-md text-xs font-medium cursor-pointer hover:border-black transition-all focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-1 flex items-center justify-between gap-2"
                           style={{
                             backgroundColor: getColorValue(
                               parsedItemColor.value,
@@ -641,9 +680,35 @@ export default function ShoppingBag() {
                 </div>
                 <div className="flex justify-between">
                   <span>Shipping</span>
-                  <span>${shipping}</span>
+                  <span>
+                    {shipping === 0 && subtotal > 0
+                      ? "Free"
+                      : `$${(shipping / 100).toFixed(2)}`}
+                  </span>
                 </div>
               </div>
+
+              {subtotal > 0 && !qualifiesForFreeShipping && (
+                <p className="mt-4 text-xs text-neutral-600">
+                  Add $
+                  {(
+                    (storeSettings.freeShippingThresholdCents - subtotal) /
+                    100
+                  ).toFixed(2)}{" "}
+                  more to unlock free shipping.
+                </p>
+              )}
+
+              {qualifiesForFreeShipping && subtotal > 0 && (
+                <p className="mt-4 text-xs text-emerald-700 font-medium">
+                  You unlocked free shipping.
+                </p>
+              )}
+
+              <p className="mt-2 text-xs text-neutral-500">
+                Returns accepted within {storeSettings.returnWindowDays} days
+                after delivery.
+              </p>
 
               <div className="border-t mt-6 pt-6 flex justify-between font-medium">
                 <span>Total</span>

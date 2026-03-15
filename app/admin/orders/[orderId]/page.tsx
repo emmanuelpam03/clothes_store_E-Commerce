@@ -2,10 +2,17 @@ import { auth } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import { getOrderByIdAdmin } from "@/app/actions/admin.actions";
 import OrderActions from "@/components/admin/OrderActions";
+import ReturnRequestActions from "@/components/admin/ReturnRequestActions";
 import Image from "next/image";
 import Link from "next/link";
 
 type OrderStatus = "PENDING" | "PAID" | "SHIPPED" | "DELIVERED" | "CANCELLED";
+type ReturnRequestStatus =
+  | "REQUESTED"
+  | "APPROVED"
+  | "REJECTED"
+  | "RECEIVED"
+  | "REFUNDED";
 
 interface PageProps {
   params: Promise<{ orderId: string }>;
@@ -51,6 +58,11 @@ export default async function OrderDetailsPage({ params }: PageProps) {
 
   const { orderId } = await params;
   const order = await getOrderByIdAdmin(orderId);
+  const itemsSubtotal = order.items.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0,
+  );
+  const shippingCost = Math.max(order.total - itemsSubtotal, 0);
 
   if (!order) {
     notFound();
@@ -90,7 +102,7 @@ export default async function OrderDetailsPage({ params }: PageProps) {
                   key={item.id}
                   className="flex gap-4 pb-4 border-b border-slate-200 last:border-0"
                 >
-                  <div className="w-20 h-20 bg-slate-100 rounded-lg overflow-hidden flex-shrink-0">
+                  <div className="w-20 h-20 bg-slate-100 rounded-lg overflow-hidden shrink-0">
                     {item.image ? (
                       <Image
                         src={item.image}
@@ -185,6 +197,48 @@ export default async function OrderDetailsPage({ params }: PageProps) {
               )}
             </div>
           </div>
+
+          {order.returnRequests.length > 0 && (
+            <div className="bg-white rounded-xl border border-slate-200 p-6">
+              <h2 className="text-xl font-bold text-slate-900 mb-4">Returns</h2>
+              <div className="space-y-4">
+                {order.returnRequests.map((request) => (
+                  <div
+                    key={request.id}
+                    className="border border-slate-200 rounded-lg p-4"
+                  >
+                    <p className="text-xs text-slate-500">
+                      {new Date(request.requestedAt).toLocaleDateString(
+                        "en-US",
+                        {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        },
+                      )}
+                    </p>
+                    <p className="text-sm font-semibold text-slate-900 mt-1">
+                      {request.status}
+                    </p>
+                    <p className="text-sm text-slate-700 mt-2">
+                      {request.reason}
+                    </p>
+                    {request.adminNote && (
+                      <p className="text-sm text-slate-600 mt-2">
+                        Admin note: {request.adminNote}
+                      </p>
+                    )}
+                    <div className="mt-3">
+                      <ReturnRequestActions
+                        requestId={request.id}
+                        currentStatus={request.status as ReturnRequestStatus}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Sidebar */}
@@ -268,7 +322,13 @@ export default async function OrderDetailsPage({ params }: PageProps) {
               <div className="flex justify-between text-sm">
                 <span className="text-slate-600">Subtotal</span>
                 <span className="font-semibold text-slate-900">
-                  {formatCurrency(order.total)}
+                  {formatCurrency(itemsSubtotal)}
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-600">Shipping</span>
+                <span className="font-semibold text-slate-900">
+                  {shippingCost === 0 ? "Free" : formatCurrency(shippingCost)}
                 </span>
               </div>
               <div className="pt-2 border-t border-slate-200">

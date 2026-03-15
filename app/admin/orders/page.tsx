@@ -11,6 +11,7 @@ type Order = {
   customer: string;
   email: string;
   status: OrderStatus;
+  returnStatus: string;
   items: number;
   amount: string;
   date: string;
@@ -66,6 +67,7 @@ const columns: Column<Order>[] = [
     label: "Status",
     render: (v) => getStatusBadge(v as OrderStatus),
   },
+  { key: "returnStatus", label: "Return" },
   { key: "amount", label: "Amount" },
   { key: "date", label: "Date" },
   {
@@ -102,6 +104,7 @@ export default async function OrdersPage() {
     customer: order.user?.name || "Unknown",
     email: order.user?.email || "N/A",
     status: order.status,
+    returnStatus: order.latestReturnRequest?.status ?? "—",
     items: order.items.length,
     amount: formatCurrency(order.total),
     date: formatDate(order.createdAt),

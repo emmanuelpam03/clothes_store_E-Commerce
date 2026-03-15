@@ -2,11 +2,12 @@
 
 import { ArrowLeft } from "lucide-react";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/lib/cart/cart";
 import { config } from "@/constants/config";
 import { createOrderAction } from "@/app/actions/order.actions";
+import { getPublicStoreSettingsAction } from "@/app/actions/store-settings.actions";
 import { toast } from "sonner";
 
 interface FormData {
@@ -42,9 +43,35 @@ export default function Checkout() {
   });
 
   const [errors, setErrors] = useState<Partial<FormData>>({});
+  const [storeSettings, setStoreSettings] = useState({
+    shippingCostCents: config.shippingCostCents,
+    freeShippingThresholdCents: config.freeShippingThresholdCents,
+    returnWindowDays: config.returnWindowDays,
+  });
+
+  useEffect(() => {
+    const loadStoreSettings = async () => {
+      try {
+        const settings = await getPublicStoreSettingsAction();
+        setStoreSettings({
+          shippingCostCents: settings.shippingCostCents,
+          freeShippingThresholdCents: settings.freeShippingThresholdCents,
+          returnWindowDays: settings.returnWindowDays,
+        });
+      } catch {
+        // Keep fallback settings from config
+      }
+    };
+
+    loadStoreSettings();
+  }, []);
 
   const subtotal = items.reduce((sum, item) => sum + item.price * item.qty, 0);
-  const shipping = config.shippingCostCents;
+  const qualifiesForFreeShipping =
+    subtotal >= storeSettings.freeShippingThresholdCents;
+  const shipping = qualifiesForFreeShipping
+    ? 0
+    : storeSettings.shippingCostCents;
   const total = subtotal + shipping;
 
   const handleInputChange = (
@@ -381,8 +408,26 @@ export default function Checkout() {
               </div>
               <div className="flex justify-between text-sm">
                 <span>Shipping</span>
-                <span>${(shipping / 100).toFixed(2)}</span>
+                <span>
+                  {shipping === 0 ? "Free" : `$${(shipping / 100).toFixed(2)}`}
+                </span>
               </div>
+
+              {!qualifiesForFreeShipping && subtotal > 0 && (
+                <p className="text-xs text-neutral-600 pt-1">
+                  Add $
+                  {(
+                    (storeSettings.freeShippingThresholdCents - subtotal) /
+                    100
+                  ).toFixed(2)}{" "}
+                  more for free shipping.
+                </p>
+              )}
+
+              <p className="text-xs text-neutral-500 pt-1">
+                Returns accepted within {storeSettings.returnWindowDays} days
+                after delivery.
+              </p>
               <div className="flex justify-between text-base font-bold border-t pt-4 mt-4">
                 <span>Total</span>
                 <span>${(total / 100).toFixed(2)}</span>

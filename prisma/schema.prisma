@@ -59,6 +59,7 @@ model User {
   sessions                Session[]
   emailVerificationTokens EmailVerificationToken[]
   orders                  Order[]
+  returnRequests          ReturnRequest[]
   carts                   Cart?
   favorites               Favorite[]
 
@@ -124,6 +125,14 @@ enum OrderStatus {
   CANCELLED
 }
 
+enum ReturnRequestStatus {
+  REQUESTED
+  APPROVED
+  REJECTED
+  RECEIVED
+  REFUNDED
+}
+
 model Order {
   id     String      @id @default(cuid())
   userId String?
@@ -143,8 +152,30 @@ model Order {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user  User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
-  items OrderItem[]
+  user           User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  items          OrderItem[]
+  returnRequests ReturnRequest[]
+}
+
+model ReturnRequest {
+  id         String              @id @default(cuid())
+  orderId    String              @map("order_id")
+  userId     String              @map("user_id")
+  reason     String
+  status     ReturnRequestStatus @default(REQUESTED)
+  adminNote  String?             @map("admin_note")
+  requestedAt DateTime           @default(now()) @map("requested_at")
+  resolvedAt DateTime?           @map("resolved_at")
+  createdAt  DateTime            @default(now()) @map("created_at")
+  updatedAt  DateTime            @updatedAt @map("updated_at")
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([userId])
+  @@index([status])
+  @@map("return_requests")
 }
 
 model OrderItem {
@@ -221,5 +252,22 @@ model RateLimit {
   @@index([key])
   @@index([resetAt])
   @@map("rate_limits")
+}
+
+model StoreSettings {
+  id                         String   @id @default("default")
+  brandName                  String   @default("Clothes Store") @map("brand_name")
+  supportEmail               String   @default("support@clothesstore.com") @map("support_email")
+  currency                   String   @default("USD")
+  sizeSystem                 String   @default("US") @map("size_system")
+  shippingOrigin             String   @default("United States") @map("shipping_origin")
+  shippingCostCents          Int      @default(1000) @map("shipping_cost_cents")
+  freeShippingThresholdCents Int      @default(10000) @map("free_shipping_threshold_cents")
+  lowStockThreshold          Int      @default(10) @map("low_stock_threshold")
+  returnWindowDays           Int      @default(30) @map("return_window_days")
+  createdAt                  DateTime @default(now()) @map("created_at")
+  updatedAt                  DateTime @updatedAt @map("updated_at")
+
+  @@map("store_settings")
 }
 

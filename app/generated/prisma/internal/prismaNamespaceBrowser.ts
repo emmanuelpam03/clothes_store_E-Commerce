@@ -58,12 +58,14 @@ export const ModelName = {
   Product: 'Product',
   Inventory: 'Inventory',
   Order: 'Order',
+  ReturnRequest: 'ReturnRequest',
   OrderItem: 'OrderItem',
   Cart: 'Cart',
   CartItem: 'CartItem',
   Favorite: 'Favorite',
   Category: 'Category',
-  RateLimit: 'RateLimit'
+  RateLimit: 'RateLimit',
+  StoreSettings: 'StoreSettings'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -190,6 +192,22 @@ export const OrderScalarFieldEnum = {
 export type OrderScalarFieldEnum = (typeof OrderScalarFieldEnum)[keyof typeof OrderScalarFieldEnum]
 
 
+export const ReturnRequestScalarFieldEnum = {
+  id: 'id',
+  orderId: 'orderId',
+  userId: 'userId',
+  reason: 'reason',
+  status: 'status',
+  adminNote: 'adminNote',
+  requestedAt: 'requestedAt',
+  resolvedAt: 'resolvedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ReturnRequestScalarFieldEnum = (typeof ReturnRequestScalarFieldEnum)[keyof typeof ReturnRequestScalarFieldEnum]
+
+
 export const OrderItemScalarFieldEnum = {
   id: 'id',
   orderId: 'orderId',
@@ -256,6 +274,24 @@ export const RateLimitScalarFieldEnum = {
 } as const
 
 export type RateLimitScalarFieldEnum = (typeof RateLimitScalarFieldEnum)[keyof typeof RateLimitScalarFieldEnum]
+
+
+export const StoreSettingsScalarFieldEnum = {
+  id: 'id',
+  brandName: 'brandName',
+  supportEmail: 'supportEmail',
+  currency: 'currency',
+  sizeSystem: 'sizeSystem',
+  shippingOrigin: 'shippingOrigin',
+  shippingCostCents: 'shippingCostCents',
+  freeShippingThresholdCents: 'freeShippingThresholdCents',
+  lowStockThreshold: 'lowStockThreshold',
+  returnWindowDays: 'returnWindowDays',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type StoreSettingsScalarFieldEnum = (typeof StoreSettingsScalarFieldEnum)[keyof typeof StoreSettingsScalarFieldEnum]
 
 
 export const SortOrder = {

@@ -1,5 +1,7 @@
 export const config = {
   appName: "Clothes Store",
   shippingCostCents: 1000, // $10.00
-  // Add other configuration constants here
+  freeShippingThresholdCents: 10000, // $100.00
+  lowStockThreshold: 10,
+  returnWindowDays: 30,
 } as const;

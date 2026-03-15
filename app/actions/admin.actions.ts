@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { hash } from "bcryptjs";
 import { generateTemporaryPassword } from "@/lib/utils";
 import { sendEmail } from "@/lib/email/send-email";
+import { Prisma } from "@/app/generated/prisma/client";
 
 /**
  * Escape HTML special characters to prevent HTML injection
@@ -21,6 +22,26 @@ function escapeHtml(text: string): string {
   };
   return text.replace(/[&<>"'/]/g, (char) => map[char] || char);
 }
+
+type ReturnRequestStatus =
+  | "REQUESTED"
+  | "APPROVED"
+  | "REJECTED"
+  | "RECEIVED"
+  | "REFUNDED";
+
+type ReturnRequestRecord = {
+  id: string;
+  orderId: string;
+  userId: string;
+  reason: string;
+  status: ReturnRequestStatus;
+  adminNote: string | null;
+  requestedAt: Date;
+  resolvedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
 
 // Admin Products
 export async function getAllProductsAdmin() {
@@ -367,7 +388,42 @@ export async function getAllOrdersAdmin() {
     },
   });
 
-  return orders;
+  if (orders.length === 0) {
+    return orders.map((order) => ({
+      ...order,
+      latestReturnRequest: null,
+    }));
+  }
+
+  const orderIds = orders.map((order) => order.id);
+  const returnRequests = await prisma.$queryRaw<ReturnRequestRecord[]>`
+    SELECT
+      id,
+      order_id AS "orderId",
+      user_id AS "userId",
+      reason,
+      status::text AS "status",
+      admin_note AS "adminNote",
+      requested_at AS "requestedAt",
+      resolved_at AS "resolvedAt",
+      created_at AS "createdAt",
+      updated_at AS "updatedAt"
+    FROM return_requests
+    WHERE order_id IN (${Prisma.join(orderIds)})
+    ORDER BY requested_at DESC
+  `;
+
+  const latestByOrder = new Map<string, ReturnRequestRecord>();
+  for (const request of returnRequests) {
+    if (!latestByOrder.has(request.orderId)) {
+      latestByOrder.set(request.orderId, request);
+    }
+  }
+
+  return orders.map((order) => ({
+    ...order,
+    latestReturnRequest: latestByOrder.get(order.id) ?? null,
+  }));
 }
 
 export async function getOrderByIdAdmin(orderId: string) {
@@ -406,7 +462,133 @@ export async function getOrderByIdAdmin(orderId: string) {
     throw new Error("Order not found");
   }
 
-  return order;
+  const returnRequests = await prisma.$queryRaw<ReturnRequestRecord[]>`
+    SELECT
+      id,
+      order_id AS "orderId",
+      user_id AS "userId",
+      reason,
+      status::text AS "status",
+      admin_note AS "adminNote",
+      requested_at AS "requestedAt",
+      resolved_at AS "resolvedAt",
+      created_at AS "createdAt",
+      updated_at AS "updatedAt"
+    FROM return_requests
+    WHERE order_id = ${orderId}
+    ORDER BY requested_at DESC
+  `;
+
+  return {
+    ...order,
+    returnRequests,
+  };
+}
+
+export async function getAllReturnRequestsAdmin() {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN") {
+    throw new Error("Unauthorized");
+  }
+
+  const requests = await prisma.$queryRaw<
+    Array<
+      ReturnRequestRecord & {
+        orderStatus: string;
+        orderTotal: number;
+        orderCreatedAt: Date;
+        customerName: string | null;
+        customerEmail: string | null;
+      }
+    >
+  >`
+    SELECT
+      rr.id,
+      rr.order_id AS "orderId",
+      rr.user_id AS "userId",
+      rr.reason,
+      rr.status::text AS "status",
+      rr.admin_note AS "adminNote",
+      rr.requested_at AS "requestedAt",
+      rr.resolved_at AS "resolvedAt",
+      rr.created_at AS "createdAt",
+      rr.updated_at AS "updatedAt",
+      o.status::text AS "orderStatus",
+      o.total AS "orderTotal",
+      o."createdAt" AS "orderCreatedAt",
+      u.name AS "customerName",
+      u.email AS "customerEmail"
+    FROM return_requests rr
+    JOIN "Order" o ON o.id = rr.order_id
+    LEFT JOIN users u ON u.id = rr.user_id
+    ORDER BY rr.requested_at DESC
+  `;
+
+  return requests;
+}
+
+export async function updateReturnRequestStatusAdmin(
+  requestId: string,
+  status: ReturnRequestStatus,
+  adminNote?: string,
+) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN") {
+    throw new Error("Unauthorized");
+  }
+
+  const existing = await prisma.$queryRaw<
+    Array<{ id: string; orderId: string; status: ReturnRequestStatus }>
+  >`
+    SELECT id, order_id AS "orderId", status::text AS "status"
+    FROM return_requests
+    WHERE id = ${requestId}
+    LIMIT 1
+  `;
+
+  if (existing.length === 0) {
+    throw new Error("Return request not found");
+  }
+
+  const current = existing[0];
+
+  const transitions: Record<ReturnRequestStatus, ReturnRequestStatus[]> = {
+    REQUESTED: ["APPROVED", "REJECTED"],
+    APPROVED: ["RECEIVED", "REJECTED"],
+    REJECTED: [],
+    RECEIVED: ["REFUNDED"],
+    REFUNDED: [],
+  };
+
+  if (
+    status !== current.status &&
+    !transitions[current.status].includes(status)
+  ) {
+    throw new Error(
+      `Invalid transition from ${current.status} to ${status}. Allowed: ${transitions[current.status].join(", ") || "none"}`,
+    );
+  }
+
+  const note = adminNote?.trim() || null;
+  const shouldResolve = status === "REJECTED" || status === "REFUNDED";
+
+  await prisma.$executeRaw`
+    UPDATE return_requests
+    SET
+      status = ${status}::"ReturnRequestStatus",
+      admin_note = ${note},
+      resolved_at = CASE WHEN ${shouldResolve} THEN NOW() ELSE resolved_at END,
+      updated_at = NOW()
+    WHERE id = ${requestId}
+  `;
+
+  revalidatePath("/admin/orders");
+  revalidatePath("/admin/returns");
+  revalidatePath(`/admin/orders/${current.orderId}`);
+  revalidatePath("/order");
+  revalidatePath(`/order/${current.orderId}`);
+
+  return { success: true };
 }
 
 export async function updateOrderStatusAdmin(

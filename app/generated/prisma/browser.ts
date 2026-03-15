@@ -53,6 +53,11 @@ export type Inventory = Prisma.InventoryModel
  */
 export type Order = Prisma.OrderModel
 /**
+ * Model ReturnRequest
+ * 
+ */
+export type ReturnRequest = Prisma.ReturnRequestModel
+/**
  * Model OrderItem
  * 
  */
@@ -82,3 +87,8 @@ export type Category = Prisma.CategoryModel
  * 
  */
 export type RateLimit = Prisma.RateLimitModel
+/**
+ * Model StoreSettings
+ * 
+ */
+export type StoreSettings = Prisma.StoreSettingsModel

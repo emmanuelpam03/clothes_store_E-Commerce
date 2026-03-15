@@ -9,12 +9,14 @@ import {
   Users,
   BarChart3,
   Settings,
+  RotateCcw,
 } from "lucide-react";
 
 const links = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { name: "Products", href: "/admin/products", icon: Package },
   { name: "Orders", href: "/admin/orders", icon: ShoppingCart },
+  { name: "Returns", href: "/admin/returns", icon: RotateCcw },
   { name: "Customers", href: "/admin/users", icon: Users },
   { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
   { name: "Settings", href: "/admin/settings", icon: Settings },

@@ -1,5 +1,7 @@
 import { getOrderById } from "@/app/actions/order.actions";
+import { getPublicStoreSettingsAction } from "@/app/actions/store-settings.actions";
 import CancelOrderButton from "@/components/shop/cancelOrderButton";
+import RequestReturnButton from "@/components/shop/RequestReturnButton";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 
@@ -20,6 +22,18 @@ export default async function OrderSuccessPage({ params }: PageProps) {
     notFound();
   }
 
+  const storeSettings = await getPublicStoreSettingsAction();
+
+  const hasActiveReturnRequest =
+    order.returnRequests?.some((request) =>
+      ["REQUESTED", "APPROVED", "RECEIVED"].includes(request.status),
+    ) ?? false;
+  const itemsSubtotal = order.items.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0,
+  );
+  const shippingCost = Math.max(order.total - itemsSubtotal, 0);
+
   return (
     <div className="min-h-screen bg-neutral-100 px-6 py-12">
       <div className="mx-auto max-w-3xl bg-white border-2 border-neutral-300 p-8">
@@ -33,6 +47,11 @@ export default async function OrderSuccessPage({ params }: PageProps) {
         <p className="text-sm text-neutral-600 mb-8">
           Thank you for your order. This is your order summary.
         </p>
+
+        <div className="mb-8 border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-700">
+          Returns are accepted within {storeSettings.returnWindowDays} days
+          after delivery.
+        </div>
 
         <div className="mb-8 space-y-2 text-sm">
           <p>
@@ -116,17 +135,65 @@ export default async function OrderSuccessPage({ params }: PageProps) {
           ))}
         </div>
 
-        <div className="border-t border-neutral-200 mt-8 pt-6 flex justify-between">
-          <span className="text-sm font-semibold">Total</span>
-          <span className="text-lg font-bold">
-            ${(order.total / 100).toFixed(2)}
-          </span>
+        <div className="border-t border-neutral-200 mt-8 pt-6 space-y-3">
+          <div className="flex justify-between text-sm text-neutral-600">
+            <span>Subtotal</span>
+            <span>${(itemsSubtotal / 100).toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between text-sm text-neutral-600">
+            <span>Shipping</span>
+            <span>
+              {shippingCost === 0
+                ? "Free"
+                : `$${(shippingCost / 100).toFixed(2)}`}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-sm font-semibold">Total</span>
+            <span className="text-lg font-bold">
+              ${(order.total / 100).toFixed(2)}
+            </span>
+          </div>
         </div>
+
+        {order.returnRequests && order.returnRequests.length > 0 && (
+          <div className="mt-6 border border-neutral-200 p-4">
+            <h2 className="text-sm font-semibold mb-3">Return Requests</h2>
+            <div className="space-y-3">
+              {order.returnRequests.map((request) => (
+                <div key={request.id} className="border border-neutral-200 p-3">
+                  <p className="text-xs text-neutral-500 mb-1">
+                    {new Date(request.requestedAt).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </p>
+                  <p className="text-sm font-semibold text-black mb-1">
+                    Status: {request.status}
+                  </p>
+                  <p className="text-sm text-neutral-700">{request.reason}</p>
+                  {request.adminNote && (
+                    <p className="text-sm text-neutral-600 mt-2">
+                      Admin note: {request.adminNote}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Cancel Order Button */}
         {order.status === "PENDING" && (
           <div className="mt-6">
             <CancelOrderButton orderId={order.id} status={order.status} />
+          </div>
+        )}
+
+        {order.status === "DELIVERED" && !hasActiveReturnRequest && (
+          <div className="mt-4">
+            <RequestReturnButton orderId={order.id} />
           </div>
         )}
       </div>

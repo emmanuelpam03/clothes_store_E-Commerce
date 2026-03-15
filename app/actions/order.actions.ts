@@ -1,9 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { Prisma } from "@/app/generated/prisma/client";
 
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { getStoreSettings } from "@/lib/store-settings";
 
 type CartItem = {
   productId: string;
@@ -19,6 +21,24 @@ type ShippingDetails = {
   city: string;
   zipCode: string;
   country: string;
+};
+
+type ReturnRequestStatus =
+  | "REQUESTED"
+  | "APPROVED"
+  | "REJECTED"
+  | "RECEIVED"
+  | "REFUNDED";
+
+type ReturnRequestRecord = {
+  id: string;
+  orderId: string;
+  userId: string;
+  reason: string;
+  status: ReturnRequestStatus;
+  adminNote: string | null;
+  requestedAt: Date;
+  resolvedAt: Date | null;
 };
 
 function validateShippingDetails(details: ShippingDetails): void {
@@ -56,6 +76,7 @@ export async function createOrderAction(
   validateShippingDetails(shippingDetails);
 
   const userId = session.user.id;
+  const storeSettings = await getStoreSettings();
 
   if (items.length === 0) {
     throw new Error("Cart is empty");
@@ -92,13 +113,20 @@ export async function createOrderAction(
       }
 
       // 3️⃣ Create order
+      const subtotal = items.reduce((sum, item) => {
+        const product = products.find((p) => p.id === item.productId)!;
+        return sum + product.price * item.quantity;
+      }, 0);
+
+      const shippingCost =
+        subtotal >= storeSettings.freeShippingThresholdCents
+          ? 0
+          : storeSettings.shippingCostCents;
+
       const order = await tx.order.create({
         data: {
           userId,
-          total: items.reduce((sum, item) => {
-            const product = products.find((p) => p.id === item.productId)!;
-            return sum + product.price * item.quantity;
-          }, 0),
+          total: subtotal + shippingCost,
           email: shippingDetails.email,
           phone: shippingDetails.phone,
           firstName: shippingDetails.firstName,
@@ -170,7 +198,42 @@ export async function getOrders() {
     },
     orderBy: { createdAt: "desc" },
   });
-  return orders;
+
+  if (orders.length === 0) {
+    return orders.map((order) => ({
+      ...order,
+      latestReturnRequest: null,
+    }));
+  }
+
+  const orderIds = orders.map((order) => order.id);
+  const returnRequests = await prisma.$queryRaw<ReturnRequestRecord[]>`
+    SELECT
+      id,
+      order_id AS "orderId",
+      user_id AS "userId",
+      reason,
+      status::text AS "status",
+      admin_note AS "adminNote",
+      requested_at AS "requestedAt",
+      resolved_at AS "resolvedAt"
+    FROM return_requests
+    WHERE user_id = ${session.user.id}
+      AND order_id IN (${Prisma.join(orderIds)})
+    ORDER BY requested_at DESC
+  `;
+
+  const latestByOrder = new Map<string, ReturnRequestRecord>();
+  for (const request of returnRequests) {
+    if (!latestByOrder.has(request.orderId)) {
+      latestByOrder.set(request.orderId, request);
+    }
+  }
+
+  return orders.map((order) => ({
+    ...order,
+    latestReturnRequest: latestByOrder.get(order.id) ?? null,
+  }));
 }
 
 export async function getOrderById(orderId: string) {
@@ -198,7 +261,111 @@ export async function getOrderById(orderId: string) {
     throw new Error("Order not found");
   }
 
-  return order;
+  const returnRequests = await prisma.$queryRaw<ReturnRequestRecord[]>`
+    SELECT
+      id,
+      order_id AS "orderId",
+      user_id AS "userId",
+      reason,
+      status::text AS "status",
+      admin_note AS "adminNote",
+      requested_at AS "requestedAt",
+      resolved_at AS "resolvedAt"
+    FROM return_requests
+    WHERE user_id = ${session.user.id}
+      AND order_id = ${orderId}
+    ORDER BY requested_at DESC
+  `;
+
+  return {
+    ...order,
+    returnRequests,
+  };
+}
+
+export async function createReturnRequest(orderId: string, reason: string) {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized");
+  }
+
+  const trimmedReason = reason.trim();
+  if (trimmedReason.length < 10) {
+    throw new Error(
+      "Please provide at least 10 characters for the return reason",
+    );
+  }
+
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    select: {
+      id: true,
+      userId: true,
+      status: true,
+      updatedAt: true,
+    },
+  });
+
+  if (!order || !order.userId || order.userId !== session.user.id) {
+    throw new Error("Order not found");
+  }
+
+  if (order.status !== "DELIVERED") {
+    throw new Error("Returns can only be requested for delivered orders");
+  }
+
+  const storeSettings = await getStoreSettings();
+  const returnWindowMs = storeSettings.returnWindowDays * 24 * 60 * 60 * 1000;
+  const isWithinWindow =
+    Date.now() - new Date(order.updatedAt).getTime() <= returnWindowMs;
+  if (!isWithinWindow) {
+    throw new Error(
+      `Return window closed. Returns are accepted within ${storeSettings.returnWindowDays} days of delivery.`,
+    );
+  }
+
+  const existingOpenRequest = await prisma.$queryRaw<Array<{ id: string }>>`
+    SELECT id
+    FROM return_requests
+    WHERE order_id = ${orderId}
+      AND user_id = ${session.user.id}
+      AND status IN ('REQUESTED', 'APPROVED', 'RECEIVED')
+    LIMIT 1
+  `;
+
+  if (existingOpenRequest.length > 0) {
+    throw new Error("A return request is already active for this order");
+  }
+
+  await prisma.$executeRaw`
+    INSERT INTO return_requests (
+      id,
+      order_id,
+      user_id,
+      reason,
+      status,
+      requested_at,
+      created_at,
+      updated_at
+    ) VALUES (
+      ${crypto.randomUUID()},
+      ${orderId},
+      ${session.user.id},
+      ${trimmedReason},
+      'REQUESTED'::"ReturnRequestStatus",
+      NOW(),
+      NOW(),
+      NOW()
+    )
+  `;
+
+  revalidatePath("/order");
+  revalidatePath(`/order/${orderId}`);
+  revalidatePath("/admin/orders");
+  revalidatePath("/admin/returns");
+
+  return { success: true };
 }
 
 export async function updateOrderStatus() {
