@@ -32,11 +32,25 @@ export default function RequestReturnButton({ orderId }: { orderId: string }) {
       >
         Request Return
       </button>
-
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
-          <div className="w-full max-w-lg bg-white border border-neutral-300 p-6">
-            <h3 className="text-lg font-bold text-black mb-2">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
+          onClick={() => !isPending && setIsOpen(false)}
+          onKeyDown={(e) =>
+            e.key === "Escape" && !isPending && setIsOpen(false)
+          }
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="return-modal-title"
+            className="w-full max-w-lg bg-white border border-neutral-300 p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3
+              id="return-modal-title"
+              className="text-lg font-bold text-black mb-2"
+            >
               Request a Return
             </h3>
             <p className="text-sm text-neutral-600 mb-4">
@@ -68,7 +82,7 @@ export default function RequestReturnButton({ orderId }: { orderId: string }) {
             </div>
           </div>
         </div>
-      )}
+      )}{" "}
     </>
   );
 }

@@ -544,7 +544,7 @@ export default function ShoppingBag() {
                           aria-haspopup="listbox"
                           aria-expanded={openDropdown === `color-${item.id}`}
                           aria-label="Select color"
-                          className="px-3 py-2 min-w-22.5 border border-neutral-300 rounded-md text-xs font-medium cursor-pointer hover:border-black transition-all focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-1 flex items-center justify-between gap-2"
+                          className="px-3 py-2 min-w-[90px] border border-neutral-300 rounded-md text-xs font-medium cursor-pointer hover:border-black transition-all focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-1 flex items-center justify-between gap-2"
                           style={{
                             backgroundColor: getColorValue(
                               parsedItemColor.value,

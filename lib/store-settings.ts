@@ -39,28 +39,28 @@ type StoreSettingsRow = {
 
 export async function getStoreSettings(): Promise<StoreSettingsRuntime> {
   try {
-    const rows = await prisma.$queryRaw<StoreSettingsRow[]>`
-      SELECT
-        brand_name AS "brandName",
-        support_email AS "supportEmail",
-        currency,
-        size_system AS "sizeSystem",
-        shipping_origin AS "shippingOrigin",
-        shipping_cost_cents AS "shippingCostCents",
-        free_shipping_threshold_cents AS "freeShippingThresholdCents",
-        low_stock_threshold AS "lowStockThreshold",
-        return_window_days AS "returnWindowDays"
-      FROM store_settings
-      WHERE id = 'default'
-      LIMIT 1
-    `;
+    const row = await prisma.storeSettings.findUnique({
+      where: { id: "default" },
+      select: {
+        brandName: true,
+        supportEmail: true,
+        currency: true,
+        sizeSystem: true,
+        shippingOrigin: true,
+        shippingCostCents: true,
+        freeShippingThresholdCents: true,
+        lowStockThreshold: true,
+        returnWindowDays: true,
+      },
+    });
 
-    if (rows.length === 0) {
+    if (!row) {
       return defaultStoreSettings;
     }
 
-    return rows[0];
-  } catch {
+    return row as StoreSettingsRow;
+  } catch (error) {
+    console.error("Failed to fetch store settings:", error);
     return defaultStoreSettings;
   }
 }

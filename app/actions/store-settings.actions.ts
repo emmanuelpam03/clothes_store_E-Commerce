@@ -80,48 +80,32 @@ export async function updateAdminStoreSettingsAction(
     values.freeShippingThreshold * 100,
   );
 
-  await prisma.$executeRaw`
-    INSERT INTO store_settings (
-      id,
-      brand_name,
-      support_email,
+  await prisma.storeSettings.upsert({
+    where: { id: "default" },
+    create: {
+      id: "default",
+      brandName,
+      supportEmail,
       currency,
-      size_system,
-      shipping_origin,
-      shipping_cost_cents,
-      free_shipping_threshold_cents,
-      low_stock_threshold,
-      return_window_days,
-      created_at,
-      updated_at
-    )
-    VALUES (
-      'default',
-      ${brandName},
-      ${supportEmail},
-      ${currency},
-      ${sizeSystem},
-      ${shippingOrigin},
-      ${shippingCostCents},
-      ${freeShippingThresholdCents},
-      ${values.lowStockThreshold},
-      ${values.returnWindowDays},
-      NOW(),
-      NOW()
-    )
-    ON CONFLICT (id) DO UPDATE
-    SET
-      brand_name = EXCLUDED.brand_name,
-      support_email = EXCLUDED.support_email,
-      currency = EXCLUDED.currency,
-      size_system = EXCLUDED.size_system,
-      shipping_origin = EXCLUDED.shipping_origin,
-      shipping_cost_cents = EXCLUDED.shipping_cost_cents,
-      free_shipping_threshold_cents = EXCLUDED.free_shipping_threshold_cents,
-      low_stock_threshold = EXCLUDED.low_stock_threshold,
-      return_window_days = EXCLUDED.return_window_days,
-      updated_at = NOW()
-  `;
+      sizeSystem,
+      shippingOrigin,
+      shippingCostCents,
+      freeShippingThresholdCents,
+      lowStockThreshold: values.lowStockThreshold,
+      returnWindowDays: values.returnWindowDays,
+    },
+    update: {
+      brandName,
+      supportEmail,
+      currency,
+      sizeSystem,
+      shippingOrigin,
+      shippingCostCents,
+      freeShippingThresholdCents,
+      lowStockThreshold: values.lowStockThreshold,
+      returnWindowDays: values.returnWindowDays,
+    },
+  });
 
   revalidatePath("/admin/settings");
   revalidatePath("/cart");

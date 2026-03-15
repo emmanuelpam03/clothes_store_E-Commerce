@@ -22,8 +22,8 @@ export default async function OrderSuccessPage({ params }: PageProps) {
     notFound();
   }
 
-  const storeSettings = await getPublicStoreSettingsAction();
-
+  const storeSettings = await getPublicStoreSettingsAction().catch(() => null);
+  const returnWindowDays = storeSettings?.returnWindowDays ?? 30;
   const hasActiveReturnRequest =
     order.returnRequests?.some((request) =>
       ["REQUESTED", "APPROVED", "RECEIVED"].includes(request.status),
@@ -32,7 +32,62 @@ export default async function OrderSuccessPage({ params }: PageProps) {
     (sum, item) => sum + item.price * item.quantity,
     0,
   );
-  const shippingCost = Math.max(order.total - itemsSubtotal, 0);
+
+  const parseAmount = (value: unknown): number | undefined => {
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return Math.round(value);
+    }
+
+    if (typeof value === "string") {
+      const parsed = Number(value);
+      if (Number.isFinite(parsed)) {
+        return Math.round(parsed);
+      }
+    }
+
+    return undefined;
+  };
+
+  const orderRecord = order as Record<string, unknown>;
+  const metadata =
+    typeof orderRecord.metadata === "object" && orderRecord.metadata !== null
+      ? (orderRecord.metadata as Record<string, unknown>)
+      : null;
+
+  const explicitShipping =
+    parseAmount(orderRecord.shipping) ??
+    parseAmount(orderRecord.shippingCost) ??
+    parseAmount(orderRecord.shipping_cost) ??
+    parseAmount(metadata?.shipping) ??
+    parseAmount(metadata?.shippingCost) ??
+    parseAmount(metadata?.shipping_cost);
+
+  const discounts =
+    parseAmount(orderRecord.discounts) ??
+    parseAmount(orderRecord.discount) ??
+    parseAmount(metadata?.discounts) ??
+    parseAmount(metadata?.discount) ??
+    0;
+
+  const taxes =
+    parseAmount(orderRecord.taxes) ??
+    parseAmount(orderRecord.tax) ??
+    parseAmount(metadata?.taxes) ??
+    parseAmount(metadata?.tax) ??
+    0;
+
+  const fees =
+    parseAmount(orderRecord.fees) ??
+    parseAmount(orderRecord.fee) ??
+    parseAmount(metadata?.fees) ??
+    parseAmount(metadata?.fee) ??
+    0;
+
+  const fallbackShipping = Math.max(
+    order.total - itemsSubtotal + discounts - taxes - fees,
+    0,
+  );
+  const shippingCost = explicitShipping ?? fallbackShipping;
 
   return (
     <div className="min-h-screen bg-neutral-100 px-6 py-12">
@@ -49,8 +104,7 @@ export default async function OrderSuccessPage({ params }: PageProps) {
         </p>
 
         <div className="mb-8 border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-700">
-          Returns are accepted within {storeSettings.returnWindowDays} days
-          after delivery.
+          Returns are accepted within {returnWindowDays} days after delivery.
         </div>
 
         <div className="mb-8 space-y-2 text-sm">

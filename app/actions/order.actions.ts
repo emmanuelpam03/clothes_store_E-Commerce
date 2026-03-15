@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { Prisma } from "@/app/generated/prisma/client";
+import { OrderStatus, ReturnRequestStatus } from "@/app/generated/prisma/enums";
 
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
@@ -22,13 +22,6 @@ type ShippingDetails = {
   zipCode: string;
   country: string;
 };
-
-type ReturnRequestStatus =
-  | "REQUESTED"
-  | "APPROVED"
-  | "REJECTED"
-  | "RECEIVED"
-  | "REFUNDED";
 
 type ReturnRequestRecord = {
   id: string;
@@ -138,6 +131,13 @@ export async function createOrderAction(
         },
       });
 
+      await tx.orderStatusHistory.create({
+        data: {
+          orderId: order.id,
+          status: OrderStatus.PENDING,
+        },
+      });
+
       // 4️⃣ Create order items (snapshots)
       await tx.orderItem.createMany({
         data: items.map((item) => {
@@ -207,21 +207,23 @@ export async function getOrders() {
   }
 
   const orderIds = orders.map((order) => order.id);
-  const returnRequests = await prisma.$queryRaw<ReturnRequestRecord[]>`
-    SELECT
-      id,
-      order_id AS "orderId",
-      user_id AS "userId",
-      reason,
-      status::text AS "status",
-      admin_note AS "adminNote",
-      requested_at AS "requestedAt",
-      resolved_at AS "resolvedAt"
-    FROM return_requests
-    WHERE user_id = ${session.user.id}
-      AND order_id IN (${Prisma.join(orderIds)})
-    ORDER BY requested_at DESC
-  `;
+  const returnRequests = await prisma.returnRequest.findMany({
+    where: {
+      userId: session.user.id,
+      orderId: { in: orderIds },
+    },
+    select: {
+      id: true,
+      orderId: true,
+      userId: true,
+      reason: true,
+      status: true,
+      adminNote: true,
+      requestedAt: true,
+      resolvedAt: true,
+    },
+    orderBy: { requestedAt: "desc" },
+  });
 
   const latestByOrder = new Map<string, ReturnRequestRecord>();
   for (const request of returnRequests) {
@@ -261,21 +263,23 @@ export async function getOrderById(orderId: string) {
     throw new Error("Order not found");
   }
 
-  const returnRequests = await prisma.$queryRaw<ReturnRequestRecord[]>`
-    SELECT
-      id,
-      order_id AS "orderId",
-      user_id AS "userId",
-      reason,
-      status::text AS "status",
-      admin_note AS "adminNote",
-      requested_at AS "requestedAt",
-      resolved_at AS "resolvedAt"
-    FROM return_requests
-    WHERE user_id = ${session.user.id}
-      AND order_id = ${orderId}
-    ORDER BY requested_at DESC
-  `;
+  const returnRequests = await prisma.returnRequest.findMany({
+    where: {
+      userId: session.user.id,
+      orderId,
+    },
+    select: {
+      id: true,
+      orderId: true,
+      userId: true,
+      reason: true,
+      status: true,
+      adminNote: true,
+      requestedAt: true,
+      resolvedAt: true,
+    },
+    orderBy: { requestedAt: "desc" },
+  });
 
   return {
     ...order,
@@ -303,7 +307,7 @@ export async function createReturnRequest(orderId: string, reason: string) {
       id: true,
       userId: true,
       status: true,
-      updatedAt: true,
+      deliveredAt: true,
     },
   });
 
@@ -315,50 +319,58 @@ export async function createReturnRequest(orderId: string, reason: string) {
     throw new Error("Returns can only be requested for delivered orders");
   }
 
+  const deliveredAtFromHistory = order.deliveredAt
+    ? null
+    : await prisma.orderStatusHistory.findFirst({
+        where: {
+          orderId,
+          status: OrderStatus.DELIVERED,
+        },
+        orderBy: { changedAt: "desc" },
+        select: { changedAt: true },
+      });
+
+  const deliveredAt = order.deliveredAt ?? deliveredAtFromHistory?.changedAt;
+
   const storeSettings = await getStoreSettings();
   const returnWindowMs = storeSettings.returnWindowDays * 24 * 60 * 60 * 1000;
   const isWithinWindow =
-    Date.now() - new Date(order.updatedAt).getTime() <= returnWindowMs;
+    deliveredAt !== undefined &&
+    deliveredAt !== null &&
+    Date.now() - new Date(deliveredAt).getTime() <= returnWindowMs;
   if (!isWithinWindow) {
     throw new Error(
       `Return window closed. Returns are accepted within ${storeSettings.returnWindowDays} days of delivery.`,
     );
   }
 
-  const existingOpenRequest = await prisma.$queryRaw<Array<{ id: string }>>`
-    SELECT id
-    FROM return_requests
-    WHERE order_id = ${orderId}
-      AND user_id = ${session.user.id}
-      AND status IN ('REQUESTED', 'APPROVED', 'RECEIVED')
-    LIMIT 1
-  `;
+  const existingOpenRequest = await prisma.returnRequest.findFirst({
+    where: {
+      orderId,
+      userId: session.user.id,
+      status: {
+        in: [
+          ReturnRequestStatus.REQUESTED,
+          ReturnRequestStatus.APPROVED,
+          ReturnRequestStatus.RECEIVED,
+        ],
+      },
+    },
+    select: { id: true },
+  });
 
-  if (existingOpenRequest.length > 0) {
+  if (existingOpenRequest) {
     throw new Error("A return request is already active for this order");
   }
 
-  await prisma.$executeRaw`
-    INSERT INTO return_requests (
-      id,
-      order_id,
-      user_id,
-      reason,
-      status,
-      requested_at,
-      created_at,
-      updated_at
-    ) VALUES (
-      ${crypto.randomUUID()},
-      ${orderId},
-      ${session.user.id},
-      ${trimmedReason},
-      'REQUESTED'::"ReturnRequestStatus",
-      NOW(),
-      NOW(),
-      NOW()
-    )
-  `;
+  await prisma.returnRequest.create({
+    data: {
+      orderId,
+      userId: session.user.id,
+      reason: trimmedReason,
+      status: ReturnRequestStatus.REQUESTED,
+    },
+  });
 
   revalidatePath("/order");
   revalidatePath(`/order/${orderId}`);
@@ -405,6 +417,13 @@ export async function cancelOrder(orderId: string) {
   const updatedOrder = await prisma.order.update({
     where: { id: order.id },
     data: { status: "CANCELLED" },
+  });
+
+  await prisma.orderStatusHistory.create({
+    data: {
+      orderId: order.id,
+      status: OrderStatus.CANCELLED,
+    },
   });
 
   revalidatePath("/order");

@@ -138,6 +138,7 @@ model Order {
   userId String?
   status OrderStatus @default(PENDING)
   total  Int // computed at creation
+  deliveredAt DateTime?
 
   // Shipping details
   email     String
@@ -155,6 +156,19 @@ model Order {
   user           User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
   items          OrderItem[]
   returnRequests ReturnRequest[]
+  statusHistory  OrderStatusHistory[]
+}
+
+model OrderStatusHistory {
+  id        String      @id @default(cuid())
+  orderId   String
+  status    OrderStatus
+  changedAt DateTime    @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId, status, changedAt])
+  @@map("order_status_history")
 }
 
 model ReturnRequest {

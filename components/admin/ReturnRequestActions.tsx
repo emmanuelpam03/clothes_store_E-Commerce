@@ -1,16 +1,10 @@
 "use client";
 
 import { updateReturnRequestStatusAdmin } from "@/app/actions/admin.actions";
+import { ReturnRequestStatus } from "@/app/generated/prisma/enums";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "sonner";
-
-type ReturnRequestStatus =
-  | "REQUESTED"
-  | "APPROVED"
-  | "REJECTED"
-  | "RECEIVED"
-  | "REFUNDED";
 
 export default function ReturnRequestActions({
   requestId,
@@ -23,11 +17,17 @@ export default function ReturnRequestActions({
   const [isPending, setIsPending] = useState(false);
 
   const transitions: Record<ReturnRequestStatus, ReturnRequestStatus[]> = {
-    REQUESTED: ["APPROVED", "REJECTED"],
-    APPROVED: ["RECEIVED", "REJECTED"],
-    REJECTED: [],
-    RECEIVED: ["REFUNDED"],
-    REFUNDED: [],
+    [ReturnRequestStatus.REQUESTED]: [
+      ReturnRequestStatus.APPROVED,
+      ReturnRequestStatus.REJECTED,
+    ],
+    [ReturnRequestStatus.APPROVED]: [
+      ReturnRequestStatus.RECEIVED,
+      ReturnRequestStatus.REJECTED,
+    ],
+    [ReturnRequestStatus.REJECTED]: [],
+    [ReturnRequestStatus.RECEIVED]: [ReturnRequestStatus.REFUNDED],
+    [ReturnRequestStatus.REFUNDED]: [],
   };
 
   const nextStates = transitions[currentStatus] ?? [];

@@ -1,24 +1,18 @@
 import { auth } from "@/lib/auth";
+import { ReturnRequestStatus } from "@/app/generated/prisma/enums";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 
 import { getAllReturnRequestsAdmin } from "@/app/actions/admin.actions";
 import ReturnRequestActions from "@/components/admin/ReturnRequestActions";
 
-type ReturnRequestStatus =
-  | "REQUESTED"
-  | "APPROVED"
-  | "REJECTED"
-  | "RECEIVED"
-  | "REFUNDED";
-
 function getStatusBadgeClass(status: ReturnRequestStatus): string {
   const classes: Record<ReturnRequestStatus, string> = {
-    REQUESTED: "bg-yellow-100 text-yellow-700",
-    APPROVED: "bg-blue-100 text-blue-700",
-    REJECTED: "bg-red-100 text-red-700",
-    RECEIVED: "bg-purple-100 text-purple-700",
-    REFUNDED: "bg-emerald-100 text-emerald-700",
+    [ReturnRequestStatus.REQUESTED]: "bg-yellow-100 text-yellow-700",
+    [ReturnRequestStatus.APPROVED]: "bg-blue-100 text-blue-700",
+    [ReturnRequestStatus.REJECTED]: "bg-red-100 text-red-700",
+    [ReturnRequestStatus.RECEIVED]: "bg-purple-100 text-purple-700",
+    [ReturnRequestStatus.REFUNDED]: "bg-emerald-100 text-emerald-700",
   };
 
   return classes[status];

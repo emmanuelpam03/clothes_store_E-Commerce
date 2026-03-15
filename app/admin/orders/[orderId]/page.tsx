@@ -1,4 +1,5 @@
 import { auth } from "@/lib/auth";
+import { ReturnRequestStatus } from "@/app/generated/prisma/enums";
 import { notFound } from "next/navigation";
 import { getOrderByIdAdmin } from "@/app/actions/admin.actions";
 import OrderActions from "@/components/admin/OrderActions";
@@ -7,12 +8,6 @@ import Image from "next/image";
 import Link from "next/link";
 
 type OrderStatus = "PENDING" | "PAID" | "SHIPPED" | "DELIVERED" | "CANCELLED";
-type ReturnRequestStatus =
-  | "REQUESTED"
-  | "APPROVED"
-  | "REJECTED"
-  | "RECEIVED"
-  | "REFUNDED";
 
 interface PageProps {
   params: Promise<{ orderId: string }>;
