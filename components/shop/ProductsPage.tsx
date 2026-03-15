@@ -17,7 +17,7 @@ import ProductsGridSkeleton from "./skeleton/ProductsGridSkeleton";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTransition, useEffect } from "react";
 import AddToCartDialog from "./AddToCartDialog";
-import { formatCurrencyFromCents } from "@/lib/money";
+import { formatCurrencyFromCentsConverted } from "@/lib/money";
 import { useStoreSettings } from "@/lib/store-settings-client";
 
 type Product = {
@@ -63,7 +63,7 @@ export default function ProductsPageComponent({
     new Set(["Category", "Price Range"]),
   );
 
-  const { currency } = useStoreSettings();
+  const { currency, fxRate } = useStoreSettings();
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -617,12 +617,25 @@ export default function ProductsPageComponent({
                       />
                     </div>
                     <div className="flex items-center justify-between text-xs text-neutral-500">
-                      <span>{formatCurrencyFromCents(0, currency)}</span>
-                      <span>{formatCurrencyFromCents(maxPrice, currency)}</span>
+                      <span>
+                        {formatCurrencyFromCentsConverted(0, currency, fxRate)}
+                      </span>
+                      <span>
+                        {formatCurrencyFromCentsConverted(
+                          maxPrice,
+                          currency,
+                          fxRate,
+                        )}
+                      </span>
                     </div>
                     <div className="text-center text-sm text-black font-medium">
-                      Range: {formatCurrencyFromCents(0, currency)} -{" "}
-                      {formatCurrencyFromCents(maxPrice, currency)}
+                      Range:{" "}
+                      {formatCurrencyFromCentsConverted(0, currency, fxRate)} -{" "}
+                      {formatCurrencyFromCentsConverted(
+                        maxPrice,
+                        currency,
+                        fxRate,
+                      )}
                     </div>
                   </div>
                 )}
@@ -856,9 +869,10 @@ export default function ProductsPageComponent({
                                 <p className="font-medium">{product.name}</p>
                               </div>
                               <p className="font-semibold">
-                                {formatCurrencyFromCents(
+                                {formatCurrencyFromCentsConverted(
                                   product.price,
                                   currency,
+                                  fxRate,
                                 )}
                               </p>
                             </div>

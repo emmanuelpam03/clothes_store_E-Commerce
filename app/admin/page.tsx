@@ -9,8 +9,8 @@ import {
 } from "lucide-react";
 import { getAdminStats } from "@/app/actions/admin.actions";
 import prisma from "@/lib/prisma";
-import { getStoreSettings } from "@/lib/store-settings";
-import { formatCurrencyFromCents } from "@/lib/money";
+import { getStoreSettingsWithFx } from "@/lib/store-settings-fx";
+import { formatCurrencyFromCentsConverted } from "@/lib/money";
 
 // Force dynamic rendering to always show fresh data
 export const dynamic = "force-dynamic";
@@ -58,7 +58,7 @@ const orderColumns: Column<Order>[] = [
 
 export default async function DashboardPage() {
   const stats = await getAdminStats();
-  const storeSettings = await getStoreSettings();
+  const { settings: storeSettings, fxRate } = await getStoreSettingsWithFx();
   const currency = storeSettings.currency;
 
   // Fetch recent 5 orders
@@ -74,7 +74,7 @@ export default async function DashboardPage() {
     id: order.id,
     customer: order.user?.name || order.firstName + " " + order.lastName,
     status: order.status,
-    amount: formatCurrencyFromCents(order.total, currency),
+    amount: formatCurrencyFromCentsConverted(order.total, currency, fxRate),
     date: new Date(order.createdAt).toLocaleDateString(),
   }));
 
@@ -90,7 +90,11 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <StatCard
           title="Total Revenue"
-          value={formatCurrencyFromCents(stats.totalRevenue, currency)}
+          value={formatCurrencyFromCentsConverted(
+            stats.totalRevenue,
+            currency,
+            fxRate,
+          )}
           change="+12.5%"
           icon={<TrendingUp size={24} className="text-blue-500" />}
         />

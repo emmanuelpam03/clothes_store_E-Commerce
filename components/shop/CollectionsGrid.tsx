@@ -7,7 +7,7 @@ import { Suspense, useState } from "react";
 import { useFavorites } from "@/lib/favorites/useFavorites";
 import { toast } from "sonner";
 import AddToCartDialog from "./AddToCartDialog";
-import { formatCurrencyFromCents } from "@/lib/money";
+import { formatCurrencyFromCentsConverted } from "@/lib/money";
 import { useStoreSettings } from "@/lib/store-settings-client";
 
 // fallback image
@@ -33,7 +33,7 @@ type CollectionsGridProps = {
 export function CollectionsGrid({ products = [] }: CollectionsGridProps) {
   const { isFavorited, toggleFavorite, isLoading: isPending } = useFavorites();
   const [dialogProduct, setDialogProduct] = useState<Product | null>(null);
-  const { currency } = useStoreSettings();
+  const { currency, fxRate } = useStoreSettings();
 
   // show products in batches of 6
   const BATCH_SIZE = 6;
@@ -138,7 +138,11 @@ export function CollectionsGrid({ products = [] }: CollectionsGridProps) {
                   <div className="mt-4 flex justify-between text-sm">
                     <p className="font-medium">{product.name}</p>
                     <p className="font-semibold">
-                      {formatCurrencyFromCents(product.price, currency)}
+                      {formatCurrencyFromCentsConverted(
+                        product.price,
+                        currency,
+                        fxRate,
+                      )}
                     </p>
                   </div>
                 </Link>

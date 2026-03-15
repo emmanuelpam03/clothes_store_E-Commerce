@@ -30,6 +30,22 @@ export function formatCurrencyFromCents(
   return getCurrencyFormatter({ currency, locale }).format(amount);
 }
 
+export function formatCurrencyFromCentsConverted(
+  cents: number,
+  currency: string,
+  conversionRate: number,
+  locale?: string,
+): string {
+  const safeCents = Number.isFinite(cents) ? cents : 0;
+  const safeRate =
+    Number.isFinite(conversionRate) && conversionRate > 0 ? conversionRate : 1;
+  return formatCurrencyFromCents(
+    Math.round(safeCents * safeRate),
+    currency,
+    locale,
+  );
+}
+
 export function formatCurrencyCompactFromCents(
   cents: number,
   currency: string = "USD",
@@ -46,4 +62,20 @@ export function formatCurrencyCompactFromCents(
     compactDisplay: "short",
     maximumFractionDigits: 1,
   }).format(amount);
+}
+
+export function formatCurrencyCompactFromCentsConverted(
+  cents: number,
+  currency: string,
+  conversionRate: number,
+  locale?: string,
+): string {
+  const safeCents = Number.isFinite(cents) ? cents : 0;
+  const safeRate =
+    Number.isFinite(conversionRate) && conversionRate > 0 ? conversionRate : 1;
+  return formatCurrencyCompactFromCents(
+    Math.round(safeCents * safeRate),
+    currency,
+    locale,
+  );
 }

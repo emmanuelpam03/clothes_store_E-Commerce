@@ -5,8 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import OrderPageCartClear from "@/components/shop/OrderPageCartClear";
 import { getOrders } from "@/app/actions/order.actions";
-import { getPublicStoreSettingsAction } from "@/app/actions/store-settings.actions";
-import { formatCurrencyFromCents } from "@/lib/money";
+import { getStoreSettingsWithFx } from "@/lib/store-settings-fx";
+import { formatCurrencyFromCentsConverted } from "@/lib/money";
 
 export default async function OrdersPage() {
   const session = await auth();
@@ -16,8 +16,8 @@ export default async function OrdersPage() {
   }
 
   const orders = await getOrders();
-  const storeSettings = await getPublicStoreSettingsAction().catch(() => null);
-  const currency = storeSettings?.currency ?? "USD";
+  const { settings: storeSettings, fxRate } = await getStoreSettingsWithFx();
+  const currency = storeSettings.currency;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -97,7 +97,11 @@ export default async function OrdersPage() {
                   <div>
                     <p className="text-sm text-neutral-500">Total</p>
                     <p className="text-lg font-semibold">
-                      {formatCurrencyFromCents(order.total, currency)}
+                      {formatCurrencyFromCentsConverted(
+                        order.total,
+                        currency,
+                        fxRate,
+                      )}
                     </p>
                   </div>
                 </div>
@@ -128,14 +132,20 @@ export default async function OrdersPage() {
                           Quantity: {item.quantity}
                         </p>
                         <p className="text-sm mt-2">
-                          {formatCurrencyFromCents(item.price, currency)} each
+                          {formatCurrencyFromCentsConverted(
+                            item.price,
+                            currency,
+                            fxRate,
+                          )}{" "}
+                          each
                         </p>
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-semibold">
-                          {formatCurrencyFromCents(
+                          {formatCurrencyFromCentsConverted(
                             item.price * item.quantity,
                             currency,
+                            fxRate,
                           )}
                         </p>
                       </div>
@@ -151,8 +161,12 @@ export default async function OrdersPage() {
                     </p>
                     <p className="text-sm font-semibold text-neutral-700">
                       Please pay{" "}
-                      {formatCurrencyFromCents(order.total, currency)} when you
-                      receive your order.
+                      {formatCurrencyFromCentsConverted(
+                        order.total,
+                        currency,
+                        fxRate,
+                      )}{" "}
+                      when you receive your order.
                     </p>
                   </div>
                 )}

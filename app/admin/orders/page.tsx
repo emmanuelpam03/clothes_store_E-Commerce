@@ -3,8 +3,8 @@ import OrderActions from "@/components/admin/OrderActions";
 import { auth } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import { getAllOrdersAdmin } from "@/app/actions/admin.actions";
-import { getStoreSettings } from "@/lib/store-settings";
-import { formatCurrencyFromCents } from "@/lib/money";
+import { getStoreSettingsWithFx } from "@/lib/store-settings-fx";
+import { formatCurrencyFromCentsConverted } from "@/lib/money";
 
 type OrderStatus = "PENDING" | "PAID" | "SHIPPED" | "DELIVERED" | "CANCELLED";
 
@@ -22,10 +22,6 @@ type Order = {
     currentStatus: OrderStatus;
   };
 };
-
-function formatCurrency(cents: number, currency: string): string {
-  return formatCurrencyFromCents(cents, currency);
-}
 
 function formatDate(date: Date): string {
   return new Date(date).toLocaleDateString("en-US", {
@@ -93,8 +89,8 @@ export default async function OrdersPage() {
     notFound(); // hides existence of route
   }
 
-  const storeSettings = await getStoreSettings();
-  const currency = storeSettings?.currency ?? "USD";
+  const { settings: storeSettings, fxRate } = await getStoreSettingsWithFx();
+  const currency = storeSettings.currency;
   let dbOrders;
   try {
     dbOrders = await getAllOrdersAdmin();
@@ -110,7 +106,7 @@ export default async function OrdersPage() {
     status: order.status,
     returnStatus: order.latestReturnRequest?.status ?? "—",
     items: order.items.length,
-    amount: formatCurrency(order.total, currency),
+    amount: formatCurrencyFromCentsConverted(order.total, currency, fxRate),
     date: formatDate(order.createdAt),
     actions: {
       orderId: order.id,

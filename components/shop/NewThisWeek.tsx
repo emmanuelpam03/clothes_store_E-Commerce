@@ -8,7 +8,7 @@ import { useFavorites } from "@/lib/favorites/useFavorites";
 import { toast } from "sonner";
 import AddToCartDialog from "./AddToCartDialog";
 import { ShoppingBag } from "lucide-react";
-import { formatCurrencyFromCents } from "@/lib/money";
+import { formatCurrencyFromCentsConverted } from "@/lib/money";
 import { useStoreSettings } from "@/lib/store-settings-client";
 
 // fallback image (IMPORTANT)
@@ -39,7 +39,7 @@ export function NewThisWeek({ products }: NewThisWeekProps) {
   const [dragStart, setDragStart] = useState<number | null>(null);
   const [dragOffset, setDragOffset] = useState(0);
   const { isFavorited, toggleFavorite, isLoading: isPending } = useFavorites();
-  const { currency } = useStoreSettings();
+  const { currency, fxRate } = useStoreSettings();
   const [dialogProduct, setDialogProduct] = useState<NewThisWeekProduct | null>(
     null,
   );
@@ -172,7 +172,11 @@ export function NewThisWeek({ products }: NewThisWeekProps) {
                   <div className="mt-3 text-sm">
                     <p className="font-medium">{product.name}</p>
                     <p className="font-semibold">
-                      {formatCurrencyFromCents(product.price, currency)}
+                      {formatCurrencyFromCentsConverted(
+                        product.price,
+                        currency,
+                        fxRate,
+                      )}
                     </p>
                   </div>
                 </Link>

@@ -6,7 +6,7 @@ import { Heart, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useFavorites } from "@/lib/favorites/useFavorites";
 import { toast } from "sonner";
-import { formatCurrencyFromCents } from "@/lib/money";
+import { formatCurrencyFromCentsConverted } from "@/lib/money";
 import { useStoreSettings } from "@/lib/store-settings-client";
 
 type Product = {
@@ -29,7 +29,7 @@ export default function FavoritesClient({
 }: FavoritesClientProps) {
   const [items, setItems] = useState<Product[]>(initialProducts);
   const { toggleFavorite, getGuestFavoriteIds, isLoading } = useFavorites();
-  const { currency } = useStoreSettings();
+  const { currency, fxRate } = useStoreSettings();
 
   // sync for logged-in users
   useEffect(() => {
@@ -127,7 +127,11 @@ export default function FavoritesClient({
                   )}
 
                   <p className="text-xl font-bold mb-6">
-                    {formatCurrencyFromCents(product.price, currency)}
+                    {formatCurrencyFromCentsConverted(
+                      product.price,
+                      currency,
+                      fxRate,
+                    )}
                   </p>
 
                   <div className="flex gap-3">

@@ -5,8 +5,8 @@ import { auth } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import { getAllProductsAdmin } from "@/app/actions/admin.actions";
 import ProductActions from "@/components/admin/ProductActions";
-import { getStoreSettings } from "@/lib/store-settings";
-import { formatCurrencyFromCents } from "@/lib/money";
+import { getStoreSettingsWithFx } from "@/lib/store-settings-fx";
+import { formatCurrencyFromCentsConverted } from "@/lib/money";
 
 type Product = {
   id: string;
@@ -25,7 +25,14 @@ type Product = {
   };
 };
 
-function getColumns(currency: string): Column<Product>[] {
+function getColumns(params: {
+  currency: string;
+  fxRate: number;
+}): Column<Product>[] {
+  const { currency, fxRate } = params;
+  const formatCurrency = (cents: number) =>
+    formatCurrencyFromCentsConverted(cents, currency, fxRate);
+
   return [
     { key: "name", label: "Product Name" },
     {
@@ -54,7 +61,7 @@ function getColumns(currency: string): Column<Product>[] {
     {
       key: "price",
       label: "Price",
-      render: (v) => formatCurrencyFromCents(v as number, currency),
+      render: (v) => formatCurrency(v as number),
     },
     {
       key: "inventory",
@@ -88,8 +95,8 @@ export default async function ProductsPage() {
     notFound();
   }
 
-  const storeSettings = await getStoreSettings();
-  const currency = storeSettings.currency;
+  const { settings, fxRate } = await getStoreSettingsWithFx();
+  const currency = settings.currency;
 
   const products = await getAllProductsAdmin();
 
@@ -113,7 +120,7 @@ export default async function ProductsPage() {
 
       <div className="bg-white rounded-xl border border-slate-200 p-8">
         {products.length > 0 ? (
-          <Table columns={getColumns(currency)} data={products} />
+          <Table columns={getColumns({ currency, fxRate })} data={products} />
         ) : (
           <div className="text-center py-12 text-slate-500">
             <p className="text-lg font-medium">No products yet</p>

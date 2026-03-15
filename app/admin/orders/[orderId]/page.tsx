@@ -6,17 +6,13 @@ import OrderActions from "@/components/admin/OrderActions";
 import ReturnRequestActions from "@/components/admin/ReturnRequestActions";
 import Image from "next/image";
 import Link from "next/link";
-import { getStoreSettings } from "@/lib/store-settings";
-import { formatCurrencyFromCents } from "@/lib/money";
+import { getStoreSettingsWithFx } from "@/lib/store-settings-fx";
+import { formatCurrencyFromCentsConverted } from "@/lib/money";
 
 type OrderStatus = "PENDING" | "PAID" | "SHIPPED" | "DELIVERED" | "CANCELLED";
 
 interface PageProps {
   params: Promise<{ orderId: string }>;
-}
-
-function formatCurrency(cents: number, currency: string): string {
-  return formatCurrencyFromCents(cents, currency);
 }
 
 function formatDate(date: Date): string {
@@ -53,20 +49,22 @@ export default async function OrderDetailsPage({ params }: PageProps) {
     notFound();
   }
 
-  const storeSettings = await getStoreSettings();
-  const currency = storeSettings.currency;
-
   const { orderId } = await params;
   const order = await getOrderByIdAdmin(orderId);
+  if (!order) {
+    notFound();
+  }
+
+  const { settings, fxRate } = await getStoreSettingsWithFx();
+  const currency = settings.currency;
+  const formatCurrency = (cents: number) =>
+    formatCurrencyFromCentsConverted(cents, currency, fxRate);
+
   const itemsSubtotal = order.items.reduce(
     (sum, item) => sum + item.price * item.quantity,
     0,
   );
   const shippingCost = Math.max(order.total - itemsSubtotal, 0);
-
-  if (!order) {
-    notFound();
-  }
 
   return (
     <div className="p-8 space-y-8 bg-slate-50 min-h-screen">
@@ -147,10 +145,10 @@ export default async function OrderDetailsPage({ params }: PageProps) {
                   </div>
                   <div className="text-right">
                     <div className="font-semibold text-slate-900">
-                      {formatCurrency(item.price * item.quantity, currency)}
+                      {formatCurrency(item.price * item.quantity)}
                     </div>
                     <div className="text-sm text-slate-600">
-                      {formatCurrency(item.price, currency)} each
+                      {formatCurrency(item.price)} each
                     </div>
                   </div>
                 </div>
@@ -160,7 +158,7 @@ export default async function OrderDetailsPage({ params }: PageProps) {
               <div className="flex justify-between items-center">
                 <span className="text-lg font-bold text-slate-900">Total</span>
                 <span className="text-2xl font-bold text-slate-900">
-                  {formatCurrency(order.total, currency)}
+                  {formatCurrency(order.total)}
                 </span>
               </div>
             </div>
@@ -322,22 +320,20 @@ export default async function OrderDetailsPage({ params }: PageProps) {
               <div className="flex justify-between text-sm">
                 <span className="text-slate-600">Subtotal</span>
                 <span className="font-semibold text-slate-900">
-                  {formatCurrency(itemsSubtotal, currency)}
+                  {formatCurrency(itemsSubtotal)}
                 </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-slate-600">Shipping</span>
                 <span className="font-semibold text-slate-900">
-                  {shippingCost === 0
-                    ? "Free"
-                    : formatCurrency(shippingCost, currency)}
+                  {shippingCost === 0 ? "Free" : formatCurrency(shippingCost)}
                 </span>
               </div>
               <div className="pt-2 border-t border-slate-200">
                 <div className="flex justify-between">
                   <span className="font-bold text-slate-900">Total</span>
                   <span className="font-bold text-slate-900 text-lg">
-                    {formatCurrency(order.total, currency)}
+                    {formatCurrency(order.total)}
                   </span>
                 </div>
               </div>

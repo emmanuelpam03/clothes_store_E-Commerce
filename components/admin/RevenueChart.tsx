@@ -11,8 +11,8 @@ import {
   Legend,
 } from "recharts";
 import {
-  formatCurrencyCompactFromCents,
-  formatCurrencyFromCents,
+  formatCurrencyCompactFromCentsConverted,
+  formatCurrencyFromCentsConverted,
 } from "@/lib/money";
 import { useStoreSettings } from "@/lib/store-settings-client";
 
@@ -29,9 +29,15 @@ interface CustomTooltipProps {
     payload: MonthData;
   }>;
   currency: string;
+  fxRate: number;
 }
 
-function CustomTooltip({ active, payload, currency }: CustomTooltipProps) {
+function CustomTooltip({
+  active,
+  payload,
+  currency,
+  fxRate,
+}: CustomTooltipProps) {
   if (active && payload && payload.length) {
     return (
       <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-4">
@@ -43,7 +49,11 @@ function CustomTooltip({ active, payload, currency }: CustomTooltipProps) {
             <div className="w-3 h-3 rounded-full bg-blue-500" />
             <span className="text-sm text-slate-600">Revenue:</span>
             <span className="text-sm font-bold text-slate-900">
-              {formatCurrencyFromCents(Number(payload[0].value), currency)}
+              {formatCurrencyFromCentsConverted(
+                Number(payload[0].value),
+                currency,
+                fxRate,
+              )}
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -61,7 +71,7 @@ function CustomTooltip({ active, payload, currency }: CustomTooltipProps) {
 }
 
 export default function RevenueChart({ data }: { data: MonthData[] }) {
-  const { currency } = useStoreSettings();
+  const { currency, fxRate } = useStoreSettings();
 
   if (!data || data.length === 0) {
     return (
@@ -101,7 +111,7 @@ export default function RevenueChart({ data }: { data: MonthData[] }) {
             style={{ fontSize: "12px" }}
             tickLine={false}
             tickFormatter={(value: number) =>
-              formatCurrencyCompactFromCents(value, currency)
+              formatCurrencyCompactFromCentsConverted(value, currency, fxRate)
             }
           />
           <YAxis
@@ -113,7 +123,7 @@ export default function RevenueChart({ data }: { data: MonthData[] }) {
           />
           <Tooltip
             content={(props) => (
-              <CustomTooltip {...props} currency={currency} />
+              <CustomTooltip {...props} currency={currency} fxRate={fxRate} />
             )}
           />
           <Legend

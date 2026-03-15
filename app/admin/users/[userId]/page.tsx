@@ -3,8 +3,8 @@ import { notFound } from "next/navigation";
 import { getUserByIdAdmin } from "@/app/actions/admin.actions";
 import UserActions from "@/components/admin/UserActions";
 import Link from "next/link";
-import { getStoreSettings } from "@/lib/store-settings";
-import { formatCurrencyFromCents } from "@/lib/money";
+import { getStoreSettingsWithFx } from "@/lib/store-settings-fx";
+import { formatCurrencyFromCentsConverted } from "@/lib/money";
 
 type UserRole = "USER" | "ADMIN";
 
@@ -22,8 +22,12 @@ function formatDate(date: Date): string {
   });
 }
 
-function formatCurrency(cents: number, currency: string): string {
-  return formatCurrencyFromCents(cents, currency);
+function formatCurrency(
+  cents: number,
+  currency: string,
+  fxRate: number,
+): string {
+  return formatCurrencyFromCentsConverted(cents, currency, fxRate);
 }
 
 function getRoleBadge(role: UserRole) {
@@ -58,8 +62,8 @@ export default async function UserDetailsPage({ params }: PageProps) {
     notFound();
   }
 
-  const storeSettings = await getStoreSettings();
-  const currency = storeSettings.currency ?? "USD";
+  const { settings: storeSettings, fxRate } = await getStoreSettingsWithFx();
+  const currency = storeSettings.currency;
   const { userId } = await params;
   const user = await getUserByIdAdmin(userId);
 
@@ -134,7 +138,7 @@ export default async function UserDetailsPage({ params }: PageProps) {
                     </div>
                     <div className="text-right">
                       <div className="font-semibold text-slate-900">
-                        {formatCurrency(order.total, currency)}
+                        {formatCurrency(order.total, currency, fxRate)}
                       </div>
                       <div
                         className={`text-xs font-semibold px-2 py-1 rounded-full inline-block ${
@@ -254,7 +258,7 @@ export default async function UserDetailsPage({ params }: PageProps) {
               <div className="flex justify-between">
                 <span className="text-slate-600">Total Spent</span>
                 <span className="font-semibold text-slate-900">
-                  {formatCurrency(user.ordersTotal, currency)}
+                  {formatCurrency(user.ordersTotal, currency, fxRate)}
                 </span>
               </div>
             </div>

@@ -9,6 +9,8 @@ import CartAuthSync from "@/lib/cart/CartAuthSync";
 import { headers } from "next/headers";
 import { getStoreSettings } from "@/lib/store-settings";
 import { StoreSettingsProvider } from "@/lib/store-settings-client";
+import { config } from "@/constants/config";
+import { getFxRate } from "@/lib/fx";
 
 export const inter = Inter({
   subsets: ["latin"],
@@ -34,6 +36,16 @@ export default async function RootLayout({
 }) {
   const reason = (await headers()).get("x-not-found-reason");
   const storeSettings = await getStoreSettings();
+
+  const baseCurrency = config.pricingCurrency ?? "USD";
+  let fxRate = 1;
+
+  try {
+    fxRate = await getFxRate(baseCurrency, storeSettings.currency);
+  } catch (error) {
+    console.error("Failed to fetch FX rate:", error);
+    fxRate = 1;
+  }
   return (
     <html lang="en" className="no-scrollbar overflow-y-scroll">
       <head>
@@ -44,6 +56,8 @@ export default async function RootLayout({
           value={{
             currency: storeSettings.currency,
             sizeSystem: storeSettings.sizeSystem,
+            baseCurrency,
+            fxRate,
           }}
         >
           <SessionProvider>

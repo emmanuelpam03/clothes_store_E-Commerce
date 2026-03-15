@@ -12,7 +12,7 @@ import {
 } from "react";
 import { Heart, XIcon, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
-import { formatCurrencyFromCents } from "@/lib/money";
+import { formatCurrencyFromCentsConverted } from "@/lib/money";
 import { useStoreSettings } from "@/lib/store-settings-client";
 import { useSession } from "next-auth/react";
 
@@ -92,7 +92,7 @@ export default function ShoppingBag() {
   const { status } = useSession();
   const isLoggedIn = status === "authenticated";
   const { isFavorited, toggleFavorite } = useFavorites();
-  const { currency } = useStoreSettings();
+  const { currency, fxRate } = useStoreSettings();
 
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [, startTransition] = useTransition();
@@ -372,7 +372,13 @@ export default function ShoppingBag() {
                         </p>
                         <div className="flex justify-between mt-1">
                           <p className="text-xs text-black">{item.subtitle}</p>
-                          <p>{formatCurrencyFromCents(item.price, currency)}</p>
+                          <p>
+                            {formatCurrencyFromCentsConverted(
+                              item.price,
+                              currency,
+                              fxRate,
+                            )}
+                          </p>
                         </div>
                         {/* Stock Warning */}
                         {isOutOfStock ? (
@@ -684,14 +690,24 @@ export default function ShoppingBag() {
               <div className="space-y-4 text-sm">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span>{formatCurrencyFromCents(subtotal, currency)}</span>
+                  <span>
+                    {formatCurrencyFromCentsConverted(
+                      subtotal,
+                      currency,
+                      fxRate,
+                    )}
+                  </span>
                 </div>
                 <div className="flex justify-between">
                   <span>Shipping</span>
                   <span>
                     {shipping === 0 && subtotal > 0
                       ? "Free"
-                      : formatCurrencyFromCents(shipping, currency)}
+                      : formatCurrencyFromCentsConverted(
+                          shipping,
+                          currency,
+                          fxRate,
+                        )}
                   </span>
                 </div>
               </div>
@@ -699,9 +715,10 @@ export default function ShoppingBag() {
               {subtotal > 0 && !qualifiesForFreeShipping && (
                 <p className="mt-4 text-xs text-neutral-600">
                   Add{" "}
-                  {formatCurrencyFromCents(
+                  {formatCurrencyFromCentsConverted(
                     storeSettings.freeShippingThresholdCents - subtotal,
                     currency,
+                    fxRate,
                   )}{" "}
                   more to unlock free shipping.
                 </p>
@@ -720,7 +737,9 @@ export default function ShoppingBag() {
 
               <div className="border-t mt-6 pt-6 flex justify-between font-medium">
                 <span>Total</span>
-                <span>{formatCurrencyFromCents(total, currency)}</span>
+                <span>
+                  {formatCurrencyFromCentsConverted(total, currency, fxRate)}
+                </span>
               </div>
 
               {hasStockIssues && (

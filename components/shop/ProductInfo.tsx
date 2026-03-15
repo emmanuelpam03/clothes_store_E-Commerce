@@ -8,7 +8,7 @@ import { addToCartAction } from "@/app/actions/cart.actions";
 import { Heart } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useFavorites } from "@/lib/favorites/useFavorites";
-import { formatCurrencyFromCents } from "@/lib/money";
+import { formatCurrencyFromCentsConverted } from "@/lib/money";
 import { useStoreSettings } from "@/lib/store-settings-client";
 
 // fallback static images (safe)
@@ -58,9 +58,13 @@ export default function ProductInfo({ product }: ProductInfoProps) {
   const { status } = useSession();
   const isLoggedIn = status === "authenticated";
   const { isFavorited, toggleFavorite, isLoading: isPending } = useFavorites();
-  const { currency } = useStoreSettings();
+  const { currency, fxRate } = useStoreSettings();
 
-  const displayPrice = formatCurrencyFromCents(product.price, currency);
+  const displayPrice = formatCurrencyFromCentsConverted(
+    product.price,
+    currency,
+    fxRate,
+  );
   const stockQuantity = product.inventory?.quantity ?? 0;
   const isOutOfStock = stockQuantity === 0;
   const isLowStock = stockQuantity > 0 && stockQuantity <= 5;
