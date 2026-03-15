@@ -19,7 +19,13 @@ export async function getStoreSettingsWithFx(): Promise<StoreSettingsWithFx> {
     const fxRate = await getFxRate(baseCurrency, settings.currency);
     return { settings, baseCurrency, fxRate };
   } catch (error) {
-    console.error("Failed to fetch FX rate:", error);
-    return { settings, baseCurrency, fxRate: 1 };
+    console.error(
+      `Failed to fetch FX rate for ${baseCurrency} → ${settings.currency}:`,
+      error,
+    );
+    if (baseCurrency === settings.currency) {
+      return { settings, baseCurrency, fxRate: 1 };
+    }
+    throw error;
   }
 }

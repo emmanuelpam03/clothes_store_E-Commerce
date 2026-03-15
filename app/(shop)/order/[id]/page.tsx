@@ -24,7 +24,21 @@ export default async function OrderSuccessPage({ params }: PageProps) {
     notFound();
   }
 
-  const { settings: storeSettings, fxRate } = await getStoreSettingsWithFx();
+  let storeSettings;
+  let fxRate: number;
+
+  try {
+    const result = await getStoreSettingsWithFx();
+    storeSettings = result.settings;
+    fxRate = result.fxRate;
+  } catch {
+    notFound();
+  }
+
+  if (!fxRate || fxRate <= 0 || !Number.isFinite(fxRate)) {
+    fxRate = 1;
+  }
+
   const returnWindowDays = storeSettings.returnWindowDays;
   const currency = storeSettings.currency;
   const hasActiveReturnRequest =

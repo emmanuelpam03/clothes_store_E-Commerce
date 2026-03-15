@@ -63,8 +63,7 @@ export default function ProductsPageComponent({
     new Set(["Category", "Price Range"]),
   );
 
-  const { currency, fxRate } = useStoreSettings();
-
+  const { currency, fxRate = 1 } = useStoreSettings();
   const router = useRouter();
   const searchParams = useSearchParams();
   const currentQuery = searchParams.get("q") ?? "";

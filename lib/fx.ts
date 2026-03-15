@@ -3,7 +3,13 @@ type FxApiResponse = {
   rates?: Record<string, number>;
 };
 
+type Rates = Record<string, number>;
+
 const DEFAULT_TTL_MS = 6 * 60 * 60 * 1000; // 6h
+
+// Deduplicate concurrent misses per base currency.
+// (This is best-effort and scoped to the current runtime instance.)
+const inFlightFetches = new Map<string, Promise<Rates>>();
 
 type CachedRates = {
   fetchedAt: number;
@@ -13,9 +19,11 @@ type CachedRates = {
 
 function normalizeCurrency(code: string) {
   const trimmed = code?.trim();
-  return trimmed ? trimmed.toUpperCase() : "USD";
+  if (!trimmed) {
+    throw new Error("Currency code is required");
+  }
+  return trimmed.toUpperCase();
 }
-
 function getCacheKey(base: string) {
   return `__fx_rates__${base}`;
 }
@@ -43,9 +51,7 @@ function setCachedRates(base: string, rates: Record<string, number>) {
   } satisfies CachedRates;
 }
 
-async function fetchRates(
-  baseCurrency: string,
-): Promise<Record<string, number>> {
+async function fetchRates(baseCurrency: string): Promise<Rates> {
   // Free endpoint (no API key). If you want a provider with an API key,
   // you can swap this URL and keep the rest of the code.
   const url = `https://open.er-api.com/v6/latest/${encodeURIComponent(
@@ -79,12 +85,30 @@ export async function getFxRate(
   if (base === target) return 1;
 
   const cached = getCachedRates(base);
-  if (cached?.rates?.[target] && Number.isFinite(cached.rates[target])) {
-    return cached.rates[target];
+  const cachedRate = cached?.rates?.[target];
+  if (
+    typeof cachedRate === "number" &&
+    Number.isFinite(cachedRate) &&
+    cachedRate > 0
+  ) {
+    return cachedRate;
   }
 
-  const rates = await fetchRates(base);
-  setCachedRates(base, rates);
+  let ratesPromise = inFlightFetches.get(base);
+  if (!ratesPromise) {
+    ratesPromise = fetchRates(base)
+      .then((rates) => {
+        setCachedRates(base, rates);
+        return rates;
+      })
+      .finally(() => {
+        inFlightFetches.delete(base);
+      });
+
+    inFlightFetches.set(base, ratesPromise);
+  }
+
+  const rates = await ratesPromise;
 
   const rate = rates[target];
   if (!Number.isFinite(rate) || rate <= 0) {
@@ -95,7 +119,29 @@ export async function getFxRate(
 }
 
 export function convertCentsWithRate(cents: number, rate: number): number {
-  const safeCents = Number.isFinite(cents) ? cents : 0;
-  const safeRate = Number.isFinite(rate) && rate > 0 ? rate : 1;
-  return Math.round(safeCents * safeRate);
+  if (!Number.isFinite(cents)) {
+    throw new TypeError(
+      `convertCentsWithRate: cents must be a finite number; received cents=${String(
+        cents,
+      )}, rate=${String(rate)}`,
+    );
+  }
+
+  if (!Number.isFinite(rate)) {
+    throw new TypeError(
+      `convertCentsWithRate: rate must be a finite number; received cents=${String(
+        cents,
+      )}, rate=${String(rate)}`,
+    );
+  }
+
+  if (rate <= 0) {
+    throw new RangeError(
+      `convertCentsWithRate: rate must be > 0; received cents=${String(
+        cents,
+      )}, rate=${String(rate)}`,
+    );
+  }
+
+  return Math.round(cents * rate);
 }

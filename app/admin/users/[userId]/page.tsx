@@ -63,7 +63,7 @@ export default async function UserDetailsPage({ params }: PageProps) {
   }
 
   const { settings: storeSettings, fxRate } = await getStoreSettingsWithFx();
-  const currency = storeSettings.currency;
+  const currency = storeSettings.currency ?? "USD";
   const { userId } = await params;
   const user = await getUserByIdAdmin(userId);
 

@@ -55,8 +55,12 @@ export default async function OrderDetailsPage({ params }: PageProps) {
     notFound();
   }
 
-  const { settings, fxRate } = await getStoreSettingsWithFx();
+  const { settings, baseCurrency, fxRate } = await getStoreSettingsWithFx();
   const currency = settings.currency;
+  const normalizedBaseCurrency = baseCurrency?.trim()?.toUpperCase() || "USD";
+  const normalizedCurrency = currency?.trim()?.toUpperCase() || "USD";
+  const isConvertedAtCurrentRate =
+    normalizedBaseCurrency !== normalizedCurrency;
   const formatCurrency = (cents: number) =>
     formatCurrencyFromCentsConverted(cents, currency, fxRate);
 
@@ -85,6 +89,18 @@ export default async function OrderDetailsPage({ params }: PageProps) {
           <OrderActions orderId={order.id} currentStatus={order.status} />
         </div>
       </div>
+
+      {isConvertedAtCurrentRate && (
+        <div className="rounded-xl border border-slate-200 bg-white p-4">
+          <p className="text-sm text-slate-700">
+            <span className="font-semibold text-slate-900">Note:</span> Amounts
+            are shown in {normalizedCurrency} by converting from{" "}
+            {normalizedBaseCurrency} using the{" "}
+            <span className="font-semibold">current</span> FX rate. This may
+            differ from the rate at purchase time.
+          </p>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Content */}
