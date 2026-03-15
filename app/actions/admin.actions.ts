@@ -389,24 +389,22 @@ export async function getAllOrdersAdmin() {
   }
 
   const orderIds = orders.map((order) => order.id);
-  const returnRequests = await prisma.returnRequest.findMany({
-    where: {
-      orderId: { in: orderIds },
-    },
-    select: {
-      id: true,
-      orderId: true,
-      userId: true,
-      reason: true,
-      status: true,
-      adminNote: true,
-      requestedAt: true,
-      resolvedAt: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-    orderBy: { requestedAt: "desc" },
-  });
+  const returnRequests = await prisma.$queryRaw<ReturnRequestRecord[]>`
+    SELECT DISTINCT ON ("order_id")
+      "id",
+      "order_id" AS "orderId",
+      "user_id" AS "userId",
+      "reason",
+      "status",
+      "admin_note" AS "adminNote",
+      "requested_at" AS "requestedAt",
+      "resolved_at" AS "resolvedAt",
+      "created_at" AS "createdAt",
+      "updated_at" AS "updatedAt"
+    FROM "return_requests"
+    WHERE "order_id" = ANY(${orderIds})
+    ORDER BY "order_id", "requested_at" DESC
+  `;
 
   const latestByOrder = new Map<string, ReturnRequestRecord>();
   for (const request of returnRequests) {
@@ -457,22 +455,22 @@ export async function getOrderByIdAdmin(orderId: string) {
     throw new Error("Order not found");
   }
 
-  const returnRequests = await prisma.returnRequest.findMany({
-    where: { orderId },
-    select: {
-      id: true,
-      orderId: true,
-      userId: true,
-      reason: true,
-      status: true,
-      adminNote: true,
-      requestedAt: true,
-      resolvedAt: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-    orderBy: { requestedAt: "desc" },
-  });
+  const returnRequests = await prisma.$queryRaw<ReturnRequestRecord[]>`
+    SELECT
+      "id",
+      "order_id" AS "orderId",
+      "user_id" AS "userId",
+      "reason",
+      "status",
+      "admin_note" AS "adminNote",
+      "requested_at" AS "requestedAt",
+      "resolved_at" AS "resolvedAt",
+      "created_at" AS "createdAt",
+      "updated_at" AS "updatedAt"
+    FROM "return_requests"
+    WHERE "order_id" = ${orderId}
+    ORDER BY "requested_at" DESC
+  `;
 
   return {
     ...order,
@@ -486,43 +484,40 @@ export async function getAllReturnRequestsAdmin() {
     throw new Error("Unauthorized");
   }
 
-  const requests = await prisma.returnRequest.findMany({
-    include: {
-      order: {
-        select: {
-          id: true,
-          status: true,
-          total: true,
-          createdAt: true,
-        },
-      },
-      user: {
-        select: {
-          name: true,
-          email: true,
-        },
-      },
-    },
-    orderBy: { requestedAt: "desc" },
-  });
+  const requests = await prisma.$queryRaw<
+    Array<
+      ReturnRequestRecord & {
+        orderStatus: OrderStatus;
+        orderTotal: number;
+        orderCreatedAt: Date;
+        customerName: string | null;
+        customerEmail: string | null;
+      }
+    >
+  >`
+    SELECT
+      rr."id" AS "id",
+      rr."order_id" AS "orderId",
+      rr."user_id" AS "userId",
+      rr."reason" AS "reason",
+      rr."status" AS "status",
+      rr."admin_note" AS "adminNote",
+      rr."requested_at" AS "requestedAt",
+      rr."resolved_at" AS "resolvedAt",
+      rr."created_at" AS "createdAt",
+      rr."updated_at" AS "updatedAt",
+      o."status" AS "orderStatus",
+      o."total" AS "orderTotal",
+      o."createdAt" AS "orderCreatedAt",
+      u."name" AS "customerName",
+      u."email" AS "customerEmail"
+    FROM "return_requests" rr
+    JOIN "Order" o ON o."id" = rr."order_id"
+    LEFT JOIN "users" u ON u."id" = rr."user_id"
+    ORDER BY rr."requested_at" DESC
+  `;
 
-  return requests.map((request) => ({
-    id: request.id,
-    orderId: request.orderId,
-    userId: request.userId,
-    reason: request.reason,
-    status: request.status,
-    adminNote: request.adminNote,
-    requestedAt: request.requestedAt,
-    resolvedAt: request.resolvedAt,
-    createdAt: request.createdAt,
-    updatedAt: request.updatedAt,
-    orderStatus: request.order.status,
-    orderTotal: request.order.total,
-    orderCreatedAt: request.order.createdAt,
-    customerName: request.user?.name ?? null,
-    customerEmail: request.user?.email ?? null,
-  }));
+  return requests;
 }
 
 export async function updateReturnRequestStatusAdmin(
@@ -535,14 +530,19 @@ export async function updateReturnRequestStatusAdmin(
     throw new Error("Unauthorized");
   }
 
-  const current = await prisma.returnRequest.findUnique({
-    where: { id: requestId },
-    select: {
-      id: true,
-      orderId: true,
-      status: true,
-    },
-  });
+  const currentRows = await prisma.$queryRaw<
+    Array<{ id: string; orderId: string; status: ReturnRequestStatus }>
+  >`
+    SELECT
+      "id",
+      "order_id" AS "orderId",
+      "status" AS "status"
+    FROM "return_requests"
+    WHERE "id" = ${requestId}
+    LIMIT 1
+  `;
+
+  const current = currentRows[0] ?? null;
 
   if (!current) {
     throw new Error("Return request not found");
@@ -576,14 +576,15 @@ export async function updateReturnRequestStatusAdmin(
     status === ReturnRequestStatus.REJECTED ||
     status === ReturnRequestStatus.REFUNDED;
 
-  await prisma.returnRequest.update({
-    where: { id: requestId },
-    data: {
-      status,
-      adminNote: note,
-      ...(shouldResolve ? { resolvedAt: new Date() } : {}),
-    },
-  });
+  await prisma.$executeRaw`
+    UPDATE "return_requests"
+    SET
+      "status" = CAST(${status} AS "ReturnRequestStatus"),
+      "admin_note" = ${note},
+      "resolved_at" = ${shouldResolve ? new Date() : null},
+      "updated_at" = NOW()
+    WHERE "id" = ${requestId}
+  `;
 
   revalidatePath("/admin/orders");
   revalidatePath("/admin/returns");
@@ -649,12 +650,15 @@ export async function updateOrderStatusAdmin(
       },
     });
 
-    await tx.orderStatusHistory.create({
-      data: {
-        orderId,
-        status: status as OrderStatus,
-      },
-    });
+    await tx.$executeRaw`
+      INSERT INTO "order_status_history" ("id", "orderId", "status", "changedAt")
+      VALUES (
+        ${crypto.randomUUID()},
+        ${orderId},
+        CAST(${status as OrderStatus} AS "OrderStatus"),
+        NOW()
+      )
+    `;
 
     return updated;
   });
@@ -724,12 +728,15 @@ export async function cancelOrderAdmin(orderId: string) {
         data: { status: "CANCELLED" },
       });
 
-      await tx.orderStatusHistory.create({
-        data: {
-          orderId,
-          status: OrderStatus.CANCELLED,
-        },
-      });
+      await tx.$executeRaw`
+        INSERT INTO "order_status_history" ("id", "orderId", "status", "changedAt")
+        VALUES (
+          ${crypto.randomUUID()},
+          ${orderId},
+          CAST(${OrderStatus.CANCELLED} AS "OrderStatus"),
+          NOW()
+        )
+      `;
     });
   } else {
     // Just cancel if still pending
@@ -739,12 +746,15 @@ export async function cancelOrderAdmin(orderId: string) {
         data: { status: "CANCELLED" },
       });
 
-      await tx.orderStatusHistory.create({
-        data: {
-          orderId,
-          status: OrderStatus.CANCELLED,
-        },
-      });
+      await tx.$executeRaw`
+        INSERT INTO "order_status_history" ("id", "orderId", "status", "changedAt")
+        VALUES (
+          ${crypto.randomUUID()},
+          ${orderId},
+          CAST(${OrderStatus.CANCELLED} AS "OrderStatus"),
+          NOW()
+        )
+      `;
     });
   }
 

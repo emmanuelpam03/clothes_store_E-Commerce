@@ -131,12 +131,15 @@ export async function createOrderAction(
         },
       });
 
-      await tx.orderStatusHistory.create({
-        data: {
-          orderId: order.id,
-          status: OrderStatus.PENDING,
-        },
-      });
+      await tx.$executeRaw`
+        INSERT INTO "order_status_history" ("id", "orderId", "status", "changedAt")
+        VALUES (
+          ${crypto.randomUUID()},
+          ${order.id},
+          CAST(${OrderStatus.PENDING} AS "OrderStatus"),
+          NOW()
+        )
+      `;
 
       // 4️⃣ Create order items (snapshots)
       await tx.orderItem.createMany({
@@ -207,29 +210,25 @@ export async function getOrders() {
   }
 
   const orderIds = orders.map((order) => order.id);
-  const returnRequests = await prisma.returnRequest.findMany({
-    where: {
-      userId: session.user.id,
-      orderId: { in: orderIds },
-    },
-    select: {
-      id: true,
-      orderId: true,
-      userId: true,
-      reason: true,
-      status: true,
-      adminNote: true,
-      requestedAt: true,
-      resolvedAt: true,
-    },
-    orderBy: { requestedAt: "desc" },
-  });
+  const latestReturnRequests = await prisma.$queryRaw<ReturnRequestRecord[]>`
+    SELECT DISTINCT ON ("order_id")
+      "id",
+      "order_id" AS "orderId",
+      "user_id" AS "userId",
+      "reason",
+      "status",
+      "admin_note" AS "adminNote",
+      "requested_at" AS "requestedAt",
+      "resolved_at" AS "resolvedAt"
+    FROM "return_requests"
+    WHERE "user_id" = ${session.user.id}
+      AND "order_id" = ANY(${orderIds})
+    ORDER BY "order_id", "requested_at" DESC
+  `;
 
   const latestByOrder = new Map<string, ReturnRequestRecord>();
-  for (const request of returnRequests) {
-    if (!latestByOrder.has(request.orderId)) {
-      latestByOrder.set(request.orderId, request);
-    }
+  for (const req of latestReturnRequests) {
+    latestByOrder.set(req.orderId, req);
   }
 
   return orders.map((order) => ({
@@ -263,23 +262,21 @@ export async function getOrderById(orderId: string) {
     throw new Error("Order not found");
   }
 
-  const returnRequests = await prisma.returnRequest.findMany({
-    where: {
-      userId: session.user.id,
-      orderId,
-    },
-    select: {
-      id: true,
-      orderId: true,
-      userId: true,
-      reason: true,
-      status: true,
-      adminNote: true,
-      requestedAt: true,
-      resolvedAt: true,
-    },
-    orderBy: { requestedAt: "desc" },
-  });
+  const returnRequests = await prisma.$queryRaw<ReturnRequestRecord[]>`
+    SELECT
+      "id",
+      "order_id" AS "orderId",
+      "user_id" AS "userId",
+      "reason",
+      "status",
+      "admin_note" AS "adminNote",
+      "requested_at" AS "requestedAt",
+      "resolved_at" AS "resolvedAt"
+    FROM "return_requests"
+    WHERE "order_id" = ${orderId}
+      AND "user_id" = ${session.user.id}
+    ORDER BY "requested_at" DESC
+  `;
 
   return {
     ...order,
@@ -344,33 +341,45 @@ export async function createReturnRequest(orderId: string, reason: string) {
     );
   }
 
-  const existingOpenRequest = await prisma.returnRequest.findFirst({
-    where: {
-      orderId,
-      userId: session.user.id,
-      status: {
-        in: [
-          ReturnRequestStatus.REQUESTED,
-          ReturnRequestStatus.APPROVED,
-          ReturnRequestStatus.RECEIVED,
-        ],
-      },
-    },
-    select: { id: true },
-  });
+  const existingOpenRequest = await prisma.$queryRaw<{ id: string }[]>`
+    SELECT "id"
+    FROM "return_requests"
+    WHERE "order_id" = ${orderId}
+      AND "user_id" = ${session.user.id}
+      AND "status" IN (
+        CAST(${ReturnRequestStatus.REQUESTED} AS "ReturnRequestStatus"),
+        CAST(${ReturnRequestStatus.APPROVED} AS "ReturnRequestStatus"),
+        CAST(${ReturnRequestStatus.RECEIVED} AS "ReturnRequestStatus")
+      )
+    LIMIT 1
+  `;
 
-  if (existingOpenRequest) {
+  if (existingOpenRequest.length > 0) {
     throw new Error("A return request is already active for this order");
   }
 
-  await prisma.returnRequest.create({
-    data: {
-      orderId,
-      userId: session.user.id,
-      reason: trimmedReason,
-      status: ReturnRequestStatus.REQUESTED,
-    },
-  });
+  await prisma.$executeRaw`
+    INSERT INTO "return_requests" (
+      "id",
+      "order_id",
+      "user_id",
+      "reason",
+      "status",
+      "requested_at",
+      "created_at",
+      "updated_at"
+    )
+    VALUES (
+      ${crypto.randomUUID()},
+      ${orderId},
+      ${session.user.id},
+      ${trimmedReason},
+      CAST(${ReturnRequestStatus.REQUESTED} AS "ReturnRequestStatus"),
+      NOW(),
+      NOW(),
+      NOW()
+    )
+  `;
 
   revalidatePath("/order");
   revalidatePath(`/order/${orderId}`);
