@@ -34,15 +34,29 @@ export default async function OrderSuccessPage({ params }: PageProps) {
   );
 
   const parseAmount = (value: unknown): number | undefined => {
-    if (typeof value === "number" && Number.isFinite(value)) {
-      return Math.round(value);
+    if (typeof value === "number") {
+      if (!Number.isFinite(value)) {
+        return undefined;
+      }
+
+      return Number.isInteger(value)
+        ? Math.round(value)
+        : Math.round(value * 100);
     }
 
     if (typeof value === "string") {
-      const parsed = Number(value);
-      if (Number.isFinite(parsed)) {
-        return Math.round(parsed);
+      const trimmed = value.trim();
+      if (!trimmed) {
+        return undefined;
       }
+
+      const parsed = Number(trimmed);
+      if (!Number.isFinite(parsed)) {
+        return undefined;
+      }
+
+      const hasDecimal = trimmed.includes(".") || !Number.isInteger(parsed);
+      return hasDecimal ? Math.round(parsed * 100) : Math.round(parsed);
     }
 
     return undefined;

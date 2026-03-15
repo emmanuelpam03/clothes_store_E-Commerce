@@ -1,13 +1,29 @@
 "use client";
 
 import { createReturnRequest } from "@/app/actions/order.actions";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { toast } from "sonner";
 
 export default function RequestReturnButton({ orderId }: { orderId: string }) {
   const [isOpen, setIsOpen] = useState(false);
   const [reason, setReason] = useState("");
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !isPending) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, isPending, setIsOpen]);
 
   const submitRequest = () => {
     startTransition(async () => {
@@ -36,9 +52,6 @@ export default function RequestReturnButton({ orderId }: { orderId: string }) {
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4"
           onClick={() => !isPending && setIsOpen(false)}
-          onKeyDown={(e) =>
-            e.key === "Escape" && !isPending && setIsOpen(false)
-          }
         >
           <div
             role="dialog"
