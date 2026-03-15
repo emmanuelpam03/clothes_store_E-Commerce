@@ -121,6 +121,19 @@ export function FavoritesProvider({ children }: { children: React.ReactNode }) {
 
 export function useFavorites() {
   const ctx = useContext(FavoritesContext);
-  if (!ctx) throw new Error("useFavorites must be used inside FavoritesProvider");
+  if (!ctx) {
+    // During SSR or before FavoritesProvider mounts, return safe defaults
+    if (typeof window === "undefined") {
+      return {
+        favoriteIds: new Set<string>(),
+        isFavorited: () => false,
+        toggleFavorite: async () => ({ isFavorited: false }),
+        isLoading: false,
+        isLoggedIn: false,
+        getGuestFavoriteIds: () => [],
+      };
+    }
+    throw new Error("useFavorites must be used inside FavoritesProvider");
+  }
   return ctx;
 }

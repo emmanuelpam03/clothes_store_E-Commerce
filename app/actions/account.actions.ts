@@ -303,72 +303,77 @@ export async function deleteAccountPermanently() {
   const userId = session.user.id;
 
   // Use transaction to ensure all operations succeed together
-  await prisma.$transaction(async (tx) => {
-    // Fetch current user to check if deletedAt already exists
-    const currentUser = await tx.user.findUnique({
-      where: { id: userId },
-      select: { deletedAt: true },
-    });
+  await prisma.$transaction(
+    async (tx) => {
+      // Fetch current user to check if deletedAt already exists
+      const currentUser = await tx.user.findUnique({
+        where: { id: userId },
+        select: { deletedAt: true },
+      });
 
-    // Preserve existing deletedAt (if account was deactivated earlier)
-    // or set new timestamp (if this is first deletion action)
-    const deletedAtValue = currentUser?.deletedAt || new Date();
+      // Preserve existing deletedAt (if account was deactivated earlier)
+      // or set new timestamp (if this is first deletion action)
+      const deletedAtValue = currentUser?.deletedAt || new Date();
 
-    // 1. Anonymize user's personal data
-    const anonymizedEmail = `deleted_${userId}@deleted.local`;
-    await tx.user.update({
-      where: { id: userId },
-      data: {
-        active: false,
-        deletedAt: deletedAtValue,
-        email: anonymizedEmail,
-        name: "Deleted User",
-        image: null,
-        password: null, // Remove password
-        emailVerified: null,
-      },
-    });
+      // 1. Anonymize user's personal data
+      const anonymizedEmail = `deleted_${userId}@deleted.local`;
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          active: false,
+          deletedAt: deletedAtValue,
+          email: anonymizedEmail,
+          name: "Deleted User",
+          image: null,
+          password: null, // Remove password
+          emailVerified: null,
+        },
+      });
 
-    // 2. Anonymize personal data in all orders (preserve order records)
-    await tx.order.updateMany({
-      where: { userId },
-      data: {
-        email: anonymizedEmail,
-        phone: "DELETED",
-        firstName: "Deleted",
-        lastName: "User",
-        address: "DELETED",
-        city: "DELETED",
-        zipCode: "00000",
-        country: "DELETED",
-      },
-    });
+      // 2. Anonymize personal data in all orders (preserve order records)
+      await tx.order.updateMany({
+        where: { userId },
+        data: {
+          email: anonymizedEmail,
+          phone: "DELETED",
+          firstName: "Deleted",
+          lastName: "User",
+          address: "DELETED",
+          city: "DELETED",
+          zipCode: "00000",
+          country: "DELETED",
+        },
+      });
 
-    // 3. Delete cart (will cascade to cart items)
-    await tx.cart.deleteMany({
-      where: { userId },
-    });
+      // 3. Delete cart (will cascade to cart items)
+      await tx.cart.deleteMany({
+        where: { userId },
+      });
 
-    // 4. Delete favorites
-    await tx.favorite.deleteMany({
-      where: { userId },
-    });
+      // 4. Delete favorites
+      await tx.favorite.deleteMany({
+        where: { userId },
+      });
 
-    // 5. Delete sessions
-    await tx.session.deleteMany({
-      where: { userId },
-    });
+      // 5. Delete sessions
+      await tx.session.deleteMany({
+        where: { userId },
+      });
 
-    // 6. Delete OAuth accounts (Google, etc.)
-    await tx.account.deleteMany({
-      where: { userId },
-    });
+      // 6. Delete OAuth accounts (Google, etc.)
+      await tx.account.deleteMany({
+        where: { userId },
+      });
 
-    // 7. Delete email verification tokens
-    await tx.emailVerificationToken.deleteMany({
-      where: { userId },
-    });
-  });
+      // 7. Delete email verification tokens
+      await tx.emailVerificationToken.deleteMany({
+        where: { userId },
+      });
+    },
+    {
+      timeout: 15000, // 15 seconds (increased from default 5s for large datasets)
+    },
+  );
 
   // Sign the user out
   await signOut({ redirectTo: "/login?deleted=true" });
@@ -519,72 +524,77 @@ export async function adminDeleteUserPermanentlyAction(userId: string) {
   }
 
   // Use transaction to ensure all operations succeed together
-  await prisma.$transaction(async (tx) => {
-    // Fetch current user to check if deletedAt already exists
-    const currentUser = await tx.user.findUnique({
-      where: { id: userId },
-      select: { deletedAt: true },
-    });
+  await prisma.$transaction(
+    async (tx) => {
+      // Fetch current user to check if deletedAt already exists
+      const currentUser = await tx.user.findUnique({
+        where: { id: userId },
+        select: { deletedAt: true },
+      });
 
-    // Preserve existing deletedAt (if account was deactivated earlier)
-    // or set new timestamp (if this is first deletion action)
-    const deletedAtValue = currentUser?.deletedAt || new Date();
+      // Preserve existing deletedAt (if account was deactivated earlier)
+      // or set new timestamp (if this is first deletion action)
+      const deletedAtValue = currentUser?.deletedAt || new Date();
 
-    // 1. Anonymize user's personal data
-    const anonymizedEmail = `deleted_${userId}@deleted.local`;
-    await tx.user.update({
-      where: { id: userId },
-      data: {
-        active: false,
-        deletedAt: deletedAtValue,
-        email: anonymizedEmail,
-        name: "Deleted User",
-        image: null,
-        password: null,
-        emailVerified: null,
-      },
-    });
+      // 1. Anonymize user's personal data
+      const anonymizedEmail = `deleted_${userId}@deleted.local`;
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          active: false,
+          deletedAt: deletedAtValue,
+          email: anonymizedEmail,
+          name: "Deleted User",
+          image: null,
+          password: null,
+          emailVerified: null,
+        },
+      });
 
-    // 2. Anonymize personal data in all orders
-    await tx.order.updateMany({
-      where: { userId },
-      data: {
-        email: anonymizedEmail,
-        phone: "DELETED",
-        firstName: "Deleted",
-        lastName: "User",
-        address: "DELETED",
-        city: "DELETED",
-        zipCode: "00000",
-        country: "DELETED",
-      },
-    });
+      // 2. Anonymize personal data in all orders
+      await tx.order.updateMany({
+        where: { userId },
+        data: {
+          email: anonymizedEmail,
+          phone: "DELETED",
+          firstName: "Deleted",
+          lastName: "User",
+          address: "DELETED",
+          city: "DELETED",
+          zipCode: "00000",
+          country: "DELETED",
+        },
+      });
 
-    // 3. Delete cart
-    await tx.cart.deleteMany({
-      where: { userId },
-    });
+      // 3. Delete cart
+      await tx.cart.deleteMany({
+        where: { userId },
+      });
 
-    // 4. Delete favorites
-    await tx.favorite.deleteMany({
-      where: { userId },
-    });
+      // 4. Delete favorites
+      await tx.favorite.deleteMany({
+        where: { userId },
+      });
 
-    // 5. Delete sessions
-    await tx.session.deleteMany({
-      where: { userId },
-    });
+      // 5. Delete sessions
+      await tx.session.deleteMany({
+        where: { userId },
+      });
 
-    // 6. Delete OAuth accounts
-    await tx.account.deleteMany({
-      where: { userId },
-    });
+      // 6. Delete OAuth accounts
+      await tx.account.deleteMany({
+        where: { userId },
+      });
 
-    // 7. Delete email verification tokens
-    await tx.emailVerificationToken.deleteMany({
-      where: { userId },
-    });
-  });
+      // 7. Delete email verification tokens
+      await tx.emailVerificationToken.deleteMany({
+        where: { userId },
+      });
+    },
+    {
+      timeout: 15000, // 15 seconds (increased from default 5s for large datasets)
+    },
+  );
 
   return { success: true };
 }

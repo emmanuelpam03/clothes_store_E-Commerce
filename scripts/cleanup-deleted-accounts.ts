@@ -15,62 +15,67 @@ import prisma from "@/lib/prisma";
 
 async function permanentlyDeleteUser(userId: string) {
   // Use transaction to ensure all operations succeed together
-  await prisma.$transaction(async (tx) => {
-    // 1. Anonymize user's personal data
-    // Note: Preserve existing deletedAt to maintain original 90-day countdown
-    const anonymizedEmail = `deleted_${userId}@deleted.local`;
-    await tx.user.update({
-      where: { id: userId },
-      data: {
-        active: false,
-        email: anonymizedEmail,
-        name: "Deleted User",
-        image: null,
-        password: null,
-        emailVerified: null,
-      },
-    });
+  await prisma.$transaction(
+    async (tx) => {
+      // 1. Anonymize user's personal data
+      // Note: Preserve existing deletedAt to maintain original 90-day countdown
+      const anonymizedEmail = `deleted_${userId}@deleted.local`;
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          active: false,
+          email: anonymizedEmail,
+          name: "Deleted User",
+          image: null,
+          password: null,
+          emailVerified: null,
+        },
+      });
 
-    // 2. Anonymize personal data in all orders
-    await tx.order.updateMany({
-      where: { userId },
-      data: {
-        email: anonymizedEmail,
-        phone: "DELETED",
-        firstName: "Deleted",
-        lastName: "User",
-        address: "DELETED",
-        city: "DELETED",
-        zipCode: "00000",
-        country: "DELETED",
-      },
-    });
+      // 2. Anonymize personal data in all orders
+      await tx.order.updateMany({
+        where: { userId },
+        data: {
+          email: anonymizedEmail,
+          phone: "DELETED",
+          firstName: "Deleted",
+          lastName: "User",
+          address: "DELETED",
+          city: "DELETED",
+          zipCode: "00000",
+          country: "DELETED",
+        },
+      });
 
-    // 3. Delete cart
-    await tx.cart.deleteMany({
-      where: { userId },
-    });
+      // 3. Delete cart
+      await tx.cart.deleteMany({
+        where: { userId },
+      });
 
-    // 4. Delete favorites
-    await tx.favorite.deleteMany({
-      where: { userId },
-    });
+      // 4. Delete favorites
+      await tx.favorite.deleteMany({
+        where: { userId },
+      });
 
-    // 5. Delete sessions
-    await tx.session.deleteMany({
-      where: { userId },
-    });
+      // 5. Delete sessions
+      await tx.session.deleteMany({
+        where: { userId },
+      });
 
-    // 6. Delete OAuth accounts
-    await tx.account.deleteMany({
-      where: { userId },
-    });
+      // 6. Delete OAuth accounts
+      await tx.account.deleteMany({
+        where: { userId },
+      });
 
-    // 7. Delete email verification tokens
-    await tx.emailVerificationToken.deleteMany({
-      where: { userId },
-    });
-  });
+      // 7. Delete email verification tokens
+      await tx.emailVerificationToken.deleteMany({
+        where: { userId },
+      });
+    },
+    {
+      timeout: 15000, // 15 seconds (increased from default 5s for large datasets)
+    },
+  );
 }
 
 async function cleanupDeletedAccounts() {

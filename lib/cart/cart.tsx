@@ -29,6 +29,7 @@ type CartContextType = {
   removeItem: (id: string) => void;
   clearCart: () => void;
   hydrateFromDb: () => Promise<void>;
+  isHydrated: boolean;
 };
 
 const CartContext = createContext<CartContextType | null>(null);
@@ -125,6 +126,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         removeItem,
         clearCart,
         hydrateFromDb,
+        isHydrated,
       }}
     >
       {children}
@@ -134,6 +136,21 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
 export function useCart() {
   const ctx = useContext(CartContext);
-  if (!ctx) throw new Error("useCart must be used inside CartProvider");
+  if (!ctx) {
+    // During SSR or before CartProvider mounts, return safe defaults
+    if (typeof window === "undefined") {
+      return {
+        items: [],
+        addItem: () => {},
+        updateQty: () => {},
+        updateItem: () => {},
+        removeItem: () => {},
+        clearCart: () => {},
+        hydrateFromDb: async () => {},
+        isHydrated: false,
+      };
+    }
+    throw new Error("useCart must be used inside CartProvider");
+  }
   return ctx;
 }
