@@ -6,6 +6,8 @@ import { Heart, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useFavorites } from "@/lib/favorites/useFavorites";
 import { toast } from "sonner";
+import { formatCurrencyFromCents } from "@/lib/money";
+import { useStoreSettings } from "@/lib/store-settings-client";
 
 type Product = {
   id: string;
@@ -27,6 +29,7 @@ export default function FavoritesClient({
 }: FavoritesClientProps) {
   const [items, setItems] = useState<Product[]>(initialProducts);
   const { toggleFavorite, getGuestFavoriteIds, isLoading } = useFavorites();
+  const { currency } = useStoreSettings();
 
   // sync for logged-in users
   useEffect(() => {
@@ -96,10 +99,7 @@ export default function FavoritesClient({
         ) : (
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
             {items.map((product) => (
-              <div
-                key={product.id}
-                className="bg-white border overflow-hidden"
-              >
+              <div key={product.id} className="bg-white border overflow-hidden">
                 <Link href={`/products/${product.slug}`}>
                   <div className="relative h-96 bg-neutral-50">
                     {product.image ? (
@@ -118,9 +118,7 @@ export default function FavoritesClient({
                 </Link>
 
                 <div className="p-6">
-                  <h3 className="text-lg font-semibold mb-2">
-                    {product.name}
-                  </h3>
+                  <h3 className="text-lg font-semibold mb-2">{product.name}</h3>
 
                   {product.description && (
                     <p className="text-sm text-neutral-600 mb-4 line-clamp-2">
@@ -129,14 +127,11 @@ export default function FavoritesClient({
                   )}
 
                   <p className="text-xl font-bold mb-6">
-                    ${(product.price / 100).toFixed(2)}
+                    {formatCurrencyFromCents(product.price, currency)}
                   </p>
 
                   <div className="flex gap-3">
-                    <Link
-                      href={`/products/${product.slug}`}
-                      className="flex-1"
-                    >
+                    <Link href={`/products/${product.slug}`} className="flex-1">
                       <button className="w-full bg-black text-white py-3 uppercase text-xs">
                         View
                       </button>

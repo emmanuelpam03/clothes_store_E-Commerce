@@ -11,6 +11,8 @@ import Image from "next/image";
 import StatCard from "@/components/admin/StatCard";
 import RevenueChart from "@/components/admin/RevenueChart";
 import { auth } from "@/lib/auth";
+import { formatCurrencyFromCents } from "@/lib/money";
+import { getStoreSettings } from "@/lib/store-settings";
 import { notFound } from "next/navigation";
 import {
   getAnalyticsData,
@@ -24,8 +26,8 @@ import {
 // Force dynamic rendering to always fetch fresh data
 export const dynamic = "force-dynamic";
 
-function formatCurrency(cents: number): string {
-  return `$${(cents / 100).toFixed(2)}`;
+function formatCurrency(cents: number, currency: string): string {
+  return formatCurrencyFromCents(cents, currency);
 }
 
 function formatChange(change: number): string {
@@ -40,6 +42,9 @@ export default async function AnalyticsPage() {
   if (session?.user.role !== "ADMIN") {
     notFound(); // hides existence of route
   }
+
+  const storeSettings = await getStoreSettings();
+  const currency = storeSettings.currency;
 
   // Fetch all analytics data in parallel
   const [
@@ -71,13 +76,13 @@ export default async function AnalyticsPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Monthly Revenue"
-          value={formatCurrency(analyticsData.currentMonthRevenue)}
+          value={formatCurrency(analyticsData.currentMonthRevenue, currency)}
           change={formatChange(analyticsData.revenueChange)}
           icon={<DollarSign size={24} className="text-green-500" />}
         />
         <StatCard
           title="Average Order Value"
-          value={formatCurrency(analyticsData.averageOrderValue)}
+          value={formatCurrency(analyticsData.averageOrderValue, currency)}
           change={formatChange(analyticsData.avgOrderValueChange)}
           icon={<BarChart3 size={24} className="text-blue-500" />}
         />
@@ -138,7 +143,7 @@ export default async function AnalyticsPage() {
                         {product.name}
                       </p>
                       <p className="text-sm text-slate-600">
-                        {formatCurrency(product.price || 0)}
+                        {formatCurrency(product.price || 0, currency)}
                       </p>
                     </div>
                   </div>
@@ -172,7 +177,7 @@ export default async function AnalyticsPage() {
                       {category.name}
                     </h3>
                     <span className="text-sm font-medium text-green-600">
-                      {formatCurrency(category.revenue)}
+                      {formatCurrency(category.revenue, currency)}
                     </span>
                   </div>
                   <div className="flex gap-4 text-sm text-slate-600">
@@ -262,7 +267,7 @@ export default async function AnalyticsPage() {
                       {statusLabel}
                     </span>
                     <span className="font-bold text-slate-900">
-                      {formatCurrency(order.total)}
+                      {formatCurrency(order.total, currency)}
                     </span>
                   </div>
                 </div>
@@ -282,14 +287,14 @@ export default async function AnalyticsPage() {
         <div className="bg-linear-to-br from-green-500 to-green-600 rounded-xl p-8 text-white">
           <DollarSign size={32} className="mb-4 opacity-80" />
           <p className="text-4xl font-bold mb-2">
-            {formatCurrency(analyticsData.totalRevenue)}
+            {formatCurrency(analyticsData.totalRevenue, currency)}
           </p>
           <p className="text-green-100">All-Time Revenue</p>
         </div>
         <div className="bg-linear-to-br from-purple-500 to-purple-600 rounded-xl p-8 text-white">
           <TrendingUp size={32} className="mb-4 opacity-80" />
           <p className="text-4xl font-bold mb-2">
-            {formatCurrency(analyticsData.allTimeAverageOrderValue)}
+            {formatCurrency(analyticsData.allTimeAverageOrderValue, currency)}
           </p>
           <p className="text-purple-100">Avg Order Value</p>
         </div>

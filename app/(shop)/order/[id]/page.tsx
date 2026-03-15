@@ -2,6 +2,7 @@ import { getOrderById } from "@/app/actions/order.actions";
 import { getPublicStoreSettingsAction } from "@/app/actions/store-settings.actions";
 import CancelOrderButton from "@/components/shop/cancelOrderButton";
 import RequestReturnButton from "@/components/shop/RequestReturnButton";
+import { formatCurrencyFromCents } from "@/lib/money";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 
@@ -24,6 +25,7 @@ export default async function OrderSuccessPage({ params }: PageProps) {
 
   const storeSettings = await getPublicStoreSettingsAction().catch(() => null);
   const returnWindowDays = storeSettings?.returnWindowDays ?? 30;
+  const currency = storeSettings?.currency ?? "USD";
   const hasActiveReturnRequest =
     order.returnRequests?.some((request) =>
       ["REQUESTED", "APPROVED", "RECEIVED"].includes(request.status),
@@ -196,7 +198,10 @@ export default async function OrderSuccessPage({ params }: PageProps) {
                   )}
                 </div>
                 <p className="text-sm font-medium text-black">
-                  ${((item.price * item.quantity) / 100).toFixed(2)}
+                  {formatCurrencyFromCents(
+                    item.price * item.quantity,
+                    currency,
+                  )}
                 </p>
               </div>
             </div>
@@ -206,20 +211,20 @@ export default async function OrderSuccessPage({ params }: PageProps) {
         <div className="border-t border-neutral-200 mt-8 pt-6 space-y-3">
           <div className="flex justify-between text-sm text-neutral-600">
             <span>Subtotal</span>
-            <span>${(itemsSubtotal / 100).toFixed(2)}</span>
+            <span>{formatCurrencyFromCents(itemsSubtotal, currency)}</span>
           </div>
           <div className="flex justify-between text-sm text-neutral-600">
             <span>Shipping</span>
             <span>
               {shippingCost === 0
                 ? "Free"
-                : `$${(shippingCost / 100).toFixed(2)}`}
+                : formatCurrencyFromCents(shippingCost, currency)}
             </span>
           </div>
           <div className="flex justify-between">
             <span className="text-sm font-semibold">Total</span>
             <span className="text-lg font-bold">
-              ${(order.total / 100).toFixed(2)}
+              {formatCurrencyFromCents(order.total, currency)}
             </span>
           </div>
         </div>

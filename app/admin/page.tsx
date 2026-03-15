@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 import { getAdminStats } from "@/app/actions/admin.actions";
 import prisma from "@/lib/prisma";
+import { getStoreSettings } from "@/lib/store-settings";
+import { formatCurrencyFromCents } from "@/lib/money";
 
 // Force dynamic rendering to always show fresh data
 export const dynamic = "force-dynamic";
@@ -56,6 +58,8 @@ const orderColumns: Column<Order>[] = [
 
 export default async function DashboardPage() {
   const stats = await getAdminStats();
+  const storeSettings = await getStoreSettings();
+  const currency = storeSettings.currency;
 
   // Fetch recent 5 orders
   const recentOrdersData = await prisma.order.findMany({
@@ -70,7 +74,7 @@ export default async function DashboardPage() {
     id: order.id,
     customer: order.user?.name || order.firstName + " " + order.lastName,
     status: order.status,
-    amount: `$${(order.total / 100).toFixed(2)}`,
+    amount: formatCurrencyFromCents(order.total, currency),
     date: new Date(order.createdAt).toLocaleDateString(),
   }));
 
@@ -86,7 +90,7 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <StatCard
           title="Total Revenue"
-          value={`$${(stats.totalRevenue / 100).toFixed(2)}`}
+          value={formatCurrencyFromCents(stats.totalRevenue, currency)}
           change="+12.5%"
           icon={<TrendingUp size={24} className="text-blue-500" />}
         />

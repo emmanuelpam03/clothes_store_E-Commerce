@@ -7,6 +7,8 @@ import { FavoritesProvider } from "@/lib/favorites/FavoritesProvider";
 import { SessionProvider } from "next-auth/react";
 import CartAuthSync from "@/lib/cart/CartAuthSync";
 import { headers } from "next/headers";
+import { getStoreSettings } from "@/lib/store-settings";
+import { StoreSettingsProvider } from "@/lib/store-settings-client";
 
 export const inter = Inter({
   subsets: ["latin"],
@@ -31,21 +33,29 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const reason = (await headers()).get("x-not-found-reason");
+  const storeSettings = await getStoreSettings();
   return (
     <html lang="en" className="no-scrollbar overflow-y-scroll">
       <head>
         {reason && <meta name="x-not-found-reason" content={reason} />}
       </head>
       <body className={`${inter.variable} ${interTight.variable} antialiased`}>
-        <SessionProvider>
-          <CartProvider>
-            <FavoritesProvider>
-              <CartAuthSync />
-              {children}
-            </FavoritesProvider>
-          </CartProvider>
-          <Toaster richColors position="top-right" />
-        </SessionProvider>
+        <StoreSettingsProvider
+          value={{
+            currency: storeSettings.currency,
+            sizeSystem: storeSettings.sizeSystem,
+          }}
+        >
+          <SessionProvider>
+            <CartProvider>
+              <FavoritesProvider>
+                <CartAuthSync />
+                {children}
+              </FavoritesProvider>
+            </CartProvider>
+            <Toaster richColors position="top-right" />
+          </SessionProvider>
+        </StoreSettingsProvider>
       </body>
     </html>
   );

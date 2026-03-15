@@ -17,6 +17,8 @@ import ProductsGridSkeleton from "./skeleton/ProductsGridSkeleton";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useTransition, useEffect } from "react";
 import AddToCartDialog from "./AddToCartDialog";
+import { formatCurrencyFromCents } from "@/lib/money";
+import { useStoreSettings } from "@/lib/store-settings-client";
 
 type Product = {
   id: string;
@@ -60,6 +62,8 @@ export default function ProductsPageComponent({
   const [expandedFilters, setExpandedFilters] = useState<Set<string>>(
     new Set(["Category", "Price Range"]),
   );
+
+  const { currency } = useStoreSettings();
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -613,11 +617,12 @@ export default function ProductsPageComponent({
                       />
                     </div>
                     <div className="flex items-center justify-between text-xs text-neutral-500">
-                      <span>$0</span>
-                      <span>${(maxPrice / 100).toFixed(2)}</span>
+                      <span>{formatCurrencyFromCents(0, currency)}</span>
+                      <span>{formatCurrencyFromCents(maxPrice, currency)}</span>
                     </div>
                     <div className="text-center text-sm text-black font-medium">
-                      Range: $0 - ${(maxPrice / 100).toFixed(2)}
+                      Range: {formatCurrencyFromCents(0, currency)} -{" "}
+                      {formatCurrencyFromCents(maxPrice, currency)}
                     </div>
                   </div>
                 )}
@@ -851,7 +856,10 @@ export default function ProductsPageComponent({
                                 <p className="font-medium">{product.name}</p>
                               </div>
                               <p className="font-semibold">
-                                ${(product.price / 100).toFixed(2)}
+                                {formatCurrencyFromCents(
+                                  product.price,
+                                  currency,
+                                )}
                               </p>
                             </div>
                           </Link>

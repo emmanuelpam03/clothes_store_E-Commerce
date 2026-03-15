@@ -8,6 +8,8 @@ import { addToCartAction } from "@/app/actions/cart.actions";
 import { Heart } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useFavorites } from "@/lib/favorites/useFavorites";
+import { formatCurrencyFromCents } from "@/lib/money";
+import { useStoreSettings } from "@/lib/store-settings-client";
 
 // fallback static images (safe)
 import {
@@ -56,8 +58,9 @@ export default function ProductInfo({ product }: ProductInfoProps) {
   const { status } = useSession();
   const isLoggedIn = status === "authenticated";
   const { isFavorited, toggleFavorite, isLoading: isPending } = useFavorites();
+  const { currency } = useStoreSettings();
 
-  const displayPrice = (product.price / 100).toFixed(2);
+  const displayPrice = formatCurrencyFromCents(product.price, currency);
   const stockQuantity = product.inventory?.quantity ?? 0;
   const isOutOfStock = stockQuantity === 0;
   const isLowStock = stockQuantity > 0 && stockQuantity <= 5;
@@ -77,7 +80,7 @@ export default function ProductInfo({ product }: ProductInfoProps) {
       id: `${product.id}-${activeSize}-${COLORS[activeColor]}`, // Unique ID for guest cart
       productId: product.id,
       title: product.name,
-      price: product.price / 100,
+      price: product.price,
       image: product.image,
       subtitle: product.name,
       size: activeSize,
@@ -126,7 +129,7 @@ export default function ProductInfo({ product }: ProductInfoProps) {
           {/* IMAGE + THUMBNAILS */}
           <div className="flex flex-col md:flex-row gap-6 lg:col-span-2">
             {/* MAIN IMAGE */}
-            <div className="relative bg-white border border-neutral-200 w-full md:w-[420px] aspect-4/5">
+            <div className="relative bg-white border border-neutral-200 w-full md:w-105 aspect-4/5">
               <Image
                 src={product.image ?? FALLBACK_IMAGES[activeImage]}
                 alt={product.name}
@@ -177,7 +180,7 @@ export default function ProductInfo({ product }: ProductInfoProps) {
                 </button>
               </div>
 
-              <p className="mt-2 text-sm">${displayPrice}</p>
+              <p className="mt-2 text-sm">{displayPrice}</p>
               <p className="text-xs text-neutral-500">MRP incl. of all taxes</p>
 
               {/* Stock Status */}

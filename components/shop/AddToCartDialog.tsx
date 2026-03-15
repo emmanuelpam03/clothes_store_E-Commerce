@@ -8,6 +8,8 @@ import { useCart } from "@/lib/cart/cart";
 import { addToCartAction } from "@/app/actions/cart.actions";
 import { useSession } from "next-auth/react";
 import { parseColor } from "@/components/admin/ColorPicker";
+import { formatCurrencyFromCents } from "@/lib/money";
+import { useStoreSettings } from "@/lib/store-settings-client";
 
 const DEFAULT_SIZES = ["XS", "S", "M", "L", "XL", "2X"];
 
@@ -80,6 +82,7 @@ export default function AddToCartDialog({ product, isOpen, onClose }: Props) {
   const { addItem, hydrateFromDb } = useCart();
   const { status } = useSession();
   const isLoggedIn = status === "authenticated";
+  const { currency } = useStoreSettings();
 
   const sizes =
     product.sizes && product.sizes.length > 0 ? product.sizes : DEFAULT_SIZES;
@@ -131,7 +134,7 @@ export default function AddToCartDialog({ product, isOpen, onClose }: Props) {
       productId: product.id,
       title: product.name,
       subtitle: product.name,
-      price: product.price / 100,
+      price: product.price,
       image: product.image ?? "/placeholder.png",
       size: selectedSize,
       color: selectedColor,
@@ -189,7 +192,7 @@ export default function AddToCartDialog({ product, isOpen, onClose }: Props) {
               {product.name}
             </p>
             <p className="text-sm text-neutral-600 mt-1">
-              ${(product.price / 100).toFixed(2)}
+              {formatCurrencyFromCents(product.price, currency)}
             </p>
           </div>
         </div>

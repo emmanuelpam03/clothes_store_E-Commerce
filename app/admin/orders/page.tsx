@@ -3,6 +3,8 @@ import OrderActions from "@/components/admin/OrderActions";
 import { auth } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import { getAllOrdersAdmin } from "@/app/actions/admin.actions";
+import { getStoreSettings } from "@/lib/store-settings";
+import { formatCurrencyFromCents } from "@/lib/money";
 
 type OrderStatus = "PENDING" | "PAID" | "SHIPPED" | "DELIVERED" | "CANCELLED";
 
@@ -21,8 +23,8 @@ type Order = {
   };
 };
 
-function formatCurrency(cents: number): string {
-  return `$${(cents / 100).toFixed(2)}`;
+function formatCurrency(cents: number, currency: string): string {
+  return formatCurrencyFromCents(cents, currency);
 }
 
 function formatDate(date: Date): string {
@@ -91,6 +93,9 @@ export default async function OrdersPage() {
     notFound(); // hides existence of route
   }
 
+  const storeSettings = await getStoreSettings();
+  const currency = storeSettings.currency;
+
   let dbOrders;
   try {
     dbOrders = await getAllOrdersAdmin();
@@ -106,7 +111,7 @@ export default async function OrdersPage() {
     status: order.status,
     returnStatus: order.latestReturnRequest?.status ?? "—",
     items: order.items.length,
-    amount: formatCurrency(order.total),
+    amount: formatCurrency(order.total, currency),
     date: formatDate(order.createdAt),
     actions: {
       orderId: order.id,

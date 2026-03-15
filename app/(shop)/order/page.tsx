@@ -5,6 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import OrderPageCartClear from "@/components/shop/OrderPageCartClear";
 import { getOrders } from "@/app/actions/order.actions";
+import { getPublicStoreSettingsAction } from "@/app/actions/store-settings.actions";
+import { formatCurrencyFromCents } from "@/lib/money";
 
 export default async function OrdersPage() {
   const session = await auth();
@@ -14,6 +16,8 @@ export default async function OrdersPage() {
   }
 
   const orders = await getOrders();
+  const storeSettings = await getPublicStoreSettingsAction().catch(() => null);
+  const currency = storeSettings?.currency ?? "USD";
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -93,7 +97,7 @@ export default async function OrdersPage() {
                   <div>
                     <p className="text-sm text-neutral-500">Total</p>
                     <p className="text-lg font-semibold">
-                      ${(order.total / 100).toFixed(2)}
+                      {formatCurrencyFromCents(order.total, currency)}
                     </p>
                   </div>
                 </div>
@@ -124,12 +128,15 @@ export default async function OrdersPage() {
                           Quantity: {item.quantity}
                         </p>
                         <p className="text-sm mt-2">
-                          ${(item.price / 100).toFixed(2)} each
+                          {formatCurrencyFromCents(item.price, currency)} each
                         </p>
                       </div>
                       <div className="text-right">
                         <p className="text-sm font-semibold">
-                          ${((item.price * item.quantity) / 100).toFixed(2)}
+                          {formatCurrencyFromCents(
+                            item.price * item.quantity,
+                            currency,
+                          )}
                         </p>
                       </div>
                     </div>
@@ -143,7 +150,8 @@ export default async function OrdersPage() {
                       Payment method: Pay on Delivery
                     </p>
                     <p className="text-sm font-semibold text-neutral-700">
-                      Please pay ${(order.total / 100).toFixed(2)} when you
+                      Please pay{" "}
+                      {formatCurrencyFromCents(order.total, currency)} when you
                       receive your order.
                     </p>
                   </div>

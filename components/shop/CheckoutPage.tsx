@@ -9,6 +9,8 @@ import { config } from "@/constants/config";
 import { createOrderAction } from "@/app/actions/order.actions";
 import { getPublicStoreSettingsAction } from "@/app/actions/store-settings.actions";
 import { toast } from "sonner";
+import { formatCurrencyFromCents } from "@/lib/money";
+import { useStoreSettings } from "@/lib/store-settings-client";
 
 interface FormData {
   email: string;
@@ -22,6 +24,12 @@ interface FormData {
   paymentMethod: "cod"; // Pay on Delivery
 }
 
+type StoreSettingsState = {
+  shippingCostCents: number;
+  freeShippingThresholdCents: number;
+  returnWindowDays: number;
+};
+
 export default function Checkout() {
   const [step, setStep] = useState<"INFORMATION" | "SHIPPING" | "PAYMENT">(
     "INFORMATION",
@@ -29,6 +37,7 @@ export default function Checkout() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { items } = useCart();
+  const { currency } = useStoreSettings();
 
   const [formData, setFormData] = useState<FormData>({
     email: "",
@@ -43,7 +52,7 @@ export default function Checkout() {
   });
 
   const [errors, setErrors] = useState<Partial<FormData>>({});
-  const [storeSettings, setStoreSettings] = useState({
+  const [storeSettings, setStoreSettings] = useState<StoreSettingsState>({
     shippingCostCents: config.shippingCostCents,
     freeShippingThresholdCents: config.freeShippingThresholdCents,
     returnWindowDays: config.returnWindowDays,
@@ -394,7 +403,7 @@ export default function Checkout() {
                       {item.subtitle} x {item.qty}
                     </p>
                     <p className="text-sm mt-2">
-                      ${((item.price * item.qty) / 100).toFixed(2)}
+                      {formatCurrencyFromCents(item.price * item.qty, currency)}
                     </p>
                   </div>
                 </div>
@@ -404,22 +413,24 @@ export default function Checkout() {
             <div className="space-y-2 border-t pt-4">
               <div className="flex justify-between text-sm">
                 <span>Subtotal</span>
-                <span>${(subtotal / 100).toFixed(2)}</span>
+                <span>{formatCurrencyFromCents(subtotal, currency)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span>Shipping</span>
                 <span>
-                  {shipping === 0 ? "Free" : `$${(shipping / 100).toFixed(2)}`}
+                  {shipping === 0
+                    ? "Free"
+                    : formatCurrencyFromCents(shipping, currency)}
                 </span>
               </div>
 
               {!qualifiesForFreeShipping && subtotal > 0 && (
                 <p className="text-xs text-neutral-600 pt-1">
-                  Add $
-                  {(
-                    (storeSettings.freeShippingThresholdCents - subtotal) /
-                    100
-                  ).toFixed(2)}{" "}
+                  Add{" "}
+                  {formatCurrencyFromCents(
+                    storeSettings.freeShippingThresholdCents - subtotal,
+                    currency,
+                  )}{" "}
                   more for free shipping.
                 </p>
               )}
@@ -430,7 +441,7 @@ export default function Checkout() {
               </p>
               <div className="flex justify-between text-base font-bold border-t pt-4 mt-4">
                 <span>Total</span>
-                <span>${(total / 100).toFixed(2)}</span>
+                <span>{formatCurrencyFromCents(total, currency)}</span>
               </div>
             </div>
           </div>

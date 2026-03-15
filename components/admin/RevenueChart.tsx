@@ -10,6 +10,11 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
+import {
+  formatCurrencyCompactFromCents,
+  formatCurrencyFromCents,
+} from "@/lib/money";
+import { useStoreSettings } from "@/lib/store-settings-client";
 
 type MonthData = {
   month: string;
@@ -23,13 +28,10 @@ interface CustomTooltipProps {
     value: number;
     payload: MonthData;
   }>;
+  currency: string;
 }
 
-function formatCurrency(cents: number): string {
-  return `$${(cents / 100).toFixed(2)}`;
-}
-
-function CustomTooltip({ active, payload }: CustomTooltipProps) {
+function CustomTooltip({ active, payload, currency }: CustomTooltipProps) {
   if (active && payload && payload.length) {
     return (
       <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-4">
@@ -41,7 +43,7 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
             <div className="w-3 h-3 rounded-full bg-blue-500" />
             <span className="text-sm text-slate-600">Revenue:</span>
             <span className="text-sm font-bold text-slate-900">
-              {formatCurrency(Number(payload[0].value))}
+              {formatCurrencyFromCents(Number(payload[0].value), currency)}
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -58,12 +60,9 @@ function CustomTooltip({ active, payload }: CustomTooltipProps) {
   return null;
 }
 
-function formatYAxisRevenue(value: number) {
-  if (value >= 100000) return `$${(value / 100000).toFixed(1)}k`;
-  return formatCurrency(value);
-}
-
 export default function RevenueChart({ data }: { data: MonthData[] }) {
+  const { currency } = useStoreSettings();
+
   if (!data || data.length === 0) {
     return (
       <div className="w-full h-80 flex items-center justify-center text-slate-500">
@@ -101,7 +100,9 @@ export default function RevenueChart({ data }: { data: MonthData[] }) {
             stroke="#3b82f6"
             style={{ fontSize: "12px" }}
             tickLine={false}
-            tickFormatter={formatYAxisRevenue}
+            tickFormatter={(value: number) =>
+              formatCurrencyCompactFromCents(value, currency)
+            }
           />
           <YAxis
             yAxisId="right"
@@ -110,7 +111,11 @@ export default function RevenueChart({ data }: { data: MonthData[] }) {
             style={{ fontSize: "12px" }}
             tickLine={false}
           />
-          <Tooltip content={CustomTooltip} />
+          <Tooltip
+            content={(props) => (
+              <CustomTooltip {...props} currency={currency} />
+            )}
+          />
           <Legend
             wrapperStyle={{ fontSize: "14px", paddingTop: "20px" }}
             iconType="circle"

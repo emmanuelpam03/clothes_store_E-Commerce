@@ -6,6 +6,8 @@ import OrderActions from "@/components/admin/OrderActions";
 import ReturnRequestActions from "@/components/admin/ReturnRequestActions";
 import Image from "next/image";
 import Link from "next/link";
+import { getStoreSettings } from "@/lib/store-settings";
+import { formatCurrencyFromCents } from "@/lib/money";
 
 type OrderStatus = "PENDING" | "PAID" | "SHIPPED" | "DELIVERED" | "CANCELLED";
 
@@ -13,8 +15,8 @@ interface PageProps {
   params: Promise<{ orderId: string }>;
 }
 
-function formatCurrency(cents: number): string {
-  return `$${(cents / 100).toFixed(2)}`;
+function formatCurrency(cents: number, currency: string): string {
+  return formatCurrencyFromCents(cents, currency);
 }
 
 function formatDate(date: Date): string {
@@ -50,6 +52,9 @@ export default async function OrderDetailsPage({ params }: PageProps) {
   if (session?.user.role !== "ADMIN") {
     notFound();
   }
+
+  const storeSettings = await getStoreSettings();
+  const currency = storeSettings.currency;
 
   const { orderId } = await params;
   const order = await getOrderByIdAdmin(orderId);
@@ -142,10 +147,10 @@ export default async function OrderDetailsPage({ params }: PageProps) {
                   </div>
                   <div className="text-right">
                     <div className="font-semibold text-slate-900">
-                      {formatCurrency(item.price * item.quantity)}
+                      {formatCurrency(item.price * item.quantity, currency)}
                     </div>
                     <div className="text-sm text-slate-600">
-                      {formatCurrency(item.price)} each
+                      {formatCurrency(item.price, currency)} each
                     </div>
                   </div>
                 </div>
@@ -155,7 +160,7 @@ export default async function OrderDetailsPage({ params }: PageProps) {
               <div className="flex justify-between items-center">
                 <span className="text-lg font-bold text-slate-900">Total</span>
                 <span className="text-2xl font-bold text-slate-900">
-                  {formatCurrency(order.total)}
+                  {formatCurrency(order.total, currency)}
                 </span>
               </div>
             </div>
@@ -317,20 +322,22 @@ export default async function OrderDetailsPage({ params }: PageProps) {
               <div className="flex justify-between text-sm">
                 <span className="text-slate-600">Subtotal</span>
                 <span className="font-semibold text-slate-900">
-                  {formatCurrency(itemsSubtotal)}
+                  {formatCurrency(itemsSubtotal, currency)}
                 </span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-slate-600">Shipping</span>
                 <span className="font-semibold text-slate-900">
-                  {shippingCost === 0 ? "Free" : formatCurrency(shippingCost)}
+                  {shippingCost === 0
+                    ? "Free"
+                    : formatCurrency(shippingCost, currency)}
                 </span>
               </div>
               <div className="pt-2 border-t border-slate-200">
                 <div className="flex justify-between">
                   <span className="font-bold text-slate-900">Total</span>
                   <span className="font-bold text-slate-900 text-lg">
-                    {formatCurrency(order.total)}
+                    {formatCurrency(order.total, currency)}
                   </span>
                 </div>
               </div>

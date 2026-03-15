@@ -12,6 +12,8 @@ import {
 } from "react";
 import { Heart, XIcon, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
+import { formatCurrencyFromCents } from "@/lib/money";
+import { useStoreSettings } from "@/lib/store-settings-client";
 import { useSession } from "next-auth/react";
 
 import { favouritesIcon } from "@/public/assets/images/images";
@@ -78,14 +80,22 @@ type ProductData = {
   } | null;
 };
 
+type StoreSettingsState = {
+  shippingCostCents: number;
+  freeShippingThresholdCents: number;
+  lowStockThreshold: number;
+  returnWindowDays: number;
+};
+
 export default function ShoppingBag() {
   const { items, updateQty, updateItem, removeItem } = useCart();
   const { status } = useSession();
   const isLoggedIn = status === "authenticated";
   const { isFavorited, toggleFavorite } = useFavorites();
+  const { currency } = useStoreSettings();
 
   const [pendingId, setPendingId] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const [productsData, setProductsData] = useState<Map<string, ProductData>>(
     new Map(),
   );
@@ -93,7 +103,7 @@ export default function ShoppingBag() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const optionRefs = useRef<Map<string, HTMLElement>>(new Map());
-  const [storeSettings, setStoreSettings] = useState({
+  const [storeSettings, setStoreSettings] = useState<StoreSettingsState>({
     shippingCostCents: config.shippingCostCents,
     freeShippingThresholdCents: config.freeShippingThresholdCents,
     lowStockThreshold: config.lowStockThreshold,
@@ -103,7 +113,6 @@ export default function ShoppingBag() {
   // prevent empty flash
   const [isHydrated, setIsHydrated] = useState(false);
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsHydrated(true);
   }, []);
 
@@ -260,7 +269,6 @@ export default function ShoppingBag() {
         : storeSettings.shippingCostCents
       : 0;
   const total = subtotal + shipping;
-
   // Check if any items have stock issues (only when products are loaded)
   const hasStockIssues =
     !isLoadingProducts &&
@@ -364,7 +372,7 @@ export default function ShoppingBag() {
                         </p>
                         <div className="flex justify-between mt-1">
                           <p className="text-xs text-black">{item.subtitle}</p>
-                          <p>${item.price / 100}</p>
+                          <p>{formatCurrencyFromCents(item.price, currency)}</p>
                         </div>
                         {/* Stock Warning */}
                         {isOutOfStock ? (
@@ -544,7 +552,7 @@ export default function ShoppingBag() {
                           aria-haspopup="listbox"
                           aria-expanded={openDropdown === `color-${item.id}`}
                           aria-label="Select color"
-                          className="px-3 py-2 min-w-[90px] border border-neutral-300 rounded-md text-xs font-medium cursor-pointer hover:border-black transition-all focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-1 flex items-center justify-between gap-2"
+                          className="px-3 py-2 min-w-22.5 border border-neutral-300 rounded-md text-xs font-medium cursor-pointer hover:border-black transition-all focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-1 flex items-center justify-between gap-2"
                           style={{
                             backgroundColor: getColorValue(
                               parsedItemColor.value,
@@ -676,25 +684,25 @@ export default function ShoppingBag() {
               <div className="space-y-4 text-sm">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span>${subtotal / 100}</span>
+                  <span>{formatCurrencyFromCents(subtotal, currency)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Shipping</span>
                   <span>
                     {shipping === 0 && subtotal > 0
                       ? "Free"
-                      : `$${(shipping / 100).toFixed(2)}`}
+                      : formatCurrencyFromCents(shipping, currency)}
                   </span>
                 </div>
               </div>
 
               {subtotal > 0 && !qualifiesForFreeShipping && (
                 <p className="mt-4 text-xs text-neutral-600">
-                  Add $
-                  {(
-                    (storeSettings.freeShippingThresholdCents - subtotal) /
-                    100
-                  ).toFixed(2)}{" "}
+                  Add{" "}
+                  {formatCurrencyFromCents(
+                    storeSettings.freeShippingThresholdCents - subtotal,
+                    currency,
+                  )}{" "}
                   more to unlock free shipping.
                 </p>
               )}
@@ -712,7 +720,7 @@ export default function ShoppingBag() {
 
               <div className="border-t mt-6 pt-6 flex justify-between font-medium">
                 <span>Total</span>
-                <span>${total / 100}</span>
+                <span>{formatCurrencyFromCents(total, currency)}</span>
               </div>
 
               {hasStockIssues && (

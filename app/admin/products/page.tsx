@@ -5,6 +5,8 @@ import { auth } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import { getAllProductsAdmin } from "@/app/actions/admin.actions";
 import ProductActions from "@/components/admin/ProductActions";
+import { getStoreSettings } from "@/lib/store-settings";
+import { formatCurrencyFromCents } from "@/lib/money";
 
 type Product = {
   id: string;
@@ -23,66 +25,71 @@ type Product = {
   };
 };
 
-const columns: Column<Product>[] = [
-  { key: "name", label: "Product Name" },
-  {
-    key: "category",
-    label: "Category",
-    render: (v) => {
-      const cat = v as Product["category"];
-      return <span>{cat?.name || "Uncategorized"}</span>;
+function getColumns(currency: string): Column<Product>[] {
+  return [
+    { key: "name", label: "Product Name" },
+    {
+      key: "category",
+      label: "Category",
+      render: (v) => {
+        const cat = v as Product["category"];
+        return <span>{cat?.name || "Uncategorized"}</span>;
+      },
     },
-  },
-  {
-    key: "active",
-    label: "Status",
-    render: (v) => (
-      <span
-        className={`text-xs font-semibold px-3 py-1 rounded-full ${
-          v === true
-            ? "bg-green-100 text-green-700"
-            : "bg-slate-100 text-slate-700"
-        }`}
-      >
-        {v === true ? "Active" : "Inactive"}
-      </span>
-    ),
-  },
-  {
-    key: "price",
-    label: "Price",
-    render: (v) => `$${((v as number) / 100).toFixed(2)}`,
-  },
-  {
-    key: "inventory",
-    label: "Stock",
-    render: (v) => {
-      const inv = v as Product["inventory"];
-      return <span>{inv?.quantity ?? 0}</span>;
+    {
+      key: "active",
+      label: "Status",
+      render: (v) => (
+        <span
+          className={`text-xs font-semibold px-3 py-1 rounded-full ${
+            v === true
+              ? "bg-green-100 text-green-700"
+              : "bg-slate-100 text-slate-700"
+          }`}
+        >
+          {v === true ? "Active" : "Inactive"}
+        </span>
+      ),
     },
-  },
-  {
-    key: "_count",
-    label: "Sales",
-    render: (v) => {
-      const count = v as Product["_count"];
-      return <span>{count.orderItems}</span>;
+    {
+      key: "price",
+      label: "Price",
+      render: (v) => formatCurrencyFromCents(v as number, currency),
     },
-  },
-  {
-    key: "id",
-    label: "Actions",
-    render: (_, row) => (
-      <ProductActions productSlug={row.slug} productName={row.name} />
-    ),
-  },
-];
+    {
+      key: "inventory",
+      label: "Stock",
+      render: (v) => {
+        const inv = v as Product["inventory"];
+        return <span>{inv?.quantity ?? 0}</span>;
+      },
+    },
+    {
+      key: "_count",
+      label: "Sales",
+      render: (v) => {
+        const count = v as Product["_count"];
+        return <span>{count.orderItems}</span>;
+      },
+    },
+    {
+      key: "id",
+      label: "Actions",
+      render: (_, row) => (
+        <ProductActions productSlug={row.slug} productName={row.name} />
+      ),
+    },
+  ];
+}
 
 export default async function ProductsPage() {
   const session = await auth();
   if (session?.user.role !== "ADMIN") {
     notFound();
   }
+
+  const storeSettings = await getStoreSettings();
+  const currency = storeSettings.currency;
 
   const products = await getAllProductsAdmin();
 
@@ -106,7 +113,7 @@ export default async function ProductsPage() {
 
       <div className="bg-white rounded-xl border border-slate-200 p-8">
         {products.length > 0 ? (
-          <Table columns={columns} data={products} />
+          <Table columns={getColumns(currency)} data={products} />
         ) : (
           <div className="text-center py-12 text-slate-500">
             <p className="text-lg font-medium">No products yet</p>

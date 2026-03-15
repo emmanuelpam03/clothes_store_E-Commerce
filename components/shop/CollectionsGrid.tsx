@@ -7,6 +7,8 @@ import { Suspense, useState } from "react";
 import { useFavorites } from "@/lib/favorites/useFavorites";
 import { toast } from "sonner";
 import AddToCartDialog from "./AddToCartDialog";
+import { formatCurrencyFromCents } from "@/lib/money";
+import { useStoreSettings } from "@/lib/store-settings-client";
 
 // fallback image
 import { whiteShirt1 } from "@/public/assets/images/images";
@@ -31,6 +33,7 @@ type CollectionsGridProps = {
 export function CollectionsGrid({ products = [] }: CollectionsGridProps) {
   const { isFavorited, toggleFavorite, isLoading: isPending } = useFavorites();
   const [dialogProduct, setDialogProduct] = useState<Product | null>(null);
+  const { currency } = useStoreSettings();
 
   // show products in batches of 6
   const BATCH_SIZE = 6;
@@ -94,7 +97,7 @@ export function CollectionsGrid({ products = [] }: CollectionsGridProps) {
               >
                 <Link href={`/products/${product.slug}`} className="w-full">
                   {/* IMAGE */}
-                  <div className="relative h-80 md:h-[520px] bg-white group">
+                  <div className="relative h-80 md:h-130 bg-white group">
                     <Image
                       src={product.image ?? whiteShirt1}
                       alt={product.name}
@@ -135,7 +138,7 @@ export function CollectionsGrid({ products = [] }: CollectionsGridProps) {
                   <div className="mt-4 flex justify-between text-sm">
                     <p className="font-medium">{product.name}</p>
                     <p className="font-semibold">
-                      ${(product.price / 100).toFixed(2)}
+                      {formatCurrencyFromCents(product.price, currency)}
                     </p>
                   </div>
                 </Link>
