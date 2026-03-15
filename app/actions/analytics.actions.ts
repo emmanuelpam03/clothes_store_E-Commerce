@@ -2,7 +2,7 @@
 
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { OrderStatus } from "@/app/generated/prisma/enums";
+import { OrderStatus, ReturnRequestStatus } from "@/app/generated/prisma/enums";
 
 export async function getAnalyticsData() {
   const session = await auth();
@@ -13,48 +13,61 @@ export async function getAnalyticsData() {
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
 
-  // Get current month revenue
-  const currentMonthOrders = await prisma.order.findMany({
-    where: {
-      status: {
-        in: [OrderStatus.PAID, OrderStatus.SHIPPED, OrderStatus.DELIVERED],
-      },
-      createdAt: {
-        gte: startOfMonth,
-      },
-    },
-    select: {
-      total: true,
-    },
-  });
+  const currentMonthRows = await prisma.$queryRaw<
+    Array<{ revenue: number; orders: number }>
+  >`
+    WITH latest_rr AS (
+      SELECT DISTINCT ON (rr."order_id")
+        rr."order_id" AS "orderId",
+        rr."status" AS "status"
+      FROM "return_requests" rr
+      ORDER BY rr."order_id", rr."updated_at" DESC, rr."requested_at" DESC
+    )
+    SELECT
+      COALESCE(SUM(o."total"), 0)::int AS "revenue",
+      COUNT(*)::int AS "orders"
+    FROM "Order" o
+    LEFT JOIN latest_rr lr ON lr."orderId" = o."id"
+    WHERE o."status" IN (
+      CAST(${OrderStatus.PAID} AS "OrderStatus"),
+      CAST(${OrderStatus.SHIPPED} AS "OrderStatus"),
+      CAST(${OrderStatus.DELIVERED} AS "OrderStatus")
+    )
+      AND (lr."status" IS NULL OR lr."status" <> CAST(${ReturnRequestStatus.REFUNDED} AS "ReturnRequestStatus"))
+      AND o."createdAt" >= ${startOfMonth}
+  `;
 
-  const currentMonthRevenue = currentMonthOrders.reduce(
-    (sum, order) => sum + order.total,
-    0,
-  );
+  const lastMonthRows = await prisma.$queryRaw<
+    Array<{ revenue: number; orders: number }>
+  >`
+    WITH latest_rr AS (
+      SELECT DISTINCT ON (rr."order_id")
+        rr."order_id" AS "orderId",
+        rr."status" AS "status"
+      FROM "return_requests" rr
+      ORDER BY rr."order_id", rr."updated_at" DESC, rr."requested_at" DESC
+    )
+    SELECT
+      COALESCE(SUM(o."total"), 0)::int AS "revenue",
+      COUNT(*)::int AS "orders"
+    FROM "Order" o
+    LEFT JOIN latest_rr lr ON lr."orderId" = o."id"
+    WHERE o."status" IN (
+      CAST(${OrderStatus.PAID} AS "OrderStatus"),
+      CAST(${OrderStatus.SHIPPED} AS "OrderStatus"),
+      CAST(${OrderStatus.DELIVERED} AS "OrderStatus")
+    )
+      AND (lr."status" IS NULL OR lr."status" <> CAST(${ReturnRequestStatus.REFUNDED} AS "ReturnRequestStatus"))
+      AND o."createdAt" >= ${startOfLastMonth}
+      AND o."createdAt" < ${startOfMonth}
+  `;
 
-  // Get last month revenue
-  const lastMonthOrders = await prisma.order.findMany({
-    where: {
-      status: {
-        in: [OrderStatus.PAID, OrderStatus.SHIPPED, OrderStatus.DELIVERED],
-      },
-      createdAt: {
-        gte: startOfLastMonth,
-        lte: endOfLastMonth,
-      },
-    },
-    select: {
-      total: true,
-    },
-  });
+  const currentMonthRevenue = currentMonthRows[0]?.revenue ?? 0;
+  const currentMonthOrdersCount = currentMonthRows[0]?.orders ?? 0;
 
-  const lastMonthRevenue = lastMonthOrders.reduce(
-    (sum, order) => sum + order.total,
-    0,
-  );
+  const lastMonthRevenue = lastMonthRows[0]?.revenue ?? 0;
+  const lastMonthOrdersCount = lastMonthRows[0]?.orders ?? 0;
 
   // Calculate revenue change percentage
   const revenueChange =
@@ -64,13 +77,13 @@ export async function getAnalyticsData() {
 
   // Get average order value (current month)
   const averageOrderValue =
-    currentMonthOrders.length > 0
-      ? currentMonthRevenue / currentMonthOrders.length
+    currentMonthOrdersCount > 0
+      ? currentMonthRevenue / currentMonthOrdersCount
       : 0;
 
   // Get last month average order value
   const lastMonthAverageOrderValue =
-    lastMonthOrders.length > 0 ? lastMonthRevenue / lastMonthOrders.length : 0;
+    lastMonthOrdersCount > 0 ? lastMonthRevenue / lastMonthOrdersCount : 0;
 
   // Calculate average order value change
   const avgOrderValueChange =
@@ -80,20 +93,33 @@ export async function getAnalyticsData() {
         100
       : 0;
 
-  // Get total orders count
-  const totalOrders = await prisma.order.count({
-    where: {
-      status: {
-        in: [OrderStatus.PAID, OrderStatus.SHIPPED, OrderStatus.DELIVERED],
-      },
-    },
-  });
+  const allTimeRows = await prisma.$queryRaw<
+    Array<{ revenue: number; orders: number }>
+  >`
+    WITH latest_rr AS (
+      SELECT DISTINCT ON (rr."order_id")
+        rr."order_id" AS "orderId",
+        rr."status" AS "status"
+      FROM "return_requests" rr
+      ORDER BY rr."order_id", rr."updated_at" DESC, rr."requested_at" DESC
+    )
+    SELECT
+      COALESCE(SUM(o."total"), 0)::int AS "revenue",
+      COUNT(*)::int AS "orders"
+    FROM "Order" o
+    LEFT JOIN latest_rr lr ON lr."orderId" = o."id"
+    WHERE o."status" IN (
+      CAST(${OrderStatus.PAID} AS "OrderStatus"),
+      CAST(${OrderStatus.SHIPPED} AS "OrderStatus"),
+      CAST(${OrderStatus.DELIVERED} AS "OrderStatus")
+    )
+      AND (lr."status" IS NULL OR lr."status" <> CAST(${ReturnRequestStatus.REFUNDED} AS "ReturnRequestStatus"))
+  `;
 
-  // Get current month orders
-  const currentMonthOrdersCount = currentMonthOrders.length;
-
-  // Get last month orders count
-  const lastMonthOrdersCount = lastMonthOrders.length;
+  const totalRevenue = allTimeRows[0]?.revenue ?? 0;
+  const totalOrders = allTimeRows[0]?.orders ?? 0;
+  const allTimeAverageOrderValue =
+    totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
   // Calculate orders change
   const ordersChange =
@@ -102,20 +128,6 @@ export async function getAnalyticsData() {
           lastMonthOrdersCount) *
         100
       : 0;
-
-  // Get total revenue (all time)
-  const allOrders = await prisma.order.findMany({
-    where: {
-      status: {
-        in: [OrderStatus.PAID, OrderStatus.SHIPPED, OrderStatus.DELIVERED],
-      },
-    },
-    select: {
-      total: true,
-    },
-  });
-
-  const totalRevenue = allOrders.reduce((sum, order) => sum + order.total, 0);
 
   // Get total customers
   const totalCustomers = await prisma.user.count({
@@ -135,6 +147,7 @@ export async function getAnalyticsData() {
     currentMonthOrdersCount,
     ordersChange,
     totalRevenue,
+    allTimeAverageOrderValue,
     totalCustomers,
   };
 }
@@ -200,21 +213,30 @@ export async function getRevenueByMonth(months: number = 6) {
   const now = new Date();
   const startDate = new Date(now.getFullYear(), now.getMonth() - months + 1, 1);
 
-  // Fetch all orders for the date range in one query
-  const orders = await prisma.order.findMany({
-    where: {
-      status: {
-        in: [OrderStatus.PAID, OrderStatus.SHIPPED, OrderStatus.DELIVERED],
-      },
-      createdAt: {
-        gte: startDate,
-      },
-    },
-    select: {
-      total: true,
-      createdAt: true,
-    },
-  });
+  // Fetch all non-refunded orders for the date range in one query
+  const orders = await prisma.$queryRaw<
+    Array<{ total: number; createdAt: Date }>
+  >`
+    WITH latest_rr AS (
+      SELECT DISTINCT ON (rr."order_id")
+        rr."order_id" AS "orderId",
+        rr."status" AS "status"
+      FROM "return_requests" rr
+      ORDER BY rr."order_id", rr."updated_at" DESC, rr."requested_at" DESC
+    )
+    SELECT
+      o."total" AS "total",
+      o."createdAt" AS "createdAt"
+    FROM "Order" o
+    LEFT JOIN latest_rr lr ON lr."orderId" = o."id"
+    WHERE o."status" IN (
+      CAST(${OrderStatus.PAID} AS "OrderStatus"),
+      CAST(${OrderStatus.SHIPPED} AS "OrderStatus"),
+      CAST(${OrderStatus.DELIVERED} AS "OrderStatus")
+    )
+      AND (lr."status" IS NULL OR lr."status" <> CAST(${ReturnRequestStatus.REFUNDED} AS "ReturnRequestStatus"))
+      AND o."createdAt" >= ${startDate}
+  `;
 
   // Group orders by month
   const monthsData = [];
@@ -359,7 +381,35 @@ export async function getRecentOrders(limit: number = 10) {
     },
   });
 
-  return recentOrders;
+  const orderIds = recentOrders.map((order) => order.id);
+  if (orderIds.length === 0) {
+    return recentOrders.map((order) => ({ ...order, uiStatus: order.status }));
+  }
+
+  const latestReturnRows = await prisma.$queryRaw<
+    Array<{ orderId: string; status: ReturnRequestStatus }>
+  >`
+    SELECT DISTINCT ON (rr."order_id")
+      rr."order_id" AS "orderId",
+      rr."status" AS "status"
+    FROM "return_requests" rr
+    WHERE rr."order_id" = ANY(${orderIds})
+    ORDER BY rr."order_id", rr."updated_at" DESC, rr."requested_at" DESC
+  `;
+
+  const latestReturnStatusByOrderId = new Map(
+    latestReturnRows.map((row) => [row.orderId, row.status] as const),
+  );
+
+  return recentOrders.map((order) => {
+    const latestReturnStatus = latestReturnStatusByOrderId.get(order.id);
+    const uiStatus =
+      latestReturnStatus === ReturnRequestStatus.REFUNDED
+        ? "RETURNED"
+        : order.status;
+
+    return { ...order, uiStatus };
+  });
 }
 
 export async function getOrderStatusDistribution() {

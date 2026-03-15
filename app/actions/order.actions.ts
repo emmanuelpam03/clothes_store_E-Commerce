@@ -304,7 +304,7 @@ export async function createReturnRequest(orderId: string, reason: string) {
       id: true,
       userId: true,
       status: true,
-      deliveredAt: true,
+      updatedAt: true,
     },
   });
 
@@ -316,18 +316,31 @@ export async function createReturnRequest(orderId: string, reason: string) {
     throw new Error("Returns can only be requested for delivered orders");
   }
 
-  const deliveredAtFromHistory = order.deliveredAt
-    ? null
-    : await prisma.orderStatusHistory.findFirst({
-        where: {
-          orderId,
-          status: OrderStatus.DELIVERED,
-        },
-        orderBy: { changedAt: "desc" },
-        select: { changedAt: true },
-      });
+  const deliveredAtFromHistory = await prisma.$queryRaw<{ changedAt: Date }[]>`
+    SELECT "changedAt"
+    FROM "order_status_history"
+    WHERE "orderId" = ${orderId}
+      AND "status" = CAST(${OrderStatus.DELIVERED} AS "OrderStatus")
+    ORDER BY "changedAt" DESC
+    LIMIT 1
+  `;
 
-  const deliveredAt = order.deliveredAt ?? deliveredAtFromHistory?.changedAt;
+  const deliveredAtFromOrder = await prisma.$queryRaw<
+    { deliveredAt: Date | null }[]
+  >`
+    SELECT "deliveredAt"
+    FROM "Order"
+    WHERE "id" = ${orderId}
+    LIMIT 1
+  `;
+
+  const deliveredAt =
+    deliveredAtFromHistory[0]?.changedAt ??
+    deliveredAtFromOrder[0]?.deliveredAt ??
+    order.updatedAt;
+  if (!deliveredAt) {
+    throw new Error("Delivery timestamp not found for this order");
+  }
 
   const storeSettings = await getStoreSettings();
   const returnWindowMs = storeSettings.returnWindowDays * 24 * 60 * 60 * 1000;
@@ -422,17 +435,23 @@ export async function cancelOrder(orderId: string) {
     );
   }
 
-  // update the order status
-  const updatedOrder = await prisma.order.update({
-    where: { id: order.id },
-    data: { status: "CANCELLED" },
-  });
+  const updatedOrder = await prisma.$transaction(async (tx) => {
+    const updated = await tx.order.update({
+      where: { id: order.id },
+      data: { status: "CANCELLED" },
+    });
 
-  await prisma.orderStatusHistory.create({
-    data: {
-      orderId: order.id,
-      status: OrderStatus.CANCELLED,
-    },
+    await tx.$executeRaw`
+      INSERT INTO "order_status_history" ("id", "orderId", "status", "changedAt")
+      VALUES (
+        ${crypto.randomUUID()},
+        ${order.id},
+        CAST(${OrderStatus.CANCELLED} AS "OrderStatus"),
+        NOW()
+      )
+    `;
+
+    return updated;
   });
 
   revalidatePath("/order");

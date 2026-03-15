@@ -297,30 +297,40 @@ export async function getAdminStats() {
     throw new Error("Unauthorized");
   }
 
-  const [totalRevenue, todayOrders, activeProducts, totalCustomers] =
-    await Promise.all([
-      prisma.order.aggregate({
-        where: { status: "PAID" },
-        _sum: { total: true },
-      }),
-      prisma.order.count({
-        where: {
-          createdAt: {
-            gte: new Date(new Date().setHours(0, 0, 0, 0)),
-          },
+  const [
+    totalRevenue,
+    todayOrders,
+    activeProducts,
+    totalCustomers,
+    returnsRow,
+  ] = await Promise.all([
+    prisma.order.aggregate({
+      where: { status: "PAID" },
+      _sum: { total: true },
+    }),
+    prisma.order.count({
+      where: {
+        createdAt: {
+          gte: new Date(new Date().setHours(0, 0, 0, 0)),
         },
-      }),
-      prisma.product.count({
-        where: { active: true },
-      }),
-      prisma.user.count(),
-    ]);
+      },
+    }),
+    prisma.product.count({
+      where: { active: true },
+    }),
+    prisma.user.count(),
+    prisma.$queryRaw<Array<{ count: number }>>`
+        SELECT COUNT(*)::int AS "count"
+        FROM "return_requests"
+      `,
+  ]);
 
   return {
     totalRevenue: totalRevenue._sum.total || 0,
     todayOrders,
     activeProducts,
     totalCustomers,
+    returnsCount: returnsRow[0]?.count ?? 0,
   };
 }
 
@@ -588,6 +598,7 @@ export async function updateReturnRequestStatusAdmin(
 
   revalidatePath("/admin/orders");
   revalidatePath("/admin/returns");
+  revalidatePath("/admin/analytics");
   revalidatePath(`/admin/orders/${current.orderId}`);
   revalidatePath("/order");
   revalidatePath(`/order/${current.orderId}`);
@@ -646,7 +657,6 @@ export async function updateOrderStatusAdmin(
       where: { id: orderId },
       data: {
         status,
-        ...(status === "DELIVERED" ? { deliveredAt: new Date() } : {}),
       },
     });
 

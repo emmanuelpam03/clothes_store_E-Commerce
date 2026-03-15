@@ -29,7 +29,9 @@ export default async function AdminReturnsPage() {
   return (
     <div className="p-8 space-y-8 bg-slate-50 min-h-screen">
       <div>
-        <h1 className="text-4xl font-bold text-slate-900">Returns</h1>
+        <h1 className="text-4xl font-bold text-slate-900">
+          Returns ({requests.length})
+        </h1>
         <p className="text-slate-600 mt-1">
           Review customer return requests and update processing stages.
         </p>

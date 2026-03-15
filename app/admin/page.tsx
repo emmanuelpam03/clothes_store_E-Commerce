@@ -5,6 +5,7 @@ import {
   ShoppingCart,
   Package,
   Users as UsersIcon,
+  RotateCcw,
 } from "lucide-react";
 import { getAdminStats } from "@/app/actions/admin.actions";
 import prisma from "@/lib/prisma";
@@ -82,7 +83,7 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <StatCard
           title="Total Revenue"
           value={`$${(stats.totalRevenue / 100).toFixed(2)}`}
@@ -106,6 +107,11 @@ export default async function DashboardPage() {
           value={stats.totalCustomers.toString()}
           change="+18.7%"
           icon={<UsersIcon size={24} className="text-purple-500" />}
+        />
+        <StatCard
+          title="Returns"
+          value={stats.returnsCount.toString()}
+          icon={<RotateCcw size={24} className="text-orange-500" />}
         />
       </div>
 

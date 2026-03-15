@@ -226,42 +226,48 @@ export default async function AnalyticsPage() {
               No orders available yet
             </p>
           ) : (
-            recentOrders.map((order) => (
-              <div
-                key={order.id}
-                className="flex items-center justify-between p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
-              >
-                <div className="flex-1">
-                  <p className="font-semibold text-slate-900">
-                    {order.user?.name || order.email}
-                  </p>
-                  <p className="text-sm text-slate-600">
-                    {order.items.length} items •{" "}
-                    {new Date(order.createdAt).toLocaleDateString()}
-                  </p>
+            recentOrders.map((order) => {
+              const statusLabel = order.uiStatus ?? order.status;
+              const statusClasses =
+                statusLabel === "RETURNED"
+                  ? "bg-red-100 text-red-700"
+                  : statusLabel === "DELIVERED"
+                    ? "bg-green-100 text-green-700"
+                    : statusLabel === "SHIPPED"
+                      ? "bg-blue-100 text-blue-700"
+                      : statusLabel === "PAID"
+                        ? "bg-purple-100 text-purple-700"
+                        : statusLabel === "CANCELLED"
+                          ? "bg-red-100 text-red-700"
+                          : "bg-yellow-100 text-yellow-700";
+
+              return (
+                <div
+                  key={order.id}
+                  className="flex items-center justify-between p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
+                >
+                  <div className="flex-1">
+                    <p className="font-semibold text-slate-900">
+                      {order.user?.name || order.email}
+                    </p>
+                    <p className="text-sm text-slate-600">
+                      {order.items.length} items •{" "}
+                      {new Date(order.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${statusClasses}`}
+                    >
+                      {statusLabel}
+                    </span>
+                    <span className="font-bold text-slate-900">
+                      {formatCurrency(order.total)}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      order.status === "DELIVERED"
-                        ? "bg-green-100 text-green-700"
-                        : order.status === "SHIPPED"
-                          ? "bg-blue-100 text-blue-700"
-                          : order.status === "PAID"
-                            ? "bg-purple-100 text-purple-700"
-                            : order.status === "CANCELLED"
-                              ? "bg-red-100 text-red-700"
-                              : "bg-yellow-100 text-yellow-700"
-                    }`}
-                  >
-                    {order.status}
-                  </span>
-                  <span className="font-bold text-slate-900">
-                    {formatCurrency(order.total)}
-                  </span>
-                </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
@@ -283,7 +289,7 @@ export default async function AnalyticsPage() {
         <div className="bg-linear-to-br from-purple-500 to-purple-600 rounded-xl p-8 text-white">
           <TrendingUp size={32} className="mb-4 opacity-80" />
           <p className="text-4xl font-bold mb-2">
-            {formatCurrency(analyticsData.averageOrderValue)}
+            {formatCurrency(analyticsData.allTimeAverageOrderValue)}
           </p>
           <p className="text-purple-100">Avg Order Value</p>
         </div>
