@@ -11,6 +11,7 @@ export type AdminStoreSettingsFormValues = {
   supportEmail: string;
   currency: string;
   sizeSystem: string;
+  homeCollectionLabel: string;
   shippingOrigin: string;
   shippingCost: number;
   freeShippingThreshold: number;
@@ -39,6 +40,7 @@ export async function getAdminStoreSettingsAction(): Promise<AdminStoreSettingsF
     supportEmail: settings.supportEmail,
     currency: settings.currency,
     sizeSystem: settings.sizeSystem,
+    homeCollectionLabel: settings.homeCollectionLabel,
     shippingOrigin: settings.shippingOrigin,
     shippingCost: settings.shippingCostCents / 100,
     freeShippingThreshold: settings.freeShippingThresholdCents / 100,
@@ -57,12 +59,17 @@ export async function updateAdminStoreSettingsAction(
   const supportEmail = values.supportEmail.trim().toLowerCase();
   const currency = values.currency.trim().toUpperCase();
   const sizeSystem = values.sizeSystem.trim().toUpperCase();
+  const homeCollectionLabel = values.homeCollectionLabel.trim();
   const shippingOrigin = values.shippingOrigin.trim();
 
   if (!brandName) throw new Error("Brand name is required");
   if (!supportEmail) throw new Error("Support email is required");
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(supportEmail)) {
     throw new Error("Support email is invalid");
+  }
+
+  if (!homeCollectionLabel) {
+    throw new Error("Homepage collection label is required");
   }
 
   if (values.shippingCost < 0)
@@ -80,45 +87,102 @@ export async function updateAdminStoreSettingsAction(
     values.freeShippingThreshold * 100,
   );
 
-  await prisma.$executeRaw`
-    INSERT INTO "store_settings" (
-      "id",
-      "brand_name",
-      "support_email",
-      "currency",
-      "size_system",
-      "shipping_origin",
-      "shipping_cost_cents",
-      "free_shipping_threshold_cents",
-      "low_stock_threshold",
-      "return_window_days",
-      "updated_at"
-    )
-    VALUES (
-      'default',
-      ${brandName},
-      ${supportEmail},
-      ${currency},
-      ${sizeSystem},
-      ${shippingOrigin},
-      ${shippingCostCents},
-      ${freeShippingThresholdCents},
-      ${values.lowStockThreshold},
-      ${values.returnWindowDays},
-      NOW()
-    )
-    ON CONFLICT ("id") DO UPDATE SET
-      "brand_name" = EXCLUDED."brand_name",
-      "support_email" = EXCLUDED."support_email",
-      "currency" = EXCLUDED."currency",
-      "size_system" = EXCLUDED."size_system",
-      "shipping_origin" = EXCLUDED."shipping_origin",
-      "shipping_cost_cents" = EXCLUDED."shipping_cost_cents",
-      "free_shipping_threshold_cents" = EXCLUDED."free_shipping_threshold_cents",
-      "low_stock_threshold" = EXCLUDED."low_stock_threshold",
-      "return_window_days" = EXCLUDED."return_window_days",
-      "updated_at" = NOW()
+  const hasLabelColumnRows = await prisma.$queryRaw<{ exists: boolean }[]>`
+    SELECT EXISTS (
+      SELECT 1
+      FROM information_schema.columns
+      WHERE table_schema = 'public'
+        AND table_name = 'store_settings'
+        AND column_name = 'home_collection_label'
+    ) AS "exists"
   `;
+
+  const hasLabelColumn = hasLabelColumnRows[0]?.exists ?? false;
+
+  if (hasLabelColumn) {
+    await prisma.$executeRaw`
+      INSERT INTO "store_settings" (
+        "id",
+        "brand_name",
+        "support_email",
+        "currency",
+        "size_system",
+        "home_collection_label",
+        "shipping_origin",
+        "shipping_cost_cents",
+        "free_shipping_threshold_cents",
+        "low_stock_threshold",
+        "return_window_days",
+        "updated_at"
+      )
+      VALUES (
+        'default',
+        ${brandName},
+        ${supportEmail},
+        ${currency},
+        ${sizeSystem},
+        ${homeCollectionLabel},
+        ${shippingOrigin},
+        ${shippingCostCents},
+        ${freeShippingThresholdCents},
+        ${values.lowStockThreshold},
+        ${values.returnWindowDays},
+        NOW()
+      )
+      ON CONFLICT ("id") DO UPDATE SET
+        "brand_name" = EXCLUDED."brand_name",
+        "support_email" = EXCLUDED."support_email",
+        "currency" = EXCLUDED."currency",
+        "size_system" = EXCLUDED."size_system",
+        "home_collection_label" = EXCLUDED."home_collection_label",
+        "shipping_origin" = EXCLUDED."shipping_origin",
+        "shipping_cost_cents" = EXCLUDED."shipping_cost_cents",
+        "free_shipping_threshold_cents" = EXCLUDED."free_shipping_threshold_cents",
+        "low_stock_threshold" = EXCLUDED."low_stock_threshold",
+        "return_window_days" = EXCLUDED."return_window_days",
+        "updated_at" = NOW()
+    `;
+  } else {
+    await prisma.$executeRaw`
+      INSERT INTO "store_settings" (
+        "id",
+        "brand_name",
+        "support_email",
+        "currency",
+        "size_system",
+        "shipping_origin",
+        "shipping_cost_cents",
+        "free_shipping_threshold_cents",
+        "low_stock_threshold",
+        "return_window_days",
+        "updated_at"
+      )
+      VALUES (
+        'default',
+        ${brandName},
+        ${supportEmail},
+        ${currency},
+        ${sizeSystem},
+        ${shippingOrigin},
+        ${shippingCostCents},
+        ${freeShippingThresholdCents},
+        ${values.lowStockThreshold},
+        ${values.returnWindowDays},
+        NOW()
+      )
+      ON CONFLICT ("id") DO UPDATE SET
+        "brand_name" = EXCLUDED."brand_name",
+        "support_email" = EXCLUDED."support_email",
+        "currency" = EXCLUDED."currency",
+        "size_system" = EXCLUDED."size_system",
+        "shipping_origin" = EXCLUDED."shipping_origin",
+        "shipping_cost_cents" = EXCLUDED."shipping_cost_cents",
+        "free_shipping_threshold_cents" = EXCLUDED."free_shipping_threshold_cents",
+        "low_stock_threshold" = EXCLUDED."low_stock_threshold",
+        "return_window_days" = EXCLUDED."return_window_days",
+        "updated_at" = NOW()
+    `;
+  }
 
   revalidatePath("/admin/settings");
   revalidatePath("/cart");

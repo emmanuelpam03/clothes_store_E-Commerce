@@ -285,6 +285,7 @@ model StoreSettings {
   supportEmail               String   @default("support@clothesstore.com") @map("support_email")
   currency                   String   @default("USD")
   sizeSystem                 String   @default("US") @map("size_system")
+  homeCollectionLabel        String   @default("Summer 2025") @map("home_collection_label")
   shippingOrigin             String   @default("United States") @map("shipping_origin")
   shippingCostCents          Int      @default(1000) @map("shipping_cost_cents")
   freeShippingThresholdCents Int      @default(10000) @map("free_shipping_threshold_cents")

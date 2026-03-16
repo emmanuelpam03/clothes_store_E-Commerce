@@ -6,6 +6,7 @@ export type StoreSettingsRuntime = {
   supportEmail: string;
   currency: string;
   sizeSystem: string;
+  homeCollectionLabel: string;
   shippingOrigin: string;
   shippingCostCents: number;
   freeShippingThresholdCents: number;
@@ -18,6 +19,7 @@ export const defaultStoreSettings: StoreSettingsRuntime = {
   supportEmail: "support@clothesstore.com",
   currency: "USD",
   sizeSystem: "US",
+  homeCollectionLabel: "Summer 2025",
   shippingOrigin: "United States",
   shippingCostCents: config.shippingCostCents,
   freeShippingThresholdCents: config.freeShippingThresholdCents,
@@ -35,6 +37,10 @@ type StoreSettingsRow = {
   freeShippingThresholdCents: number;
   lowStockThreshold: number;
   returnWindowDays: number;
+};
+
+type HomeCollectionLabelRow = {
+  homeCollectionLabel: string;
 };
 
 export async function getStoreSettings(): Promise<StoreSettingsRuntime> {
@@ -56,7 +62,28 @@ export async function getStoreSettings(): Promise<StoreSettingsRuntime> {
     `;
 
     const row = rows[0];
-    return row ?? defaultStoreSettings;
+    if (!row) return defaultStoreSettings;
+
+    let homeCollectionLabel = defaultStoreSettings.homeCollectionLabel;
+    try {
+      const labelRows = await prisma.$queryRaw<HomeCollectionLabelRow[]>`
+        SELECT
+          "home_collection_label" AS "homeCollectionLabel"
+        FROM "store_settings"
+        WHERE "id" = 'default'
+        LIMIT 1
+      `;
+      homeCollectionLabel =
+        labelRows[0]?.homeCollectionLabel ??
+        defaultStoreSettings.homeCollectionLabel;
+    } catch {
+      // Backward compatible: column might not exist yet.
+    }
+
+    return {
+      ...row,
+      homeCollectionLabel,
+    };
   } catch (error) {
     console.error("Failed to fetch store settings:", error);
     return defaultStoreSettings;
