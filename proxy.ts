@@ -1,22 +1,12 @@
 import { NextResponse } from "next/server";
 import { NextRequest } from "next/server";
-import { getToken } from "next-auth/jwt";
+import { auth } from "@/lib/auth";
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  const token = await getToken({
-    req: request,
-    secret: process.env.AUTH_SECRET,
-  });
-
-  const sessionUser = token as {
-    role?: "USER" | "ADMIN";
-    active?: boolean;
-    emailVerified?: unknown;
-    requirePasswordChange?: boolean;
-    passwordChangeDeadline?: number | null;
-  } | null;
+  const session = await auth();
+  const sessionUser = session?.user ?? null;
 
   // Public routes that don't require email verification
   const publicRoutes = ["/login", "/register", "/verify", "/set-password"];
