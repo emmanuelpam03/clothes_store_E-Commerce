@@ -42,7 +42,13 @@ type Category = {
   slug: string;
 };
 
-const FILTERS = [
+type Department = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
+const MERCH_FILTERS = [
   { label: "FEATURED", slug: "featured" },
   { label: "NEW", slug: "new" },
   { label: "BEST SELLERS", slug: "best-sellers" },
@@ -50,23 +56,22 @@ const FILTERS = [
 
 export default function ProductsPageComponent({
   products,
-  query,
-  filter,
+  departments,
   categories,
 }: {
   products: Product[];
-  query: string | undefined;
-  filter: string | undefined;
+  departments: Department[];
   categories: Category[];
 }) {
   const [expandedFilters, setExpandedFilters] = useState<Set<string>>(
-    new Set(["Category", "Price Range"]),
+    new Set(["Department", "Filter", "Category", "Price Range"]),
   );
 
   const { currency, fxRate = 1 } = useStoreSettings();
   const router = useRouter();
   const searchParams = useSearchParams();
   const rawQuery = searchParams.get("q") ?? "";
+  const query = rawQuery.trim();
   const [inputValue, setInputValue] = useState(rawQuery);
   const [isPending, startTransition] = useTransition();
 
@@ -84,22 +89,27 @@ export default function ProductsPageComponent({
   useEffect(() => {
     const timeout = setTimeout(() => {
       startTransition(() => {
-        if (!inputValue.trim()) {
-          const params = new URLSearchParams(searchParams.toString());
+        const current = searchParams.toString();
+        const params = new URLSearchParams(current);
+
+        const nextQ = inputValue.trim();
+        if (!nextQ) {
           params.delete("q");
-          router.replace(`/products?${params.toString()}`, { scroll: false });
         } else {
-          const params = new URLSearchParams(searchParams.toString());
-          params.set("q", inputValue);
-          router.replace(`/products?${params.toString()}`, {
-            scroll: false,
-          });
+          params.set("q", nextQ);
         }
+
+        const next = params.toString();
+        if (next === current) return;
+
+        router.replace(next ? `/products?${next}` : "/products", {
+          scroll: false,
+        });
       });
     }, 500); // debounce
 
     return () => clearTimeout(timeout);
-  }, [inputValue, router]);
+  }, [inputValue, router, searchParams]);
 
   const {
     isFavorited,
@@ -128,6 +138,9 @@ export default function ProductsPageComponent({
   const maxPrice = Number(searchParams.get("maxPrice") || "100000"); // Store in cents
   const showInStock = searchParams.get("inStock") === "true";
   const showOutOfStock = searchParams.get("outOfStock") === "true";
+  const selectedDepartment = searchParams.get("department") ?? "";
+  const selectedCategory = searchParams.get("category") ?? "";
+  const selectedMerchFilter = searchParams.get("filter") ?? "";
 
   const handleToggleFavorite = async (productId: string) => {
     try {
@@ -136,7 +149,7 @@ export default function ProductsPageComponent({
       toast.success(
         wasFavorited ? "Removed from favorites" : "Added to favorites",
       );
-    } catch (error) {
+    } catch {
       toast.error("Failed to update favorite");
     }
   };
@@ -332,13 +345,13 @@ export default function ProductsPageComponent({
               isMobileFiltersOpen ? "hidden" : "hidden md:flex"
             }`}
           >
-            {FILTERS.map((item) => (
+            {MERCH_FILTERS.map((item) => (
               <button
                 key={item.slug}
                 onClick={() => {
                   const params = new URLSearchParams(searchParams.toString());
 
-                  if (filter === item.slug) {
+                  if (selectedMerchFilter === item.slug) {
                     params.delete("filter");
                   } else {
                     params.set("filter", item.slug);
@@ -349,7 +362,7 @@ export default function ProductsPageComponent({
                   });
                 }}
                 className={`rounded border px-3 py-1 text-xs tracking-wide ${
-                  filter === item.slug
+                  selectedMerchFilter === item.slug
                     ? "bg-black text-white"
                     : "border-neutral-300 text-black hover:bg-black hover:text-white"
                 }`}
@@ -364,10 +377,10 @@ export default function ProductsPageComponent({
                 onClick={() => {
                   const params = new URLSearchParams(searchParams.toString());
 
-                  if (filter === cat.slug) {
-                    params.delete("filter");
+                  if (selectedCategory === cat.slug) {
+                    params.delete("category");
                   } else {
-                    params.set("filter", cat.slug);
+                    params.set("category", cat.slug);
                   }
 
                   router.replace(`/products?${params.toString()}`, {
@@ -375,7 +388,7 @@ export default function ProductsPageComponent({
                   });
                 }}
                 className={`rounded border px-3 py-1 text-xs tracking-wide ${
-                  filter === cat.slug
+                  selectedCategory === cat.slug
                     ? "bg-black text-white"
                     : "border-neutral-300 text-black hover:bg-black hover:text-white"
                 }`}
@@ -454,6 +467,98 @@ export default function ProductsPageComponent({
                 </div>
               </div>
 
+              {/* DEPARTMENT FILTER */}
+              <div>
+                <button
+                  onClick={() => toggleFilter("Department")}
+                  className="flex w-full items-center justify-between text-sm font-semibold text-black"
+                >
+                  Department
+                  <ChevronDown
+                    className={`h-4 w-4 transition-transform ${
+                      isExpanded("Department") ? "" : "-rotate-90"
+                    }`}
+                  />
+                </button>
+                {isExpanded("Department") && (
+                  <div className="mt-4 space-y-2 text-sm text-black">
+                    {departments.map((d) => (
+                      <label
+                        key={d.id}
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedDepartment === d.slug}
+                          onChange={() => {
+                            const params = new URLSearchParams(
+                              searchParams.toString(),
+                            );
+
+                            if (selectedDepartment === d.slug) {
+                              params.delete("department");
+                            } else {
+                              params.set("department", d.slug);
+                            }
+
+                            router.replace(`/products?${params.toString()}`, {
+                              scroll: false,
+                            });
+                          }}
+                        />
+                        {d.name}
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* FILTERS */}
+              <div>
+                <button
+                  onClick={() => toggleFilter("Filter")}
+                  className="flex w-full items-center justify-between text-sm font-semibold text-black"
+                >
+                  Filter
+                  <ChevronDown
+                    className={`h-4 w-4 transition-transform ${
+                      isExpanded("Filter") ? "" : "-rotate-90"
+                    }`}
+                  />
+                </button>
+                {isExpanded("Filter") && (
+                  <div className="mt-4 space-y-2 text-sm text-black">
+                    {MERCH_FILTERS.map((item) => (
+                      <label
+                        key={item.slug}
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedMerchFilter === item.slug}
+                          onChange={() => {
+                            const params = new URLSearchParams(
+                              searchParams.toString(),
+                            );
+
+                            if (selectedMerchFilter === item.slug) {
+                              params.delete("filter");
+                            } else {
+                              params.set("filter", item.slug);
+                            }
+
+                            router.replace(`/products?${params.toString()}`, {
+                              scroll: false,
+                            });
+                          }}
+                        />
+                        {item.label}
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               {/* CATEGORY FILTER */}
               <div>
                 <button
@@ -469,33 +574,6 @@ export default function ProductsPageComponent({
                 </button>
                 {isExpanded("Category") && (
                   <div className="mt-4 space-y-2 text-sm text-black">
-                    {FILTERS.map((item) => (
-                      <label
-                        key={item.slug}
-                        className="flex items-center gap-2 cursor-pointer"
-                      >
-                        <input
-                          type="checkbox"
-                          checked={filter === item.slug}
-                          onChange={() => {
-                            const params = new URLSearchParams(
-                              searchParams.toString(),
-                            );
-
-                            if (filter === item.slug) {
-                              params.delete("filter");
-                            } else {
-                              params.set("filter", item.slug);
-                            }
-
-                            router.replace(`/products?${params.toString()}`, {
-                              scroll: false,
-                            });
-                          }}
-                        />
-                        {item.label}
-                      </label>
-                    ))}
                     {categories.map((cat) => (
                       <label
                         key={cat.id}
@@ -503,16 +581,16 @@ export default function ProductsPageComponent({
                       >
                         <input
                           type="checkbox"
-                          checked={filter === cat.slug}
+                          checked={selectedCategory === cat.slug}
                           onChange={() => {
                             const params = new URLSearchParams(
                               searchParams.toString(),
                             );
 
-                            if (filter === cat.slug) {
-                              params.delete("filter");
+                            if (selectedCategory === cat.slug) {
+                              params.delete("category");
                             } else {
-                              params.set("filter", cat.slug);
+                              params.set("category", cat.slug);
                             }
 
                             router.replace(`/products?${params.toString()}`, {
@@ -762,6 +840,109 @@ export default function ProductsPageComponent({
                   </label>
                 </div>
               </div>
+
+              {departments.length > 0 && (
+                <div>
+                  <h3 className="mb-4 text-sm font-semibold text-black">
+                    Department
+                  </h3>
+                  <div className="space-y-2 text-sm text-black">
+                    {departments.map((d) => (
+                      <label
+                        key={d.id}
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedDepartment === d.slug}
+                          onChange={() => {
+                            const params = new URLSearchParams(
+                              searchParams.toString(),
+                            );
+                            if (selectedDepartment === d.slug) {
+                              params.delete("department");
+                            } else {
+                              params.set("department", d.slug);
+                            }
+                            router.replace(`/products?${params.toString()}`, {
+                              scroll: false,
+                            });
+                          }}
+                        />
+                        {d.name}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <h3 className="mb-4 text-sm font-semibold text-black">
+                  Filter
+                </h3>
+                <div className="space-y-2 text-sm text-black">
+                  {MERCH_FILTERS.map((item) => (
+                    <label
+                      key={item.slug}
+                      className="flex items-center gap-2 cursor-pointer"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedMerchFilter === item.slug}
+                        onChange={() => {
+                          const params = new URLSearchParams(
+                            searchParams.toString(),
+                          );
+                          if (selectedMerchFilter === item.slug) {
+                            params.delete("filter");
+                          } else {
+                            params.set("filter", item.slug);
+                          }
+                          router.replace(`/products?${params.toString()}`, {
+                            scroll: false,
+                          });
+                        }}
+                      />
+                      {item.label}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {categories.length > 0 && (
+                <div>
+                  <h3 className="mb-4 text-sm font-semibold text-black">
+                    Category
+                  </h3>
+                  <div className="space-y-2 text-sm text-black">
+                    {categories.map((cat) => (
+                      <label
+                        key={cat.id}
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selectedCategory === cat.slug}
+                          onChange={() => {
+                            const params = new URLSearchParams(
+                              searchParams.toString(),
+                            );
+                            if (selectedCategory === cat.slug) {
+                              params.delete("category");
+                            } else {
+                              params.set("category", cat.slug);
+                            }
+                            router.replace(`/products?${params.toString()}`, {
+                              scroll: false,
+                            });
+                          }}
+                        />
+                        {cat.name}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
             </aside>
 
             <div className="flex-1">

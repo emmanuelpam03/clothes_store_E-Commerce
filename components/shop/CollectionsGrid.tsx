@@ -29,7 +29,7 @@ type Product = {
 
 type CollectionsGridProps = {
   products?: Product[];
-  categories: {
+  departments: {
     id: string;
     name: string;
     slug: string;
@@ -38,18 +38,18 @@ type CollectionsGridProps = {
 
 export function CollectionsGrid({
   products = [],
-  categories,
+  departments,
 }: CollectionsGridProps) {
   const { isFavorited, toggleFavorite, isLoading: isPending } = useFavorites();
   const [dialogProduct, setDialogProduct] = useState<Product | null>(null);
   const { currency, fxRate } = useStoreSettings();
 
-  const navCategories = (() => {
-    const bySlug = new Map(categories.map((c) => [c.slug.toLowerCase(), c]));
+  const navDepartments = (() => {
+    const bySlug = new Map(departments.map((d) => [d.slug.toLowerCase(), d]));
     const preferred = ["men", "women", "kids"]
       .map((slug) => bySlug.get(slug))
       .filter(Boolean);
-    return preferred.length > 0 ? preferred : categories.slice(0, 3);
+    return preferred.length > 0 ? preferred : departments.slice(0, 3);
   })();
 
   // show products in batches of 6
@@ -89,12 +89,12 @@ export function CollectionsGrid({
               <Link href="/products" className="text-black">
                 (ALL)
               </Link>
-              {navCategories.map((cat) => (
+              {navDepartments.map((dep) => (
                 <Link
-                  key={cat.id}
-                  href={`/products?category=${encodeURIComponent(cat.slug)}`}
+                  key={dep?.id}
+                  href={`/products?department=${encodeURIComponent(dep?.slug || "")}`}
                 >
-                  {cat.name}
+                  {dep?.name}
                 </Link>
               ))}
             </div>

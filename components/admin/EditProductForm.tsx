@@ -28,6 +28,7 @@ type Product = {
   price: number;
   image: string | null;
   categoryId: string | null;
+  departmentId: string | null;
   sizes: string[];
   colors: string[];
   tags: string[];
@@ -45,14 +46,22 @@ type Category = {
   slug: string;
 };
 
+type Department = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
 interface EditProductFormProps {
   product: Product;
   categories: Category[];
+  departments: Department[];
 }
 
 export default function EditProductForm({
   product,
   categories,
+  departments,
 }: EditProductFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -63,6 +72,7 @@ export default function EditProductForm({
     stock: product.inventory?.quantity.toString() || "0",
     description: product.description || "",
     image: product.image || "",
+    departmentId: product.departmentId || "",
     categoryId: product.categoryId || "",
     sizes: product.sizes.join(", "),
     colors: product.colors,
@@ -135,6 +145,7 @@ export default function EditProductForm({
           description: formData.description || undefined,
           price: priceInCents,
           image: formData.image || undefined,
+          departmentId: formData.departmentId || undefined,
           categoryId: formData.categoryId || undefined,
           sizes: formData.sizes
             ? formData.sizes
@@ -251,6 +262,24 @@ export default function EditProductForm({
                     required
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="departmentId">Department</Label>
+                <select
+                  id="departmentId"
+                  name="departmentId"
+                  value={formData.departmentId}
+                  onChange={handleChange}
+                  className="border-input h-9 w-full rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm"
+                >
+                  <option value="">None</option>
+                  {departments.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="space-y-2">

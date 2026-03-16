@@ -4,19 +4,19 @@ import { NewCollectionHero } from "@/components/shop/NewCollectionHero";
 import { NewThisWeek } from "@/components/shop/NewThisWeek";
 import { OurApproach } from "@/components/shop/OurApproach";
 import { getProducts } from "../actions/product.actions";
-import { getCategories } from "../actions/categories.actions";
+import { getDepartments } from "../actions/departments.actions";
 
 export default async function ShopPage() {
   const products = await getProducts();
-  const categories = await getCategories();
+  const departments = await getDepartments();
   const NewThisWeekProducts = products.slice(-6);
   const newProducts = products.slice(0, 9);
 
   return (
     <>
-      <NewCollectionHero products={newProducts} categories={categories} />
+      <NewCollectionHero products={newProducts} departments={departments} />
       <NewThisWeek products={NewThisWeekProducts} />
-      <CollectionsGrid products={newProducts} categories={categories} />
+      <CollectionsGrid products={newProducts} departments={departments} />
       <OurApproach />
       <LandingMinimal />
     </>

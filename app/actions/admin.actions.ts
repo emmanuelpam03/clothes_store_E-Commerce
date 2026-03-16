@@ -47,6 +47,7 @@ export async function getAllProductsAdmin() {
   return prisma.product.findMany({
     include: {
       category: true,
+      department: true,
       inventory: true,
       _count: {
         select: {
@@ -70,6 +71,7 @@ export async function getProductBySlugAdmin(slug: string) {
     where: { slug },
     include: {
       category: true,
+      department: true,
       inventory: true,
     },
   });
@@ -126,6 +128,7 @@ export interface CreateProductInput {
   price: number; // in cents
   image?: string;
   categoryId?: string;
+  departmentId?: string;
   sizes?: string[];
   colors?: string[];
   tags?: string[];
@@ -178,6 +181,7 @@ export async function createProductAdmin(input: CreateProductInput) {
       price: input.price,
       image: input.image || null,
       categoryId: input.categoryId || null,
+      departmentId: input.departmentId || null,
       sizes: input.sizes || [],
       colors: input.colors || [],
       tags: input.tags || [],
@@ -192,6 +196,7 @@ export async function createProductAdmin(input: CreateProductInput) {
     },
     include: {
       category: true,
+      department: true,
       inventory: true,
     },
   });
@@ -252,6 +257,9 @@ export async function updateProductAdmin(
       ...(input.categoryId !== undefined && {
         categoryId: input.categoryId || null,
       }),
+      ...(input.departmentId !== undefined && {
+        departmentId: input.departmentId || null,
+      }),
       ...(input.sizes && { sizes: input.sizes }),
       ...(input.colors && { colors: input.colors }),
       ...(input.tags && { tags: input.tags }),
@@ -263,6 +271,7 @@ export async function updateProductAdmin(
     },
     include: {
       category: true,
+      department: true,
       inventory: true,
     },
   });

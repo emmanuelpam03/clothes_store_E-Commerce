@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { createProductAdmin } from "@/app/actions/admin.actions";
 import { getCategories } from "@/app/actions/categories.actions";
+import { getDepartments } from "@/app/actions/departments.actions";
 import { slugify } from "@/lib/slug";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -28,10 +29,17 @@ type Category = {
   slug: string;
 };
 
+type Department = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
 export default function NewProductPage() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [categories, setCategories] = useState<Category[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
@@ -39,6 +47,7 @@ export default function NewProductPage() {
     stock: "",
     description: "",
     image: "",
+    departmentId: "",
     categoryId: "",
     sizes: "",
     colors: [] as string[],
@@ -56,6 +65,13 @@ export default function NewProductPage() {
         if (active) setCategories(cats);
       } catch {
         // non-fatal: allow creating product without category
+      }
+
+      try {
+        const deps = await getDepartments();
+        if (active) setDepartments(deps);
+      } catch {
+        // non-fatal: allow creating product without department
       }
     })();
     return () => {
@@ -131,6 +147,7 @@ export default function NewProductPage() {
           description: formData.description || undefined,
           price: priceInCents,
           image: formData.image || undefined,
+          departmentId: formData.departmentId || undefined,
           categoryId: formData.categoryId || undefined,
           sizes: formData.sizes
             ? formData.sizes
@@ -247,6 +264,24 @@ export default function NewProductPage() {
                     required
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="departmentId">Department</Label>
+                <select
+                  id="departmentId"
+                  name="departmentId"
+                  value={formData.departmentId}
+                  onChange={handleChange}
+                  className="border-input h-9 w-full rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm"
+                >
+                  <option value="">None</option>
+                  {departments.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.name}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div className="space-y-2">

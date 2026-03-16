@@ -30,7 +30,7 @@ type NewCollectionHeroProps = {
     image: string | null;
     slug: string;
   }[];
-  categories: {
+  departments: {
     id: string;
     name: string;
     slug: string;
@@ -38,7 +38,7 @@ type NewCollectionHeroProps = {
 };
 export function NewCollectionHero({
   products,
-  categories,
+  departments,
 }: NewCollectionHeroProps) {
   const [index, setIndex] = useState(0);
   const [dragStart, setDragStart] = useState<number | null>(null);
@@ -49,12 +49,12 @@ export function NewCollectionHero({
 
   const router = useRouter();
 
-  const navCategories = (() => {
-    const bySlug = new Map(categories.map((c) => [c.slug.toLowerCase(), c]));
+  const navDepartments = (() => {
+    const bySlug = new Map(departments.map((d) => [d.slug.toLowerCase(), d]));
     const preferred = ["men", "women", "kids"]
       .map((slug) => bySlug.get(slug))
       .filter(Boolean);
-    return preferred.length > 0 ? preferred : categories.slice(0, 3);
+    return preferred.length > 0 ? preferred : departments.slice(0, 3);
   })();
 
   const submit = () => {
@@ -125,12 +125,12 @@ export function NewCollectionHero({
       <div className="w-full mx-auto max-w-7xl px-5 py-8 sm:py-16">
         <div className="lg:hidden space-y-6">
           <nav className="flex flex-col space-y-1 text-xs tracking-widest text-black">
-            {navCategories.map((cat) => (
+            {navDepartments.map((dep) => (
               <Link
-                key={cat.id}
-                href={`/products?category=${encodeURIComponent(cat.slug)}`}
+                key={dep?.id}
+                href={`/products?department=${encodeURIComponent(dep?.slug || "")}`}
               >
-                {cat.name.toUpperCase()}
+                {dep?.name?.toUpperCase()}
               </Link>
             ))}
           </nav>
@@ -241,12 +241,12 @@ export function NewCollectionHero({
           <div className="col-span-5 flex flex-col justify-between">
             <div className="space-y-6">
               <nav className="flex flex-col space-y-1 text-xs tracking-widest text-black">
-                {navCategories.map((cat) => (
+                {navDepartments.map((dep) => (
                   <Link
-                    key={cat.id}
-                    href={`/products?category=${encodeURIComponent(cat.slug)}`}
+                    key={dep?.id}
+                    href={`/products?department=${encodeURIComponent(dep?.slug || "")}`}
                   >
-                    {cat.name.toUpperCase()}
+                    {dep?.name?.toUpperCase()}
                   </Link>
                 ))}
               </nav>

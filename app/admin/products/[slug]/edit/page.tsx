@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getProductBySlugAdmin } from "@/app/actions/admin.actions";
 import EditProductForm from "@/components/admin/EditProductForm";
 import { getCategories } from "@/app/actions/categories.actions";
+import { getDepartments } from "@/app/actions/departments.actions";
 
 export default async function EditProductPage({
   params,
@@ -18,6 +19,13 @@ export default async function EditProductPage({
   const product = await getProductBySlugAdmin(slug);
 
   const categories = await getCategories();
+  const departments = await getDepartments();
 
-  return <EditProductForm product={product} categories={categories} />;
+  return (
+    <EditProductForm
+      product={product}
+      categories={categories}
+      departments={departments}
+    />
+  );
 }

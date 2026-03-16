@@ -3,41 +3,41 @@
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
-  createCategoryAdmin,
-  deleteCategoryAdmin,
-} from "@/app/actions/categories.actions";
+  createDepartmentAdmin,
+  deleteDepartmentAdmin,
+} from "@/app/actions/departments.actions";
 import { slugify } from "@/lib/slug";
 
-type Category = {
+type Department = {
   id: string;
   name: string;
   slug: string;
 };
 
 type Props = {
-  initialCategories: Category[];
+  initialDepartments: Department[];
 };
 
-export default function CategoriesManager({ initialCategories }: Props) {
-  const [categories, setCategories] = useState<Category[]>(initialCategories);
+export default function DepartmentsManager({ initialDepartments }: Props) {
+  const [departments, setDepartments] =
+    useState<Department[]>(initialDepartments);
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState<Category | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<Department | null>(null);
 
   const existingSlugs = useMemo(
-    () => new Set(categories.map((c) => c.slug.toLowerCase())),
-    [categories],
+    () => new Set(departments.map((d) => d.slug.toLowerCase())),
+    [departments],
   );
 
   return (
     <div className="space-y-8">
       <div className="bg-white rounded-xl border border-slate-200 p-6">
-        <h2 className="text-lg font-semibold text-slate-900">New category</h2>
+        <h2 className="text-lg font-semibold text-slate-900">New department</h2>
         <p className="text-sm text-slate-600 mt-1">
-          Categories are used when creating products and for storefront
-          navigation.
+          Departments are used for Men/Women/Kids-style storefront navigation.
         </p>
 
         <form
@@ -60,21 +60,22 @@ export default function CategoriesManager({ initialCategories }: Props) {
             }
 
             if (existingSlugs.has(finalSlug)) {
-              toast.error("A category with this slug already exists");
+              toast.error("A department with this slug already exists");
               return;
             }
 
             setIsSaving(true);
             try {
-              const result = await createCategoryAdmin({
+              const result = await createDepartmentAdmin({
                 name: trimmedName,
                 slug: finalSlug,
               });
+
               if (result.success) {
-                setCategories((prev) => [...prev, result.category]);
+                setDepartments((prev) => [...prev, result.department]);
                 setName("");
                 setSlug("");
-                toast.success("Category created");
+                toast.success("Department created");
               } else {
                 toast.error(result.error);
               }
@@ -82,7 +83,7 @@ export default function CategoriesManager({ initialCategories }: Props) {
               toast.error(
                 err instanceof Error
                   ? err.message
-                  : "Failed to create category",
+                  : "Failed to create department",
               );
             } finally {
               setIsSaving(false);
@@ -92,12 +93,12 @@ export default function CategoriesManager({ initialCategories }: Props) {
           <div className="space-y-1">
             <label
               className="text-sm font-medium text-slate-700"
-              htmlFor="catName"
+              htmlFor="depName"
             >
               Name
             </label>
             <input
-              id="catName"
+              id="depName"
               value={name}
               onChange={(e) => {
                 const next = e.target.value;
@@ -113,12 +114,12 @@ export default function CategoriesManager({ initialCategories }: Props) {
           <div className="space-y-1">
             <label
               className="text-sm font-medium text-slate-700"
-              htmlFor="catSlug"
+              htmlFor="depSlug"
             >
               Slug
             </label>
             <input
-              id="catSlug"
+              id="depSlug"
               value={slug}
               onChange={(e) => setSlug(e.target.value)}
               placeholder="e.g. men"
@@ -140,10 +141,10 @@ export default function CategoriesManager({ initialCategories }: Props) {
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 p-6">
-        <h2 className="text-lg font-semibold text-slate-900">Categories</h2>
+        <h2 className="text-lg font-semibold text-slate-900">Departments</h2>
 
-        {categories.length === 0 ? (
-          <p className="text-sm text-slate-600 mt-3">No categories yet.</p>
+        {departments.length === 0 ? (
+          <p className="text-sm text-slate-600 mt-3">No departments yet.</p>
         ) : (
           <div className="mt-4 overflow-x-auto">
             <table className="min-w-full text-sm">
@@ -155,24 +156,23 @@ export default function CategoriesManager({ initialCategories }: Props) {
                 </tr>
               </thead>
               <tbody>
-                {categories
+                {departments
                   .slice()
                   .sort((a, b) => a.name.localeCompare(b.name))
-                  .map((c) => (
-                    <tr key={c.id} className="border-t">
+                  .map((d) => (
+                    <tr key={d.id} className="border-t">
                       <td className="py-2 pr-4 font-medium text-slate-900">
-                        {c.name}
+                        {d.name}
                       </td>
-                      <td className="py-2 pr-4 text-slate-700">{c.slug}</td>
+                      <td className="py-2 pr-4 text-slate-700">{d.slug}</td>
                       <td className="py-2">
                         <button
                           type="button"
-                          disabled={deletingId === c.id}
-                          onClick={async () => {
-                            setConfirmDelete(c);
-                          }}
+                          disabled={deletingId === d.id}
+                          className="text-red-600 hover:text-red-700 disabled:opacity-50"
+                          onClick={() => setConfirmDelete(d)}
                         >
-                          {deletingId === c.id ? "Deleting..." : "Delete"}
+                          {deletingId === d.id ? "Deleting..." : "Delete"}
                         </button>
                       </td>
                     </tr>
@@ -193,18 +193,18 @@ export default function CategoriesManager({ initialCategories }: Props) {
           <div
             role="dialog"
             aria-modal="true"
-            aria-labelledby="category-delete-title"
+            aria-labelledby="department-delete-title"
             className="w-full max-w-sm rounded-xl bg-white p-6 space-y-4"
             onClick={(e) => e.stopPropagation()}
           >
             <h3
-              id="category-delete-title"
+              id="department-delete-title"
               className="text-base font-semibold text-slate-900"
             >
-              Delete category?
+              Delete department?
             </h3>
-            <p className="text-sm text-slate-600">
-                This will permanently delete &quot;{confirmDelete.name}&quot;.
+                <p className="text-sm text-slate-600">
+                  This will permanently delete &quot;{confirmDelete.name}&quot;.
             </p>
 
             <div className="flex gap-3 pt-2">
@@ -222,17 +222,17 @@ export default function CategoriesManager({ initialCategories }: Props) {
                 onClick={async () => {
                   setDeletingId(confirmDelete.id);
                   try {
-                    await deleteCategoryAdmin(confirmDelete.id);
-                    setCategories((prev) =>
+                    await deleteDepartmentAdmin(confirmDelete.id);
+                    setDepartments((prev) =>
                       prev.filter((x) => x.id !== confirmDelete.id),
                     );
-                    toast.success("Category deleted");
+                    toast.success("Department deleted");
                     setConfirmDelete(null);
                   } catch (err) {
                     toast.error(
                       err instanceof Error
                         ? err.message
-                        : "Failed to delete category",
+                        : "Failed to delete department",
                     );
                   } finally {
                     setDeletingId(null);

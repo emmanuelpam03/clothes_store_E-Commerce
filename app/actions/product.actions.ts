@@ -5,6 +5,7 @@ import { Prisma } from "@/app/generated/prisma/client";
 
 export interface ProductFilters {
   query?: string;
+  department?: string;
   category?: string;
   filter?: string;
   sizes?: string[];
@@ -22,6 +23,7 @@ export async function getProducts(filters: ProductFilters = {}) {
 
   const {
     query,
+    department,
     category,
     filter,
     sizes,
@@ -33,6 +35,10 @@ export async function getProducts(filters: ProductFilters = {}) {
     inStock,
     outOfStock,
   } = filters;
+
+  const normalizedDepartment = department?.trim()
+    ? department.trim().toLowerCase()
+    : undefined;
 
   const normalizedCategory = category?.trim()
     ? category.trim().toLowerCase()
@@ -94,6 +100,14 @@ export async function getProducts(filters: ProductFilters = {}) {
   const where: Prisma.ProductWhereInput = {
     active: true,
 
+    ...(normalizedDepartment
+      ? {
+          department: {
+            slug: normalizedDepartment,
+          },
+        }
+      : {}),
+
     ...(normalizedCategory
       ? {
           category: {
@@ -105,7 +119,7 @@ export async function getProducts(filters: ProductFilters = {}) {
     // Combine OR conditions using AND
     ...(andConditions.length > 0 && { AND: andConditions }),
 
-    // Featured/New/Best Sellers (and legacy category via `filter`)
+    // Featured/New/Best Sellers
     ...(filter === "featured"
       ? { isFeatured: true }
       : filter === "new"
@@ -120,13 +134,7 @@ export async function getProducts(filters: ProductFilters = {}) {
                 some: {},
               },
             }
-          : filter && !normalizedCategory
-            ? {
-                category: {
-                  slug: filter,
-                },
-              }
-            : {}),
+          : {}),
 
     // Size filter - product must have at least one of the selected sizes
     ...(sizes &&
@@ -173,6 +181,7 @@ export async function getProducts(filters: ProductFilters = {}) {
     where,
     include: {
       category: true,
+      department: true,
       inventory: true,
     },
     orderBy:

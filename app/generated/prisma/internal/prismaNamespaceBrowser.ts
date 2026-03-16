@@ -56,6 +56,7 @@ export const ModelName = {
   User: 'User',
   EmailVerificationToken: 'EmailVerificationToken',
   Product: 'Product',
+  Department: 'Department',
   Inventory: 'Inventory',
   Order: 'Order',
   OrderStatusHistory: 'OrderStatusHistory',
@@ -157,11 +158,21 @@ export const ProductScalarFieldEnum = {
   tags: 'tags',
   collection: 'collection',
   categoryId: 'categoryId',
+  departmentId: 'departmentId',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
 export type ProductScalarFieldEnum = (typeof ProductScalarFieldEnum)[keyof typeof ProductScalarFieldEnum]
+
+
+export const DepartmentScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  slug: 'slug'
+} as const
+
+export type DepartmentScalarFieldEnum = (typeof DepartmentScalarFieldEnum)[keyof typeof DepartmentScalarFieldEnum]
 
 
 export const InventoryScalarFieldEnum = {
