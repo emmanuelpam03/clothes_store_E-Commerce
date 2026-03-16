@@ -39,32 +39,39 @@ export default function ResetUserPasswordForm({ userId }: Props) {
           setNewPassword("");
           setConfirmPassword("");
           router.refresh();
-        } catch (err) {
-          toast.error(
-            err instanceof Error ? err.message : "Failed to reset password",
-          );
+        } catch (_err) {
+          toast.error("Failed to reset password");
         } finally {
           setIsSaving(false);
         }
       }}
     >
+      <label htmlFor="new-password" className="sr-only">
+        New password
+      </label>
       <input
+        id="new-password"
         type="password"
         placeholder="New password"
+        autoComplete="new-password"
         className="w-full rounded-lg border px-3 py-2 text-sm"
         value={newPassword}
         onChange={(e) => setNewPassword(e.target.value)}
         disabled={isSaving}
       />
+      <label htmlFor="confirm-new-password" className="sr-only">
+        Confirm new password
+      </label>
       <input
+        id="confirm-new-password"
         type="password"
         placeholder="Confirm new password"
+        autoComplete="new-password"
         className="w-full rounded-lg border px-3 py-2 text-sm"
         value={confirmPassword}
         onChange={(e) => setConfirmPassword(e.target.value)}
         disabled={isSaving}
       />
-
       <button
         type="submit"
         disabled={isSaving}

@@ -526,36 +526,62 @@ export default function ProfileClient({
               }}
               className="space-y-4"
             >
-              <input
-                type="password"
-                name="currentPassword"
-                placeholder="Current password"
-                className="w-full rounded-lg border px-3 py-2 text-sm"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                disabled={isChangingPassword}
-              />
+              <div className="space-y-1">
+                <label
+                  htmlFor="currentPassword"
+                  className="text-sm font-medium"
+                >
+                  Current password
+                </label>
+                <input
+                  type="password"
+                  id="currentPassword"
+                  name="currentPassword"
+                  placeholder="Current password"
+                  className="w-full rounded-lg border px-3 py-2 text-sm"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  disabled={isChangingPassword}
+                  autoComplete="current-password"
+                />
+              </div>
 
-              <input
-                type="password"
-                name="newPassword"
-                placeholder="New password"
-                className="w-full rounded-lg border px-3 py-2 text-sm"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                disabled={isChangingPassword}
-              />
+              <div className="space-y-1">
+                <label htmlFor="newPassword" className="text-sm font-medium">
+                  New password
+                </label>
+                <input
+                  type="password"
+                  id="newPassword"
+                  name="newPassword"
+                  placeholder="New password"
+                  className="w-full rounded-lg border px-3 py-2 text-sm"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  disabled={isChangingPassword}
+                  autoComplete="new-password"
+                />
+              </div>
 
-              <input
-                type="password"
-                name="confirmNewPassword"
-                placeholder="Confirm new password"
-                className="w-full rounded-lg border px-3 py-2 text-sm"
-                value={confirmNewPassword}
-                onChange={(e) => setConfirmNewPassword(e.target.value)}
-                disabled={isChangingPassword}
-              />
-
+              <div className="space-y-1">
+                <label
+                  htmlFor="confirmNewPassword"
+                  className="text-sm font-medium"
+                >
+                  Confirm new password
+                </label>
+                <input
+                  type="password"
+                  id="confirmNewPassword"
+                  name="confirmNewPassword"
+                  placeholder="Confirm new password"
+                  className="w-full rounded-lg border px-3 py-2 text-sm"
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  disabled={isChangingPassword}
+                  autoComplete="new-password"
+                />
+              </div>
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
