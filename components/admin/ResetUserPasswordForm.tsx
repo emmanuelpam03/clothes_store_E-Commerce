@@ -40,7 +40,9 @@ export default function ResetUserPasswordForm({ userId }: Props) {
           setConfirmPassword("");
           router.refresh();
         } catch (err) {
-          toast.error(err instanceof Error ? err.message : "Failed to reset password");
+          toast.error(
+            err instanceof Error ? err.message : "Failed to reset password",
+          );
         } finally {
           setIsSaving(false);
         }
