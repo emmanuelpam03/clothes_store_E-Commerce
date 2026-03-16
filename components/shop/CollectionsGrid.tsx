@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import AddToCartDialog from "./AddToCartDialog";
 import { formatCurrencyFromCentsConverted } from "@/lib/money";
 import { useStoreSettings } from "@/lib/store-settings-client";
+import { config } from "@/constants/config";
 
 // fallback image
 import { whiteShirt1 } from "@/public/assets/images/images";
@@ -62,10 +63,9 @@ export function CollectionsGrid({ products = [] }: CollectionsGridProps) {
   return (
     <section className="w-full bg-neutral-100 py-16">
       <div className="mx-auto max-w-7xl px-5">
-        {/* HEADER */}
         <div className="mb-10">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold leading-none">
-            XIV <br /> COLLECTIONS <br /> 23–24
+            {config.appName} <br /> COLLECTIONS
           </h1>
 
           <div className="mt-6 flex flex-col sm:flex-row sm:justify-between gap-4 text-sm text-neutral-500">
@@ -87,7 +87,6 @@ export function CollectionsGrid({ products = [] }: CollectionsGridProps) {
           </div>
         </div>
 
-        {/* GRID */}
         <Suspense fallback={<CollectionsGridSkeleton />}>
           <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
             {visibleProducts.map((product) => (
@@ -96,7 +95,6 @@ export function CollectionsGrid({ products = [] }: CollectionsGridProps) {
                 className="animate-[fadeInUp_0.35s_ease-out]"
               >
                 <Link href={`/products/${product.slug}`} className="w-full">
-                  {/* IMAGE */}
                   <div className="relative h-80 md:h-130 bg-white group">
                     <Image
                       src={product.image ?? whiteShirt1}
@@ -105,7 +103,6 @@ export function CollectionsGrid({ products = [] }: CollectionsGridProps) {
                       className="object-cover"
                     />
 
-                    {/* FAVORITE */}
                     <button
                       onClick={(e) => handleToggleFavorite(product.id, e)}
                       className="absolute top-4 right-4 p-2 rounded-full bg-white/80"
@@ -120,7 +117,6 @@ export function CollectionsGrid({ products = [] }: CollectionsGridProps) {
                       />
                     </button>
 
-                    {/* ADD */}
                     <button
                       onClick={(e) => {
                         e.preventDefault();
@@ -134,7 +130,6 @@ export function CollectionsGrid({ products = [] }: CollectionsGridProps) {
                     </button>
                   </div>
 
-                  {/* META */}
                   <div className="mt-4 flex justify-between text-sm">
                     <p className="font-medium">{product.name}</p>
                     <p className="font-semibold">
@@ -151,7 +146,6 @@ export function CollectionsGrid({ products = [] }: CollectionsGridProps) {
           </div>
         </Suspense>
 
-        {/* MORE / LESS */}
         <div className="mt-16 flex flex-col items-center text-sm text-neutral-500">
           {hasMore ? (
             <button

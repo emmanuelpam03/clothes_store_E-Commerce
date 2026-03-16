@@ -4,17 +4,10 @@ import prisma from "@/lib/prisma";
 import { redirect } from "next/navigation";
 
 export default async function ProfilePage() {
-  // 🔹 Mock data (replace later)
-  // const user = {
-  //   name: "John Doe",
-  //   email: "john@example.com",
-  //   image: null,
-  // };
   const session = await auth();
   if (!session) {
     redirect("/login");
   }
-
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
@@ -35,7 +28,7 @@ export default async function ProfilePage() {
   }
 
   const hasGoogle = user.accounts.some(
-    (account) => account.provider === "google"
+    (account) => account.provider === "google",
   );
 
   const hasPassword = Boolean(user.password);

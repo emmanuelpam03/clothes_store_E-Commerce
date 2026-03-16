@@ -288,7 +288,6 @@ export default function ShoppingBag() {
   return (
     <div className="min-h-screen bg-[#f7f7f7]">
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {/* HEADER */}
         <div className="flex justify-center items-center gap-4 uppercase text-black text-xs mb-5">
           <Link href="/cart">shopping bag</Link>
 
@@ -305,7 +304,6 @@ export default function ShoppingBag() {
           </Link>
         </div>
 
-        {/* EMPTY CART */}
         {optimisticItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20">
             <div className="text-center">
@@ -324,7 +322,6 @@ export default function ShoppingBag() {
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-16">
-            {/* CART ITEMS */}
             <div className="flex flex-wrap gap-12 py-5 border-y border-neutral-300 justify-center">
               {optimisticItems.map((item) => {
                 const parsedItemColor = parseColor(item.color);

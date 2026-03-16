@@ -61,7 +61,7 @@ export function LoginForm(props: React.ComponentProps<typeof Card>) {
     }
   }, [searchParams, router]);
 
-  // 🔵 Handle normal login feedback
+  // Show server action feedback
   useEffect(() => {
     if (state.error) {
       toast.error(state.error);
@@ -92,7 +92,7 @@ export function LoginForm(props: React.ComponentProps<typeof Card>) {
                 id="email"
                 name="email"
                 defaultValue={state.email}
-                placeholder="pam@example.com"
+                placeholder="name@domain.com"
                 className="bg-white text-slate-900 border-2 border-slate-400 focus:border-slate-900"
               />
               {state.fieldErrors?.email && (

@@ -135,9 +135,6 @@ export async function setPasswordAction(
   };
 }
 
-/** VERIFY EMAIL CODE ACTION
- */
-
 export async function verifyEmailCodeAction(code: string) {
   const session = await auth();
 
@@ -147,27 +144,21 @@ export async function verifyEmailCodeAction(code: string) {
 
   const userId = session.user.id;
 
-  // await rateLimit({
-  //   key: `verify:${userId}`,
-  //   limit: 10,
-  //   windowMs: 10 * 60 * 1000, // 10 minutes
-  // });
-
   const record = await prisma.emailVerificationToken.findUnique({
     where: { userId },
   });
 
-  // ❌ No record or expired
+  // Invalid/expired record
   if (!record || record.expiresAt < new Date()) {
     throw new Error("Invalid or expired code");
   }
 
-  // 🔒 Locked
+  // Locked due to too many attempts
   if (record.lockedUntil && record.lockedUntil > new Date()) {
     throw new Error("Too many attempts. Try again later.");
   }
 
-  // ❌ Wrong code
+  // Wrong code
   if (record.code !== code) {
     const attempts = record.attempts + 1;
 
@@ -193,7 +184,6 @@ export async function verifyEmailCodeAction(code: string) {
     throw new Error("Invalid verification code");
   }
 
-  // ✅ SUCCESS
   await prisma.user.update({
     where: { id: userId },
     data: {
@@ -206,9 +196,6 @@ export async function verifyEmailCodeAction(code: string) {
     where: { userId },
   });
 }
-
-/** RESEND VERIFICATION CODE ACTION
- */
 
 function generate6DigitCode() {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -224,17 +211,11 @@ export async function resendVerificationCodeAction() {
   const userId = session.user.id;
   const email = session.user.email;
 
-  // await rateLimit({
-  //   key: `resend:${userId}`,
-  //   limit: 3,
-  //   windowMs: 60 * 60 * 1000, // 1 hour
-  // });
-
   const existing = await prisma.emailVerificationToken.findUnique({
     where: { userId },
   });
 
-  // ⏱ Simple cooldown: 60 seconds
+  // Simple cooldown: 60 seconds
   if (existing && existing.createdAt > new Date(Date.now() - 60_000)) {
     throw new Error("Please wait before requesting another code.");
   }
@@ -258,15 +239,10 @@ export async function resendVerificationCodeAction() {
     },
   });
 
-  // ✅ SEND REAL EMAIL
   await sendVerificationEmail(email, code);
 }
 
-/**
- * DEACTIVATE ACCOUNT (SOFT DELETE WITH 90-DAY GRACE PERIOD)
- * User can reactivate within 90 days by logging in again
- * After 90 days, account is permanently deleted by cleanup script
- */
+/** Deactivate account (soft delete). Reactivation allowed for 90 days. */
 export async function deactivateAccountAction() {
   const session = await auth();
 
@@ -289,10 +265,7 @@ export async function deactivateAccountAction() {
   await signOut({ redirectTo: "/login?deactivated=true" });
 }
 
-/**
- * PERMANENTLY DELETE ACCOUNT (IMMEDIATE GDPR-COMPLIANT DELETION)
- * Immediately anonymizes user's personal data - cannot be undone
- */
+/** Permanently delete account immediately (anonymizes personal data). */
 export async function deleteAccountPermanently() {
   const session = await auth();
 

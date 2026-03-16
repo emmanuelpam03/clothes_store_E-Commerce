@@ -67,8 +67,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem(GUEST_CART_KEY, JSON.stringify(items));
   }, [items, isHydrated, isLoggedIn]);
 
-  // ✅ NEW
-  // cart.tsx
   const hydrateFromDb = async () => {
     const cart = await getOrCreateCart();
     setItems(mapDbCartToUICart(cart));

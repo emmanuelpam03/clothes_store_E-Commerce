@@ -38,13 +38,10 @@ export default function CreateUserForm() {
 
       if (result.success) {
         setSuccess(true);
-        // Capture whether email was sent before resetting form
         setWasEmailSent(sendEmail);
-        // Set temporary password if provided
         if (result.temporaryPassword) {
           setTempPassword(result.temporaryPassword);
         }
-        // Reset form
         setEmail("");
         setName("");
         setRole("USER");
@@ -88,7 +85,7 @@ export default function CreateUserForm() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={loading}
-                placeholder="user@example.com"
+                placeholder="name@domain.com"
               />
             </Field>
 
@@ -101,7 +98,7 @@ export default function CreateUserForm() {
                 onChange={(e) => setName(e.target.value)}
                 required
                 disabled={loading}
-                placeholder="John Doe"
+                placeholder="Full name"
               />
             </Field>
 

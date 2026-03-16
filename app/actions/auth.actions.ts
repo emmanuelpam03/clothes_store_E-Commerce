@@ -138,7 +138,7 @@ export async function registerAction(
     },
   });
 
-  // 🔒 ensure email exists
+  // Defensive: email is required to send the verification code.
   if (!user.email) {
     return {
       name: "",

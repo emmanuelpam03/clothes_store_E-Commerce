@@ -11,10 +11,7 @@ export default function ProductsGridSkeleton({
           className="animate-shimmer"
           style={{ animationDelay: `${i * 120}ms` }}
         >
-          {/* IMAGE PLACEHOLDER */}
           <div className="relative h-105 bg-neutral-300" />
-
-          {/* META */}
           <div className="mt-3 flex items-center justify-between text-sm">
             <div className="space-y-2">
               <div className="h-3 w-24 bg-neutral-300 rounded" />

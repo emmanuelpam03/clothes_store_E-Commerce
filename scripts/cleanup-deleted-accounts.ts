@@ -112,7 +112,7 @@ async function cleanupDeletedAccounts() {
 
     if (deactivatedAccounts.length > 0) {
       console.log(
-        `\n🔄 Found ${deactivatedAccounts.length} deactivated account(s) to permanently delete`,
+        `\nFound ${deactivatedAccounts.length} deactivated account(s) to permanently delete`,
       );
       console.log("   Deletion details:");
       deactivatedAccounts.forEach((account) => {
@@ -125,15 +125,15 @@ async function cleanupDeletedAccounts() {
       for (const account of deactivatedAccounts) {
         await permanentlyDeleteUser(account.id);
         console.log(
-          `   ✅ Anonymized and permanently deleted account: ${account.id}`,
+          `   Anonymized and permanently deleted account: ${account.id}`,
         );
       }
 
       console.log(
-        `\n✅ Successfully permanently deleted ${deactivatedAccounts.length} deactivated account(s).`,
+        `\nSuccessfully permanently deleted ${deactivatedAccounts.length} deactivated account(s).`,
       );
     } else {
-      console.log("\n✨ No deactivated accounts to process.");
+      console.log("\nNo deactivated accounts to process.");
     }
 
     // ======================================================
@@ -158,7 +158,7 @@ async function cleanupDeletedAccounts() {
 
     if (anonymizedAccounts.length > 0) {
       console.log(
-        `\n🗑️  Found ${anonymizedAccounts.length} anonymized account(s) to remove`,
+        `\nFound ${anonymizedAccounts.length} anonymized account(s) to remove`,
       );
       console.log("   Removal details:");
       anonymizedAccounts.forEach((account) => {
@@ -183,20 +183,20 @@ async function cleanupDeletedAccounts() {
       });
 
       console.log(
-        `\n✅ Successfully removed ${deletedCount.count} anonymized account(s).`,
+        `\nSuccessfully removed ${deletedCount.count} anonymized account(s).`,
       );
     } else {
-      console.log("\n✨ No anonymized accounts to remove.");
+      console.log("\nNo anonymized accounts to remove.");
     }
 
     if (deactivatedAccounts.length === 0 && anonymizedAccounts.length === 0) {
-      console.log("\n✨ All clear! No accounts to process.");
+      console.log("\nAll clear. No accounts to process.");
     } else {
-      console.log("\n📊 Order history preserved for business records.");
-      console.log("🎉 Cleanup complete!");
+      console.log("\nOrder history preserved for business records.");
+      console.log("Cleanup complete.");
     }
   } catch (error) {
-    console.error("❌ Error during cleanup:", error);
+    console.error("Error during cleanup:", error);
     throw error;
   } finally {
     await prisma.$disconnect();

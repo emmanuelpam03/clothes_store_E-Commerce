@@ -78,7 +78,7 @@ export function NewThisWeek({ products }: NewThisWeekProps) {
   const next = () => setIndex((i) => Math.min(i + 1, maxIndex));
   const prev = () => setIndex((i) => Math.max(i - 1, 0));
 
-  // drag logic
+  // Drag gestures
   const onStart = (x: number) => setDragStart(x);
   const onMove = (x: number) => {
     if (dragStart !== null) setDragOffset(x - dragStart);
@@ -93,7 +93,6 @@ export function NewThisWeek({ products }: NewThisWeekProps) {
   return (
     <section className="w-full bg-neutral-100 py-8 sm:py-16">
       <div className="max-w-7xl mx-auto px-5">
-        {/* HEADER */}
         <div className="mb-6 sm:mb-8 flex items-center justify-between">
           <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
             NEW <br className="hidden sm:block" /> THIS WEEK
@@ -103,7 +102,6 @@ export function NewThisWeek({ products }: NewThisWeekProps) {
           </Link>
         </div>
 
-        {/* SLIDER */}
         <Suspense fallback={<NewThisWeekSkeleton />}>
           <div
             className="relative overflow-hidden"

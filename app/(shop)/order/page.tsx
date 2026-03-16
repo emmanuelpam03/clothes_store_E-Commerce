@@ -61,7 +61,6 @@ export default async function OrdersPage() {
                 key={order.id}
                 className="bg-white border border-neutral-200 p-8"
               >
-                {/* ORDER HEADER */}
                 <div className="flex justify-between items-start mb-6 pb-6 border-b">
                   <div>
                     <p className="text-sm text-neutral-500">Order ID</p>
@@ -106,7 +105,6 @@ export default async function OrdersPage() {
                   </div>
                 </div>
 
-                {/* ORDER ITEMS */}
                 <Link href={`/order/${order.id}`}>
                   <p className="text-sm text-blue-600 hover:underline">
                     View Details

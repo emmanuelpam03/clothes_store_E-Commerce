@@ -72,7 +72,6 @@ export default async function OrderDetailsPage({ params }: PageProps) {
 
   return (
     <div className="p-8 space-y-8 bg-slate-50 min-h-screen">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <Link
@@ -103,9 +102,7 @@ export default async function OrderDetailsPage({ params }: PageProps) {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Order Items */}
           <div className="bg-white rounded-xl border border-slate-200 p-6">
             <h2 className="text-xl font-bold text-slate-900 mb-4">
               Order Items

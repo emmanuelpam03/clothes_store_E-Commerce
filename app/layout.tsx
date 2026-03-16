@@ -24,10 +24,20 @@ export const interTight = Inter_Tight({
   weight: ["700", "800", "900"],
 });
 
-export const metadata: Metadata = {
-  title: "XIV",
-  description: "Fashion & Design",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  try {
+    const storeSettings = await getStoreSettings();
+    return {
+      title: storeSettings.brandName || config.appName,
+      description: "Fashion & Design",
+    };
+  } catch {
+    return {
+      title: config.appName,
+      description: "Fashion & Design",
+    };
+  }
+}
 
 export default async function RootLayout({
   children,

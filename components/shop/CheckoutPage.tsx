@@ -184,7 +184,6 @@ export default function Checkout() {
       <div className="max-w-7xl mx-auto px-6 py-12">
         <h1 className="text-4xl font-black mb-8">CHECKOUT</h1>
 
-        {/* STEPS */}
         <div className="flex gap-8 mb-12">
           <span className={stepClasses("INFORMATION")}>INFORMATION</span>
           <span className={stepClasses("SHIPPING")}>SHIPPING</span>
@@ -192,9 +191,7 @@ export default function Checkout() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-          {/* LEFT — FORM */}
           <div className="space-y-6">
-            {/* INFORMATION */}
             {(step === "INFORMATION" ||
               step === "SHIPPING" ||
               step === "PAYMENT") && (
@@ -234,7 +231,6 @@ export default function Checkout() {
               </>
             )}
 
-            {/* SHIPPING */}
             {(step === "SHIPPING" || step === "PAYMENT") && (
               <>
                 <div>
@@ -322,7 +318,6 @@ export default function Checkout() {
               </>
             )}
 
-            {/* PAYMENT */}
             {step === "PAYMENT" && (
               <>
                 <div>
@@ -347,7 +342,6 @@ export default function Checkout() {
               </>
             )}
 
-            {/* BUTTONS */}
             <div className="flex gap-4 pt-6">
               {step !== "INFORMATION" && (
                 <button
@@ -380,7 +374,6 @@ export default function Checkout() {
             </div>
           </div>
 
-          {/* RIGHT — ORDER SUMMARY */}
           <div className="border border-neutral-300 p-8 bg-white h-fit">
             <h2 className="text-sm font-semibold mb-6">YOUR ORDER</h2>
 

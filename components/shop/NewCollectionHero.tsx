@@ -28,7 +28,6 @@ type NewCollectionHeroProps = {
     description: string | null;
     price: number;
     image: string | null;
-    // active: boolean;
     slug: string;
   }[];
 };
@@ -66,7 +65,7 @@ export function NewCollectionHero({ products }: NewCollectionHeroProps) {
     }
   };
 
-  // Responsive visible count for mobile/tablet slider
+  // Update visible slide count on resize
   useEffect(() => {
     const update = () => {
       if (window.innerWidth < 640)
@@ -90,7 +89,6 @@ export function NewCollectionHero({ products }: NewCollectionHeroProps) {
     setIndex((i) => Math.min(i + 1, maxIndex));
   };
 
-  // 🔹 Drag logic
   const onStart = (x: number) => setDragStart(x);
 
   const onMove = (x: number) => {
@@ -109,16 +107,13 @@ export function NewCollectionHero({ products }: NewCollectionHeroProps) {
   return (
     <section className="w-full bg-neutral-100">
       <div className="w-full mx-auto max-w-7xl px-5 py-8 sm:py-16">
-        {/* Mobile & Tablet: Stacked Layout */}
         <div className="lg:hidden space-y-6">
-          {/* CATEGORIES */}
           <nav className="flex flex-col space-y-1 text-xs tracking-widest text-black">
-            <Link href="/men">MEN</Link>
-            <Link href="/women">WOMEN</Link>
-            <Link href="/kids">KIDS</Link>
+            <Link href="/products?q=men">MEN</Link>
+            <Link href="/products?q=women">WOMEN</Link>
+            <Link href="/products?q=kids">KIDS</Link>
           </nav>
 
-          {/* SEARCH */}
           <div className="flex w-full items-center gap-2 rounded bg-neutral-200 px-3 py-2 text-xs text-black">
             <SearchIcon size={14} />
             <input
@@ -131,7 +126,6 @@ export function NewCollectionHero({ products }: NewCollectionHeroProps) {
             />
           </div>
 
-          {/* TITLE */}
           <div className="space-y-2">
             <h1 className="text-4xl sm:text-5xl font-extrabold leading-tight tracking-tight text-black">
               NEW <br /> COLLECTION
@@ -141,7 +135,6 @@ export function NewCollectionHero({ products }: NewCollectionHeroProps) {
             </p>
           </div>
 
-          {/* SLIDER - Mobile & Tablet */}
           <Suspense fallback={<NewCollectionHeroSkeleton />}>
             <div
               className="relative overflow-hidden -mx-5 px-5"
@@ -178,7 +171,6 @@ export function NewCollectionHero({ products }: NewCollectionHeroProps) {
                       fill
                       className="object-cover"
                     />
-                    {/* FAVORITE BUTTON */}
                     <button
                       onClick={(e) => handleToggleFavorite(product.id, e)}
                       className="absolute top-4 right-4 p-2 rounded-full bg-white/80 hover:bg-white transition-colors z-10 cursor-pointer"
@@ -199,7 +191,6 @@ export function NewCollectionHero({ products }: NewCollectionHeroProps) {
             </div>
           </Suspense>
 
-          {/* SLIDER CONTROLS - Mobile & Tablet */}
           <div className="flex justify-center gap-2">
             <button
               onClick={prev}
@@ -217,7 +208,6 @@ export function NewCollectionHero({ products }: NewCollectionHeroProps) {
             </button>
           </div>
 
-          {/* BUTTON */}
           <button className="flex items-center gap-3 rounded bg-neutral-200 px-5 py-2 text-xs font-medium text-black cursor-pointer w-full justify-center sm:w-auto">
             <Link href="/products">
               Go To Shop
@@ -226,17 +216,13 @@ export function NewCollectionHero({ products }: NewCollectionHeroProps) {
           </button>
         </div>
 
-        {/* Desktop: Grid Layout */}
-
         <div className="hidden lg:grid grid-cols-12 gap-8">
-          {/* LEFT COLUMN */}
           <div className="col-span-5 flex flex-col justify-between">
-            {/* TOP */}
             <div className="space-y-6">
               <nav className="flex flex-col space-y-1 text-xs tracking-widest text-black">
-                <Link href="/men">MEN</Link>
-                <Link href="/women">WOMEN</Link>
-                <Link href="/kids">KIDS</Link>
+                <Link href="/products?q=men">MEN</Link>
+                <Link href="/products?q=women">WOMEN</Link>
+                <Link href="/products?q=kids">KIDS</Link>
               </nav>
 
               <div className="flex w-64 items-center gap-2 rounded bg-neutral-200 px-3 py-2 text-xs text-black">
@@ -252,7 +238,6 @@ export function NewCollectionHero({ products }: NewCollectionHeroProps) {
               </div>
             </div>
 
-            {/* MIDDLE */}
             <div className="space-y-4">
               <h1 className="text-5xl font-extrabold leading-tight tracking-tight text-black">
                 NEW <br /> COLLECTION
@@ -262,7 +247,6 @@ export function NewCollectionHero({ products }: NewCollectionHeroProps) {
               </p>
             </div>
 
-            {/* BOTTOM */}
             <div className="flex items-center gap-6">
               <button className="flex items-center rounded bg-neutral-200 px-5 py-2 text-xs font-medium text-black cursor-pointer">
                 <Link href="/products" className="flex items-center gap-3">
@@ -288,11 +272,9 @@ export function NewCollectionHero({ products }: NewCollectionHeroProps) {
             </div>
           </div>
 
-          {/* RIGHT COLUMN */}
           <div className="col-span-7 flex flex-col justify-between">
             <div />
 
-            {/* SLIDER */}
             <Suspense fallback={<NewCollectionHeroSkeleton />}>
               <div
                 className="relative overflow-hidden"
@@ -324,7 +306,6 @@ export function NewCollectionHero({ products }: NewCollectionHeroProps) {
                         fill
                         className="object-cover"
                       />
-                      {/* FAVORITE BUTTON */}
                       <button
                         onClick={(e) => handleToggleFavorite(product.id, e)}
                         className="absolute top-4 right-4 p-2 rounded-full bg-white/80 hover:bg-white transition-colors z-10"

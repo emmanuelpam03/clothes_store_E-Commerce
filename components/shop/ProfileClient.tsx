@@ -45,7 +45,6 @@ export default function ProfileClient({
 
   return (
     <div className="mx-auto max-w-xl space-y-10 bg-white rounded-2xl p-8 shadow-sm">
-      {/* PROFILE HEADER */}
       <div className="flex items-center gap-4">
         <div className="relative h-16 w-16 rounded-full bg-neutral-200 overflow-hidden">
           {user.image ? (
@@ -68,11 +67,9 @@ export default function ProfileClient({
         </div>
       </div>
 
-      {/* ACCOUNT ACCESS */}
       <div className="space-y-6">
         <h2 className="text-base font-medium">Account access</h2>
 
-        {/* EMAIL VERIFICATION */}
         <div className="flex items-center justify-between rounded-lg border px-4 py-3">
           <div>
             <p className="text-sm font-medium">Email verification</p>
@@ -294,8 +291,8 @@ export default function ProfileClient({
 
                 <div className="space-y-3 text-sm text-neutral-600">
                   <p>
-                    Your account will be deactivated immediately and you&apos;ll be
-                    logged out.
+                    Your account will be deactivated immediately and you&apos;ll
+                    be logged out.
                   </p>
                   <p>
                     <strong className="text-neutral-900">Within 90 days</strong>

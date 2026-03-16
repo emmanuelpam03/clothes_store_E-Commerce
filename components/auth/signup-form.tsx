@@ -27,7 +27,7 @@ const initialState = {
 export function SignupForm(props: React.ComponentProps<typeof Card>) {
   const [state, action, isLoading] = useActionState(
     registerAction,
-    initialState
+    initialState,
   );
 
   const router = useRouter();
@@ -36,7 +36,7 @@ export function SignupForm(props: React.ComponentProps<typeof Card>) {
   useEffect(() => {
     if (searchParams.get("error") === "email-exists") {
       toast.error(
-        "An account with this email already exists. Please sign in instead."
+        "An account with this email already exists. Please sign in instead.",
       );
 
       router.replace("/register");
@@ -73,7 +73,7 @@ export function SignupForm(props: React.ComponentProps<typeof Card>) {
                 id="name"
                 name="name"
                 defaultValue={state.name}
-                placeholder="Emmanuel Pam"
+                placeholder="Your name"
                 className="bg-white text-slate-900 border-2 border-slate-400 focus:border-slate-900"
               />
               {state.fieldErrors?.name && (
@@ -90,7 +90,7 @@ export function SignupForm(props: React.ComponentProps<typeof Card>) {
                 type="email"
                 name="email"
                 defaultValue={state.email}
-                placeholder="pam@example.com"
+                placeholder="name@domain.com"
                 className="bg-white text-slate-900 border-2 border-slate-400 focus:border-slate-900"
               />
               {state.fieldErrors?.email && (

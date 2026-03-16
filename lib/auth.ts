@@ -137,14 +137,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     /**
      * signIn callback
      *
-     * This is the CRITICAL SECURITY GUARD.
+     * Security guard to prevent Google OAuth from auto-linking to an existing
+     * credentials account during login.
      *
-     * It prevents Google OAuth from silently linking itself
-     * to an existing credentials account during login.
-     *
-     * Rules enforced here:
-     * - Logged OUT user + Google login + email exists → ❌ BLOCK
-     * - Logged IN user linking Google from profile → ✅ ALLOW
+     * Rules:
+     * - No active session + Google login + email exists: block
+     * - Active session linking Google from profile: allow
      */
     async signIn({ user, account }) {
       // Only apply this logic to Google OAuth
@@ -185,17 +183,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             return "/login?error=email-exists";
           }
         }
-
-        // This runs ONLY when:
-        // - Google sign-in is allowed
-        // - No takeover was detected
-        // - Account is safe to trust
-        //   if (account?.provider === "google") {
-        //     await prisma.user.update({
-        //       where: { email: user.email! },
-        //       data: { emailVerified: new Date() },
-        //     });
-        //   }
       }
 
       // Allow sign-in in all other cases

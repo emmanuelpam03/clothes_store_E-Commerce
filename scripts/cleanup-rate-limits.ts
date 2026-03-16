@@ -15,21 +15,21 @@ import { cleanupExpiredRateLimits } from "@/lib/rate-limit";
 
 async function main() {
   try {
-    console.log("🧹 Starting cleanup of expired rate limit records...");
+    console.log("Starting cleanup of expired rate limit records...");
 
     const deletedCount = await cleanupExpiredRateLimits();
 
     if (deletedCount > 0) {
       console.log(
-        `\n✅ Successfully removed ${deletedCount} expired rate limit record(s).`,
+        `\nSuccessfully removed ${deletedCount} expired rate limit record(s).`,
       );
     } else {
-      console.log("\n✨ No expired rate limit records to remove.");
+      console.log("\nNo expired rate limit records to remove.");
     }
 
-    console.log("\n🎉 Cleanup completed successfully!");
+    console.log("\nCleanup completed successfully.");
   } catch (error) {
-    console.error("\n❌ Error during cleanup:", error);
+    console.error("\nError during cleanup:", error);
     process.exit(1);
   } finally {
     await prisma.$disconnect();

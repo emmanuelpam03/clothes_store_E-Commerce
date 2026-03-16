@@ -269,17 +269,13 @@ export default function ProductsPageComponent({
   return (
     <section className="w-full bg-neutral-100 py-16">
       <div className="mx-auto max-w-7xl px-6">
-        {/* BREADCRUMB */}
         <p className="text-xs text-neutral-500">Home / Products</p>
 
-        {/* TITLE */}
         <h1 className="mt-2 text-2xl font-extrabold tracking-tight text-black">
           PRODUCTS
         </h1>
 
-        {/* SEARCH + CATEGORIES */}
         <div className="mt-6 flex flex-wrap items-center gap-4">
-          {/* SEARCH */}
           <div className="relative flex w-full max-w-md">
             <div className="flex items-center gap-3 rounded bg-neutral-200 px-4 py-2 text-sm text-black">
               <Search size={16} />
@@ -306,7 +302,6 @@ export default function ProductsPageComponent({
               />
             </div>
 
-            {/* SUGGESTIONS */}
             {showSuggestions && inputValue && suggestions.length > 0 && (
               <div className="absolute top-full z-30 mt-1 w-full rounded bg-white shadow border">
                 {suggestions.map((s) => (
@@ -332,13 +327,11 @@ export default function ProductsPageComponent({
             )}
           </div>
 
-          {/* CATEGORY PILLS - Hidden on mobile when filters are open */}
           <div
             className={`flex flex-wrap gap-2 ${
               isMobileFiltersOpen ? "hidden" : "hidden md:flex"
             }`}
           >
-            {/* NEW & BEST SELLERS */}
             {FILTERS.map((item) => (
               <button
                 key={item.slug}
@@ -365,7 +358,6 @@ export default function ProductsPageComponent({
               </button>
             ))}
 
-            {/* DATABASE CATEGORIES */}
             {categories.map((cat) => (
               <button
                 key={cat.id}
@@ -394,7 +386,6 @@ export default function ProductsPageComponent({
           </div>
         </div>
 
-        {/* MOBILE FILTERS TOGGLE BUTTON */}
         <div className="mt-6 md:hidden">
           <button
             onClick={toggleMobileFilters}
@@ -409,12 +400,9 @@ export default function ProductsPageComponent({
           </button>
         </div>
 
-        {/* MAIN GRID */}
         <div className="mt-12">
           <div className="flex gap-6">
-            {/* FILTER SIDEBAR - Desktop always visible */}
             <aside className="hidden md:block w-64 shrink-0 space-y-10">
-              {/* SIZE */}
               {allSizes.length > 0 && (
                 <div>
                   <h3 className="mb-4 text-sm font-semibold text-black">
@@ -438,7 +426,6 @@ export default function ProductsPageComponent({
                 </div>
               )}
 
-              {/* AVAILABILITY */}
               <div>
                 <h3 className="mb-4 text-sm font-semibold text-black">
                   Availability
@@ -709,7 +696,6 @@ export default function ProductsPageComponent({
               )}
             </aside>
 
-            {/* MOBILE FILTER SIDEBAR - Simplified version */}
             <aside
               className={`
                 md:hidden w-64 shrink-0 space-y-8 bg-white p-4 overflow-y-auto
@@ -721,7 +707,6 @@ export default function ProductsPageComponent({
                 }
               `}
             >
-              {/* HEADER */}
               <div className="flex items-center justify-between border-b pb-4">
                 <h2 className="text-lg font-bold text-black">Filters</h2>
                 <button onClick={toggleMobileFilters} className="p-1">
@@ -729,8 +714,6 @@ export default function ProductsPageComponent({
                 </button>
               </div>
 
-              {/* Mobile filters - Same content as desktop but in mobile view */}
-              {/* SIZE */}
               {allSizes.length > 0 && (
                 <div>
                   <h3 className="mb-4 text-sm font-semibold text-black">
@@ -754,7 +737,6 @@ export default function ProductsPageComponent({
                 </div>
               )}
 
-              {/* AVAILABILITY */}
               <div>
                 <h3 className="mb-4 text-sm font-semibold text-black">
                   Availability
@@ -780,11 +762,8 @@ export default function ProductsPageComponent({
                   </label>
                 </div>
               </div>
-
-              {/* Add other mobile filters as needed */}
             </aside>
 
-            {/* PRODUCTS GRID */}
             <div className="flex-1">
               <div className="space-y-6">
                 {query && (
@@ -802,7 +781,6 @@ export default function ProductsPageComponent({
                   </div>
                 )}
 
-                {/* GRID */}
                 <Suspense fallback={<ProductsGridSkeleton />}>
                   {isPending ? (
                     <ProductsGridSkeleton />
