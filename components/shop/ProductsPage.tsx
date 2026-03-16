@@ -63,6 +63,34 @@ export default function ProductsPageComponent({
   departments: Department[];
   categories: Category[];
 }) {
+  const parseStoredColor = (
+    color: string,
+  ): {
+    name: string;
+    value: string;
+  } => {
+    const hashIndex = color.indexOf("#");
+    if (hashIndex !== -1) {
+      let name = color.substring(0, hashIndex);
+      const value = color.substring(hashIndex);
+      name = name.replace(/:$/, "");
+      if (name) return { name, value };
+      return { name: value, value };
+    }
+
+    if (color.includes(":")) {
+      const lastColonIndex = color.lastIndexOf(":");
+      const name = color.substring(0, lastColonIndex);
+      const value = color.substring(lastColonIndex + 1);
+      return { name, value };
+    }
+
+    return { name: color, value: color };
+  };
+
+  const isHexColor = (value: string) =>
+    /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(value);
+
   const [expandedFilters, setExpandedFilters] = useState<Set<string>>(
     new Set(["Department", "Filter", "Category", "Price Range"]),
   );
@@ -263,9 +291,11 @@ export default function ProductsPageComponent({
   // Get unique values from ALL products for filter options (not filtered)
   // Note: In production, you might want to get these from the database
   const allSizes = Array.from(new Set(products.flatMap((p) => p.sizes || [])));
-  const allColors = Array.from(
-    new Set(products.flatMap((p) => p.colors || [])),
-  );
+  const allColors = Array.from(new Set(products.flatMap((p) => p.colors || [])))
+    .filter(Boolean)
+    .sort((a, b) =>
+      parseStoredColor(a).name.localeCompare(parseStoredColor(b).name),
+    );
   const allTags = Array.from(new Set(products.flatMap((p) => p.tags || [])));
   const allCollections = Array.from(
     new Set(products.map((p) => p.collection).filter(Boolean) as string[]),
@@ -622,30 +652,26 @@ export default function ProductsPageComponent({
                   {isExpanded("Colors") && (
                     <div className="mt-4 flex flex-wrap gap-2">
                       {allColors.map((color) => {
-                        const colorClasses: Record<string, string> = {
-                          Black: "bg-black",
-                          White: "bg-white border",
-                          Gray: "bg-gray-500",
-                          Grey: "bg-gray-500",
-                          Blue: "bg-blue-500",
-                          Red: "bg-red-500",
-                          Green: "bg-green-500",
-                          Yellow: "bg-yellow-500",
-                          Orange: "bg-orange-500",
-                          Purple: "bg-purple-500",
-                          Pink: "bg-pink-500",
-                          Brown: "bg-brown-500",
-                        };
+                        const parsed = parseStoredColor(color);
+                        const swatch = isHexColor(parsed.value)
+                          ? parsed.value
+                          : undefined;
                         return (
                           <button
                             key={color}
                             onClick={() => toggleColor(color)}
-                            className={`h-8 w-8 rounded ${colorClasses[color] || "bg-gray-300"} border hover:scale-110 transition-transform ${
+                            style={
+                              swatch ? { backgroundColor: swatch } : undefined
+                            }
+                            aria-label={parsed.name}
+                            className={`h-8 w-8 rounded border hover:scale-110 transition-transform ${
+                              swatch ? "" : "bg-gray-300"
+                            } ${
                               selectedColors.has(color)
                                 ? "ring-2 ring-offset-2 ring-black"
                                 : ""
                             }`}
-                            title={color}
+                            title={parsed.name}
                           />
                         );
                       })}
@@ -940,6 +966,42 @@ export default function ProductsPageComponent({
                         {cat.name}
                       </label>
                     ))}
+                  </div>
+                </div>
+              )}
+
+              {allColors.length > 0 && (
+                <div>
+                  <h3 className="mb-4 text-sm font-semibold text-black">
+                    Colors
+                  </h3>
+                  <div className="flex flex-wrap gap-2">
+                    {allColors.map((color) => {
+                      const parsed = parseStoredColor(color);
+                      const swatch = isHexColor(parsed.value)
+                        ? parsed.value
+                        : undefined;
+
+                      return (
+                        <button
+                          key={color}
+                          type="button"
+                          onClick={() => toggleColor(color)}
+                          style={
+                            swatch ? { backgroundColor: swatch } : undefined
+                          }
+                          aria-label={parsed.name}
+                          className={`h-8 w-8 rounded border hover:scale-110 transition-transform ${
+                            swatch ? "" : "bg-gray-300"
+                          } ${
+                            selectedColors.has(color)
+                              ? "ring-2 ring-offset-2 ring-black"
+                              : ""
+                          }`}
+                          title={parsed.name}
+                        />
+                      );
+                    })}
                   </div>
                 </div>
               )}
