@@ -13,6 +13,23 @@ function parseArray(value: string | undefined): string[] | undefined {
   return value.split(",").filter(Boolean);
 }
 
+function parseCollections(value: string | undefined): string[] | undefined {
+  const raw = parseArray(value);
+  if (!raw) return undefined;
+
+  const decoded = raw
+    .map((token) => {
+      const trimmed = token.trim();
+      if (trimmed.startsWith("slug:")) return trimmed.slice("slug:".length);
+      if (trimmed.startsWith("id:")) return trimmed.slice("id:".length);
+      if (trimmed.startsWith("name:")) return trimmed.slice("name:".length);
+      return trimmed;
+    })
+    .filter(Boolean);
+
+  return decoded.length > 0 ? decoded : undefined;
+}
+
 export default async function ProductsPage({
   searchParams,
 }: {
@@ -85,7 +102,7 @@ export default async function ProductsPage({
   const sizes = parseArray(params.sizes);
   const colors = parseArray(params.colors);
   const tags = parseArray(params.tags);
-  const collections = parseArray(params.collections);
+  const collections = parseCollections(params.collections);
 
   // Validate price parameters to avoid NaN
   const parsedMinPrice = params.minPrice ? Number(params.minPrice) : NaN;

@@ -1,6 +1,10 @@
 "use client";
 
-import { rightArrow } from "@/public/assets/images/images";
+import {
+  blackShirt1,
+  rightArrow,
+  whiteShirt1,
+} from "@/public/assets/images/images";
 import { SearchIcon, Heart } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -271,7 +275,7 @@ export function NewCollectionHero({
               </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-4 bg-amber-500">
               <h1 className="text-5xl font-extrabold leading-tight tracking-tight text-black">
                 NEW <br /> COLLECTION
               </h1>

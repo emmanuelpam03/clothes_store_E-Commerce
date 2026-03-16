@@ -172,14 +172,46 @@ export default function ProductsPageComponent({
   const selectedTags = new Set(
     searchParams.get("tags")?.split(",").filter(Boolean) || [],
   );
+
   const selectedCollectionsRaw =
     searchParams.get("collections")?.split(",").filter(Boolean) || [];
-  const allowedCollections = new Set(
-    collections.flatMap((c) => [c.id, c.slug, c.name]),
-  );
-  const selectedCollections = new Set(
-    selectedCollectionsRaw.filter((value) => allowedCollections.has(value)),
-  );
+
+  const collectionIdSet = new Set(collections.map((c) => c.id));
+  const collectionSlugSet = new Set(collections.map((c) => c.slug));
+  const collectionNameSet = new Set(collections.map((c) => c.name));
+
+  const selectedCollections = new Set<string>();
+
+  const parseCollectionToken = (token: string): string | null => {
+    const trimmed = token.trim();
+    if (!trimmed) return null;
+
+    if (trimmed.startsWith("id:")) {
+      const id = trimmed.slice("id:".length);
+      return collectionIdSet.has(id) ? `id:${id}` : null;
+    }
+    if (trimmed.startsWith("slug:")) {
+      const slug = trimmed.slice("slug:".length);
+      return collectionSlugSet.has(slug) ? `slug:${slug}` : null;
+    }
+    if (trimmed.startsWith("name:")) {
+      const name = trimmed.slice("name:".length);
+      return collectionNameSet.has(name) ? `name:${name}` : null;
+    }
+
+    // Legacy (unprefixed) tokens: accept only if unambiguous.
+    const matches: string[] = [];
+    if (collectionIdSet.has(trimmed)) matches.push(`id:${trimmed}`);
+    if (collectionSlugSet.has(trimmed)) matches.push(`slug:${trimmed}`);
+    if (collectionNameSet.has(trimmed)) matches.push(`name:${trimmed}`);
+
+    return matches.length === 1 ? matches[0] : null;
+  };
+
+  for (const raw of selectedCollectionsRaw) {
+    const parsed = parseCollectionToken(raw);
+    if (parsed) selectedCollections.add(parsed);
+  }
   const maxPrice = Number(searchParams.get("maxPrice") || "100000"); // Store in cents
   const showInStock = searchParams.get("inStock") === "true";
   const showOutOfStock = searchParams.get("outOfStock") === "true";
@@ -280,14 +312,20 @@ export default function ProductsPageComponent({
   const toggleCollection = (collection: Collection) => {
     const next = new Set(selectedCollections);
 
-    // Backward compatibility: older URLs may contain name/id.
-    const variants = [collection.slug, collection.id, collection.name];
-    const isSelected = variants.some((value) => next.has(value));
+    const slugToken = `slug:${collection.slug}`;
+    const idToken = `id:${collection.id}`;
+    const nameToken = `name:${collection.name}`;
+
+    const isSelected =
+      next.has(slugToken) || next.has(idToken) || next.has(nameToken);
 
     if (isSelected) {
-      for (const value of variants) next.delete(value);
+      next.delete(slugToken);
+      next.delete(idToken);
+      next.delete(nameToken);
     } else {
-      next.add(collection.slug);
+      // Always persist slug tokens going forward (stable + URL-safe).
+      next.add(slugToken);
     }
 
     updateFilters({
@@ -776,9 +814,11 @@ export default function ProductsPageComponent({
                           <input
                             type="checkbox"
                             checked={
-                              selectedCollections.has(collection.slug) ||
-                              selectedCollections.has(collection.id) ||
-                              selectedCollections.has(collection.name)
+                              selectedCollections.has(
+                                `slug:${collection.slug}`,
+                              ) ||
+                              selectedCollections.has(`id:${collection.id}`) ||
+                              selectedCollections.has(`name:${collection.name}`)
                             }
                             onChange={() => toggleCollection(collection)}
                           />
