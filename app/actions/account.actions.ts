@@ -737,3 +737,108 @@ export async function changePasswordFirstLogin(
 
   return { success: true };
 }
+
+export async function updateProfileAction(name: string): Promise<{
+  success: boolean;
+  error?: string;
+}> {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  const trimmedName = name.trim();
+  if (trimmedName.length > 100) {
+    return { success: false, error: "Name is too long" };
+  }
+
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: {
+      name: trimmedName.length > 0 ? trimmedName : null,
+    },
+  });
+
+  return { success: true };
+}
+
+export async function changePasswordAction(
+  currentPassword: string,
+  newPassword: string,
+  confirmPassword: string,
+): Promise<{ success: boolean; error?: string }> {
+  const session = await auth();
+
+  if (!session?.user?.id) {
+    return { success: false, error: "Not authenticated" };
+  }
+
+  if (!currentPassword) {
+    return { success: false, error: "Current password is required" };
+  }
+
+  const validation = setPasswordSchema.safeParse({
+    password: newPassword,
+    confirmPassword,
+  });
+
+  if (!validation.success) {
+    const errors = validation.error.flatten().fieldErrors;
+    return {
+      success: false,
+      error:
+        errors.password?.[0] ||
+        errors.confirmPassword?.[0] ||
+        "Invalid password",
+    };
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: {
+      id: true,
+      password: true,
+    },
+  });
+
+  if (!user) {
+    return { success: false, error: "User not found" };
+  }
+
+  if (!user.password) {
+    return { success: false, error: "No password set for this account" };
+  }
+
+  const rateLimitKey = `password-verify:${user.id}`;
+  const rateLimitCheck = await rateLimit({
+    key: rateLimitKey,
+    limit: 5,
+    windowMs: 10 * 60 * 1000,
+    lockoutMs: 15 * 60 * 1000,
+  });
+
+  if (!rateLimitCheck.allowed) {
+    return { success: false, error: rateLimitCheck.error };
+  }
+
+  const isValidPassword = await bcrypt.compare(currentPassword, user.password);
+  if (!isValidPassword) {
+    return { success: false, error: "Current password is incorrect" };
+  }
+
+  await clearRateLimit(rateLimitKey);
+
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      password: hashedPassword,
+      requirePasswordChange: false,
+      passwordChangeDeadline: null,
+    },
+  });
+
+  return { success: true };
+}

@@ -9,6 +9,8 @@ import {
   resendVerificationCodeAction,
   deactivateAccountAction,
   deleteAccountPermanently,
+  changePasswordAction,
+  updateProfileAction,
 } from "@/app/actions/account.actions";
 import { toast } from "sonner";
 import SetPasswordModal from "@/app/(shop)/setPasswordModal";
@@ -30,6 +32,8 @@ export default function ProfileClient({
   hasGoogle,
   hasPassword: initialHasPassword,
 }: Props) {
+  const [profileName, setProfileName] = useState(user.name ?? "");
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [showUnlinkConfirm, setShowUnlinkConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteType, setDeleteType] = useState<"deactivate" | "permanent">(
@@ -40,6 +44,11 @@ export default function ProfileClient({
   const [showSetPassword, setShowSetPassword] = useState(false);
   const [hasPassword, setHasPassword] = useState(initialHasPassword);
   const [isSending, setIsSending] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
 
   const router = useRouter();
 
@@ -62,9 +71,63 @@ export default function ProfileClient({
         </div>
 
         <div>
-          <p className="font-semibold text-lg">{user.name}</p>
+          <p className="font-semibold text-lg">
+            {profileName.trim() || user.name || "No name"}
+          </p>
           <p className="text-sm text-neutral-600">{user.email}</p>
         </div>
+      </div>
+
+      <div className="space-y-4">
+        <h2 className="text-base font-medium">Profile</h2>
+
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (isSavingProfile) return;
+
+            setIsSavingProfile(true);
+            try {
+              const result = await updateProfileAction(profileName);
+              if (result.success) {
+                toast.success("Profile updated");
+                router.refresh();
+              } else {
+                toast.error(result.error || "Failed to update profile");
+              }
+            } catch (err) {
+              toast.error(
+                err instanceof Error ? err.message : "Failed to update profile",
+              );
+            } finally {
+              setIsSavingProfile(false);
+            }
+          }}
+          className="space-y-3"
+        >
+          <div className="space-y-1">
+            <label className="text-sm font-medium" htmlFor="profileName">
+              Name
+            </label>
+            <input
+              id="profileName"
+              type="text"
+              value={profileName}
+              onChange={(e) => setProfileName(e.target.value)}
+              className="w-full rounded-lg border px-3 py-2 text-sm"
+              placeholder="Your name"
+              disabled={isSavingProfile}
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={isSavingProfile}
+            className="w-full rounded-lg bg-black py-2 text-sm font-medium text-white disabled:opacity-50"
+          >
+            {isSavingProfile ? "Saving..." : "Save changes"}
+          </button>
+        </form>
       </div>
 
       <div className="space-y-6">
@@ -118,7 +181,17 @@ export default function ProfileClient({
           </div>
 
           {hasPassword ? (
-            <span className="text-sm text-green-600">Enabled</span>
+            <button
+              onClick={() => {
+                setCurrentPassword("");
+                setNewPassword("");
+                setConfirmNewPassword("");
+                setShowChangePassword(true);
+              }}
+              className="text-sm underline cursor-pointer"
+            >
+              Change password
+            </button>
           ) : (
             <button
               onClick={() => setShowSetPassword(true)}
@@ -412,6 +485,98 @@ export default function ProfileClient({
           onClose={() => setShowSetPassword(false)}
           onPasswordSet={() => setHasPassword(true)}
         />
+      )}
+
+      {showChangePassword && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+          <div className="w-full max-w-sm rounded-xl bg-white p-6 space-y-5">
+            <h3 className="text-base font-semibold">Change password</h3>
+
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (isChangingPassword) return;
+
+                setIsChangingPassword(true);
+                try {
+                  const result = await changePasswordAction(
+                    currentPassword,
+                    newPassword,
+                    confirmNewPassword,
+                  );
+
+                  if (result.success) {
+                    toast.success("Password updated");
+                    setShowChangePassword(false);
+                    setCurrentPassword("");
+                    setNewPassword("");
+                    setConfirmNewPassword("");
+                  } else {
+                    toast.error(result.error || "Failed to change password");
+                  }
+                } catch (err) {
+                  toast.error(
+                    err instanceof Error
+                      ? err.message
+                      : "Failed to change password",
+                  );
+                } finally {
+                  setIsChangingPassword(false);
+                }
+              }}
+              className="space-y-4"
+            >
+              <input
+                type="password"
+                name="currentPassword"
+                placeholder="Current password"
+                className="w-full rounded-lg border px-3 py-2 text-sm"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+                disabled={isChangingPassword}
+              />
+
+              <input
+                type="password"
+                name="newPassword"
+                placeholder="New password"
+                className="w-full rounded-lg border px-3 py-2 text-sm"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                disabled={isChangingPassword}
+              />
+
+              <input
+                type="password"
+                name="confirmNewPassword"
+                placeholder="Confirm new password"
+                className="w-full rounded-lg border px-3 py-2 text-sm"
+                value={confirmNewPassword}
+                onChange={(e) => setConfirmNewPassword(e.target.value)}
+                disabled={isChangingPassword}
+              />
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowChangePassword(false)}
+                  className="flex-1 rounded-lg border py-2 text-sm hover:bg-neutral-50"
+                  disabled={isChangingPassword}
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={isChangingPassword}
+                  className="flex-1 rounded-lg bg-black py-2 text-sm text-white disabled:opacity-50"
+                >
+                  {isChangingPassword ? "Saving..." : "Update password"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );

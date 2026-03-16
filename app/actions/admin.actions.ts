@@ -7,6 +7,7 @@ import { hash } from "bcryptjs";
 import { generateTemporaryPassword } from "@/lib/utils";
 import { sendEmail } from "@/lib/email/send-email";
 import { OrderStatus, ReturnRequestStatus } from "@/app/generated/prisma/enums";
+import { setPasswordSchema } from "@/lib/validators/set-password.schema";
 
 /**
  * Escape HTML special characters to prevent HTML injection
@@ -912,6 +913,65 @@ export async function deleteUserAdmin(userId: string) {
   });
 
   revalidatePath("/admin/users");
+  return { success: true };
+}
+
+export async function adminSetUserPasswordAdmin(
+  userId: string,
+  newPassword: string,
+) {
+  const session = await auth();
+  if (session?.user?.role !== "ADMIN") {
+    throw new Error("Unauthorized");
+  }
+
+  if (session.user.id === userId) {
+    throw new Error("Use your profile to change your own password");
+  }
+
+  const targetUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, active: true },
+  });
+
+  if (!targetUser) {
+    throw new Error("User not found");
+  }
+
+  if (!targetUser.active) {
+    throw new Error("Cannot reset password for a deactivated user");
+  }
+
+  const validation = setPasswordSchema.safeParse({
+    password: newPassword,
+    confirmPassword: newPassword,
+  });
+
+  if (!validation.success) {
+    const errors = validation.error.flatten().fieldErrors;
+    throw new Error(errors.password?.[0] || "Invalid password");
+  }
+
+  const hashedPassword = await hash(newPassword, 10);
+
+  await prisma.$transaction(async (tx) => {
+    await tx.user.update({
+      where: { id: userId },
+      data: {
+        password: hashedPassword,
+        requirePasswordChange: true,
+        passwordChangeDeadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      },
+    });
+
+    // Force logout on all devices
+    await tx.session.deleteMany({
+      where: { userId },
+    });
+  });
+
+  revalidatePath("/admin/users");
+  revalidatePath(`/admin/users/${userId}`);
   return { success: true };
 }
 

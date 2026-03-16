@@ -5,6 +5,7 @@ import UserActions from "@/components/admin/UserActions";
 import Link from "next/link";
 import { getStoreSettingsWithFx } from "@/lib/store-settings-fx";
 import { formatCurrencyFromCentsConverted } from "@/lib/money";
+import ResetUserPasswordForm from "@/components/admin/ResetUserPasswordForm";
 
 type UserRole = "USER" | "ADMIN";
 
@@ -232,6 +233,15 @@ export default async function UserDetailsPage({ params }: PageProps) {
               </div>
             </div>
           </div>
+
+          {!isCurrentUser && user.active && (
+            <div className="bg-white rounded-xl border border-slate-200 p-6">
+              <h2 className="text-xl font-bold text-slate-900 mb-4">
+                Password
+              </h2>
+              <ResetUserPasswordForm userId={user.id} />
+            </div>
+          )}
 
           {/* Statistics */}
           <div className="bg-white rounded-xl border border-slate-200 p-6">
