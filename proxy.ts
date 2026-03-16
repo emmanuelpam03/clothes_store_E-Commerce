@@ -75,7 +75,11 @@ export async function proxy(request: NextRequest) {
 
   if (pathname.startsWith("/checkout") || pathname.startsWith("/order")) {
     if (!sessionUser) {
-      return NextResponse.redirect(new URL("/404", request.url));
+      const url = request.nextUrl.clone();
+      const next = `${pathname}${request.nextUrl.search}`;
+      url.pathname = "/login";
+      url.searchParams.set("next", next);
+      return NextResponse.redirect(url);
     }
   }
 

@@ -33,6 +33,12 @@ export function SignupForm(props: React.ComponentProps<typeof Card>) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const nextParam = searchParams.get("next");
+  const safeNext =
+    nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")
+      ? nextParam
+      : "/";
+
   useEffect(() => {
     if (searchParams.get("error") === "email-exists") {
       toast.error(
@@ -153,6 +159,7 @@ export function SignupForm(props: React.ComponentProps<typeof Card>) {
         </div>
 
         <form action={googleSignInAction}>
+          <input type="hidden" name="redirectTo" value={safeNext} />
           <Button
             type="submit"
             variant="outline"

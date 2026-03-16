@@ -29,6 +29,16 @@ export function LoginForm(props: React.ComponentProps<typeof Card>) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  const nextParam = searchParams.get("next");
+  const safeNext =
+    nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")
+      ? nextParam
+      : "/";
+
+  const loginUrl = nextParam
+    ? `/login?next=${encodeURIComponent(nextParam)}`
+    : "/login";
+
   // Handle blocked Google login (email already exists)
   useEffect(() => {
     if (searchParams.get("error") === "email-exists") {
@@ -37,29 +47,29 @@ export function LoginForm(props: React.ComponentProps<typeof Card>) {
       );
 
       // Clean the URL so toast doesn’t repeat
-      router.replace("/login");
+      router.replace(loginUrl);
     }
     if (searchParams.get("error") === "account-deactivated") {
       toast.error(
         "Account not found. Please check your credentials or create a new account.",
       );
-      router.replace("/login");
+      router.replace(loginUrl);
     }
 
     if (searchParams.get("error") === "password-expired") {
       toast.error(
         "Your temporary password has expired. Please contact an administrator to reset your account.",
       );
-      router.replace("/login");
+      router.replace(loginUrl);
     }
 
     if (searchParams.get("deleted") === "true") {
       toast.success(
         "Your account has been deactivated. You can reactivate it within 90 days by registering again with the same email.",
       );
-      router.replace("/login");
+      router.replace(loginUrl);
     }
-  }, [searchParams, router]);
+  }, [searchParams, router, loginUrl]);
 
   // Show server action feedback
   useEffect(() => {
@@ -69,9 +79,9 @@ export function LoginForm(props: React.ComponentProps<typeof Card>) {
 
     if (state.success) {
       toast.success(state.success);
-      router.push("/");
+      router.push(safeNext);
     }
-  }, [state, router]);
+  }, [state, router, safeNext]);
 
   return (
     <Card {...props} className="bg-white border border-slate-300 shadow-lg">
@@ -138,6 +148,7 @@ export function LoginForm(props: React.ComponentProps<typeof Card>) {
         </div>
 
         <form action={googleSignInAction}>
+          <input type="hidden" name="redirectTo" value={safeNext} />
           <Button
             variant="outline"
             type="submit"

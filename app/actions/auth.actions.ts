@@ -163,8 +163,17 @@ export async function registerAction(
   };
 }
 
-export async function googleSignInAction() {
-  await signIn("google", { redirectTo: "/" });
+function getSafeRedirectPath(input: FormDataEntryValue | null): string {
+  if (typeof input !== "string") return "/";
+  const value = input.trim();
+  if (!value.startsWith("/")) return "/";
+  if (value.startsWith("//")) return "/";
+  return value;
+}
+
+export async function googleSignInAction(formData: FormData) {
+  const redirectTo = getSafeRedirectPath(formData.get("redirectTo"));
+  await signIn("google", { redirectTo });
 }
 
 export async function signOutAction() {
