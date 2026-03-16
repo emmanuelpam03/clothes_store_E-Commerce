@@ -60,11 +60,10 @@ export default function CollectionsManager({ initialCollections }: Props) {
               return;
             }
 
-            if (existingSlugs.has(finalSlug)) {
+            if (existingSlugs.has(finalSlug.toLowerCase())) {
               toast.error("A collection with this slug already exists");
               return;
             }
-
             setIsSaving(true);
             try {
               const result = await createCollectionAdmin({
@@ -223,7 +222,15 @@ export default function CollectionsManager({ initialCollections }: Props) {
                 onClick={async () => {
                   setDeletingId(confirmDelete.id);
                   try {
-                    await deleteCollectionAdmin(confirmDelete.id);
+                    const result = await deleteCollectionAdmin(
+                      confirmDelete.id,
+                    );
+
+                    if (!result.success) {
+                      toast.error(result.error);
+                      return;
+                    }
+
                     setCollections((prev) =>
                       prev.filter((x) => x.id !== confirmDelete.id),
                     );

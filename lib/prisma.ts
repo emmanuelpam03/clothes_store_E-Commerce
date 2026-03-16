@@ -31,6 +31,11 @@ const prisma = (() => {
     return cached;
   }
 
+  // Disconnect stale client to release connections
+  cached.$disconnect().catch(() => {
+    // Ignore disconnect errors during HMR
+  });
+
   return new PrismaClient({ adapter });
 })();
 

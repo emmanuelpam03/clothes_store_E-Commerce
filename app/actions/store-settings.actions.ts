@@ -89,7 +89,20 @@ export async function updateAdminStoreSettingsAction(
     throw new Error("Homepage featured collection is required");
   }
 
-  const featuredCollectionExists = await prisma.product.findFirst({
+  const collectionExists = await prisma.collection.findUnique({
+    where: {
+      id: homeCollectionId,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!collectionExists) {
+    throw new Error("Collection not found");
+  }
+
+  const featuredProductExists = await prisma.product.findFirst({
     where: {
       active: true,
       isFeatured: true,
@@ -100,7 +113,7 @@ export async function updateAdminStoreSettingsAction(
     },
   });
 
-  if (!featuredCollectionExists) {
+  if (!featuredProductExists) {
     throw new Error(
       "Selected homepage collection must have at least one active featured product",
     );

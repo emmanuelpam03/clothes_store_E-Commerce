@@ -50,6 +50,21 @@ export async function getProducts(filters: ProductFilters = {}) {
   // Build AND conditions array to avoid OR key conflicts
   const andConditions: Prisma.ProductWhereInput[] = [];
 
+  const normalizedCollectionInputs = (() => {
+    if (!collections || collections.length === 0) return null;
+    const trimmed = collections
+      .map((c) => c.trim())
+      .filter((c): c is string => c.length > 0);
+    if (trimmed.length === 0) return null;
+    return Array.from(new Set(trimmed));
+  })();
+
+  const normalizedCollectionSlugsOrIds = normalizedCollectionInputs
+    ? Array.from(
+        new Set(normalizedCollectionInputs.map((c) => c.toLowerCase())),
+      )
+    : null;
+
   // Search query - OR condition for name/description
   if (query) {
     andConditions.push({
@@ -91,6 +106,38 @@ export async function getProducts(filters: ProductFilters = {}) {
         },
         {
           inventory: null,
+        },
+      ],
+    });
+  }
+
+  // Collections filter - accept collection ID, slug, or name for compatibility.
+  if (normalizedCollectionInputs && normalizedCollectionInputs.length > 0) {
+    andConditions.push({
+      OR: [
+        {
+          collectionId: {
+            in: normalizedCollectionSlugsOrIds ?? normalizedCollectionInputs,
+          },
+        },
+        {
+          collection: {
+            is: {
+              slug: {
+                in:
+                  normalizedCollectionSlugsOrIds ?? normalizedCollectionInputs,
+              },
+            },
+          },
+        },
+        {
+          collection: {
+            is: {
+              name: {
+                in: normalizedCollectionInputs,
+              },
+            },
+          },
         },
       ],
     });
@@ -157,16 +204,6 @@ export async function getProducts(filters: ProductFilters = {}) {
       tags.length > 0 && {
         tags: {
           hasSome: tags,
-        },
-      }),
-
-    // Collections filter - product collection must match one of the selected collections
-    ...(collections &&
-      collections.length > 0 && {
-        collection: {
-          name: {
-            in: collections,
-          },
         },
       }),
 

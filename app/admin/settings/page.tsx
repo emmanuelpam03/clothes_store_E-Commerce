@@ -197,10 +197,14 @@ export default function SettingsPage() {
             </div>
 
             <div className="md:col-span-2">
-              <label className="block text-sm font-semibold text-slate-700 mb-2">
+              <label
+                htmlFor="homeCollectionId"
+                className="block text-sm font-semibold text-slate-700 mb-2"
+              >
                 Homepage Featured Collection
               </label>
               <select
+                id="homeCollectionId"
                 name="homeCollectionId"
                 value={settings.homeCollectionId}
                 onChange={handleChange}

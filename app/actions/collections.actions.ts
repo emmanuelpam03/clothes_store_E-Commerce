@@ -86,20 +86,29 @@ export async function deleteCollectionAdmin(collectionId: string) {
   }
 
   if (!collectionId) {
-    throw new Error("Collection id is required");
+    return { success: false as const, error: "Collection id is required" };
   }
 
-  const count = await prisma.product.count({
-    where: { collectionId },
-  });
-
-  if (count > 0) {
-    throw new Error("Cannot delete a collection with products");
+  try {
+    await prisma.collection.delete({
+      where: { id: collectionId },
+    });
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError) {
+      // Foreign key constraint: products reference this collection.
+      if (err.code === "P2003") {
+        return {
+          success: false as const,
+          error: "Cannot delete a collection with products",
+        };
+      }
+      // Record to delete does not exist.
+      if (err.code === "P2025") {
+        return { success: false as const, error: "Collection not found" };
+      }
+    }
+    throw err;
   }
-
-  await prisma.collection.delete({
-    where: { id: collectionId },
-  });
 
   return { success: true as const };
 }

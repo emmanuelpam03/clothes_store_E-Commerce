@@ -96,7 +96,7 @@ model Product {
   colors      String[] @default([])
   tags        String[] @default([])
   collectionId String?
-  collection   Collection? @relation(fields: [collectionId], references: [id])
+  collection   Collection? @relation(fields: [collectionId], references: [id], onDelete: Restrict, onUpdate: Cascade)
 
   categoryId  String?
   category    Category? @relation(fields: [categoryId], references: [id])

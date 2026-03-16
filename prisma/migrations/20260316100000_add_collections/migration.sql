@@ -44,13 +44,14 @@ BEGIN
     FROM "Product"
     WHERE "collection" IS NOT NULL AND btrim("collection") <> ''
     GROUP BY btrim("collection")
-    ON CONFLICT ("name") DO NOTHING;
-
+    ON CONFLICT DO NOTHING;
     UPDATE "Product"
-    SET "collectionId" = md5(btrim("collection"))
-    WHERE "collection" IS NOT NULL AND btrim("collection") <> '';
-
-    ALTER TABLE "Product" DROP COLUMN IF EXISTS "collection";
+    UPDATE "Product"
+    SET "collectionId" = c."id"
+    FROM "Collection" c
+    WHERE "Product"."collection" IS NOT NULL 
+      AND btrim("Product"."collection") <> ''
+      AND c."id" = md5(btrim("Product"."collection"));    ALTER TABLE "Product" DROP COLUMN IF EXISTS "collection";
   END IF;
 END $$;
 
