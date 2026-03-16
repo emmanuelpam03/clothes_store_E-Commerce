@@ -52,6 +52,12 @@ type Department = {
   slug: string;
 };
 
+type Collection = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
 const MERCH_FILTERS = [
   { label: "FEATURED", slug: "featured" },
   { label: "NEW", slug: "new" },
@@ -62,10 +68,12 @@ export default function ProductsPageComponent({
   products,
   departments,
   categories,
+  collections,
 }: {
   products: Product[];
   departments: Department[];
   categories: Category[];
+  collections: Collection[];
 }) {
   const parseStoredColor = (
     color: string,
@@ -164,8 +172,13 @@ export default function ProductsPageComponent({
   const selectedTags = new Set(
     searchParams.get("tags")?.split(",").filter(Boolean) || [],
   );
+  const selectedCollectionsRaw =
+    searchParams.get("collections")?.split(",").filter(Boolean) || [];
+  const allowedCollections = new Set(
+    collections.flatMap((c) => [c.id, c.slug, c.name]),
+  );
   const selectedCollections = new Set(
-    searchParams.get("collections")?.split(",").filter(Boolean) || [],
+    selectedCollectionsRaw.filter((value) => allowedCollections.has(value)),
   );
   const maxPrice = Number(searchParams.get("maxPrice") || "100000"); // Store in cents
   const showInStock = searchParams.get("inStock") === "true";
@@ -264,13 +277,19 @@ export default function ProductsPageComponent({
     });
   };
 
-  const toggleCollection = (collection: string) => {
+  const toggleCollection = (collection: Collection) => {
     const next = new Set(selectedCollections);
-    if (next.has(collection)) {
-      next.delete(collection);
+
+    // Backward compatibility: older URLs may contain name/id.
+    const variants = [collection.slug, collection.id, collection.name];
+    const isSelected = variants.some((value) => next.has(value));
+
+    if (isSelected) {
+      for (const value of variants) next.delete(value);
     } else {
-      next.add(collection);
+      next.add(collection.slug);
     }
+
     updateFilters({
       collections: next.size > 0 ? Array.from(next).join(",") : undefined,
     });
@@ -301,13 +320,7 @@ export default function ProductsPageComponent({
       parseStoredColor(a).name.localeCompare(parseStoredColor(b).name),
     );
   const allTags = Array.from(new Set(products.flatMap((p) => p.tags || [])));
-  const allCollections = Array.from(
-    new Set(
-      products
-        .map((p) => p.collection?.name)
-        .filter((name): name is string => Boolean(name)),
-    ),
-  );
+  const allCollections = collections;
 
   // Calculate counts based on CURRENT filtered products
   const inStockCount = products.filter(
@@ -757,15 +770,19 @@ export default function ProductsPageComponent({
                     <div className="mt-4 space-y-2 text-sm text-black">
                       {allCollections.map((collection) => (
                         <label
-                          key={collection}
+                          key={collection.id}
                           className="flex items-center gap-2 cursor-pointer"
                         >
                           <input
                             type="checkbox"
-                            checked={selectedCollections.has(collection)}
+                            checked={
+                              selectedCollections.has(collection.slug) ||
+                              selectedCollections.has(collection.id) ||
+                              selectedCollections.has(collection.name)
+                            }
                             onChange={() => toggleCollection(collection)}
                           />
-                          {collection}
+                          {collection.name}
                         </label>
                       ))}
                     </div>

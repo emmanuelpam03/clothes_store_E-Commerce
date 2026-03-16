@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
 import { getCategories } from "@/app/actions/categories.actions";
+import { getCollections } from "@/app/actions/collections.actions";
 import { getDepartments } from "@/app/actions/departments.actions";
 import { getProducts } from "@/app/actions/product.actions";
 import ProductsPageComponent from "@/components/shop/ProductsPage";
@@ -34,6 +35,7 @@ export default async function ProductsPage({
 
   const categories = await getCategories();
   const departments = await getDepartments();
+  const collectionsList = await getCollections();
   const categorySlugs = new Set(categories.map((c) => c.slug.toLowerCase()));
   const departmentSlugs = new Set(departments.map((d) => d.slug.toLowerCase()));
 
@@ -119,6 +121,7 @@ export default async function ProductsPage({
         products={products}
         departments={departments}
         categories={categories}
+        collections={collectionsList}
       />
     </div>
   );
