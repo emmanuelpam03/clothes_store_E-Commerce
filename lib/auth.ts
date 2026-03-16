@@ -233,10 +233,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           // Fetch initial status from DB
           const dbUser = await prisma.user.findUnique({
             where: { id: token.sub },
-            select: { emailVerified: true, active: true },
+            select: {
+              emailVerified: true,
+              active: true,
+              requirePasswordChange: true,
+              passwordChangeDeadline: true,
+            },
           });
           token.emailVerified = dbUser?.emailVerified ?? null;
           token.active = dbUser?.active ?? false;
+          token.requirePasswordChange = dbUser?.requirePasswordChange ?? false;
+          token.passwordChangeDeadline = dbUser?.passwordChangeDeadline
+            ? dbUser.passwordChangeDeadline.getTime()
+            : null;
         }
 
         return token;
@@ -247,7 +256,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         try {
           const dbUser = await prisma.user.findUnique({
             where: { id: token.sub },
-            select: { id: true, active: true, emailVerified: true },
+            select: {
+              id: true,
+              active: true,
+              emailVerified: true,
+              requirePasswordChange: true,
+              passwordChangeDeadline: true,
+            },
           });
 
           // Invalidate session if user doesn't exist
@@ -258,6 +273,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           // Refresh active and emailVerified from database
           token.active = dbUser.active;
           token.emailVerified = dbUser.emailVerified;
+          token.requirePasswordChange = dbUser.requirePasswordChange;
+          token.passwordChangeDeadline = dbUser.passwordChangeDeadline
+            ? dbUser.passwordChangeDeadline.getTime()
+            : null;
         } catch (error) {
           // If database check fails, continue with existing token
           // This prevents sessions from breaking due to transient errors
@@ -285,6 +304,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       session.user.role = token.role as "USER" | "ADMIN";
       session.user.emailVerified = token.emailVerified as Date | null;
       session.user.active = token.active as boolean;
+      (
+        session.user as unknown as { requirePasswordChange?: boolean }
+      ).requirePasswordChange = token.requirePasswordChange as
+        | boolean
+        | undefined;
+      (
+        session.user as unknown as { passwordChangeDeadline?: number | null }
+      ).passwordChangeDeadline = token.passwordChangeDeadline as
+        | number
+        | null
+        | undefined;
 
       return session;
     },

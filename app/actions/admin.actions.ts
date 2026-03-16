@@ -1029,7 +1029,10 @@ export async function createUserAdmin(data: {
       // Escape values to prevent HTML injection
       const escapedEmail = escapeHtml(data.email);
       const escapedPassword = escapeHtml(temporaryPassword);
-      const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
+      const baseUrl =
+        process.env.NEXTAUTH_URL ??
+        (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ??
+        "http://localhost:3000";
       const loginUrl = `${baseUrl}/login`;
 
       await sendEmail({

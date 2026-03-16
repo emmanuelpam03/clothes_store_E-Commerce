@@ -7,6 +7,8 @@ declare module "next-auth" {
       role?: "USER" | "ADMIN";
       emailVerified?: Date | null;
       active?: boolean;
+      requirePasswordChange?: boolean;
+      passwordChangeDeadline?: number | null;
       name?: string | null;
       email?: string | null;
       image?: string | null;
@@ -18,6 +20,8 @@ declare module "next-auth" {
     role?: "USER" | "ADMIN";
     emailVerified?: Date | null;
     active?: boolean;
+    requirePasswordChange?: boolean;
+    passwordChangeDeadline?: number | null;
     name?: string | null;
     email?: string | null;
     image?: string | null;
@@ -30,6 +34,8 @@ declare module "next-auth/jwt" {
     role?: "USER" | "ADMIN";
     emailVerified?: Date | null;
     active?: boolean;
+    requirePasswordChange?: boolean;
+    passwordChangeDeadline?: number | null;
     name?: string | null;
     email?: string | null;
     image?: string | null;

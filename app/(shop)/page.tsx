@@ -11,10 +11,17 @@ export default async function ShopPage() {
   const departments = await getDepartments();
   const NewThisWeekProducts = products.slice(-6);
   const newProducts = products.slice(0, 9);
+  const collectionLabel =
+    products.find((p) => typeof p.collection === "string" && p.collection)
+      ?.collection ?? null;
 
   return (
     <>
-      <NewCollectionHero products={newProducts} departments={departments} />
+      <NewCollectionHero
+        products={newProducts}
+        departments={departments}
+        collectionLabel={collectionLabel}
+      />
       <NewThisWeek products={NewThisWeekProducts} />
       <CollectionsGrid products={newProducts} departments={departments} />
       <OurApproach />

@@ -1,49 +1,22 @@
 import { NextResponse } from "next/server";
 import { NextRequest } from "next/server";
-import { auth } from "@/lib/auth";
-import prisma from "@/lib/prisma";
-import type { Session } from "next-auth";
-
-type SessionUserWithPasswordChange = {
-  requirePasswordChange?: boolean;
-  passwordChangeDeadline?: Date | null;
-};
-
-type SessionUser = Session["user"];
+import { getToken } from "next-auth/jwt";
 
 export async function proxy(request: NextRequest) {
-  const session = await auth();
   const { pathname } = request.nextUrl;
 
-  let validSession = session;
+  const token = await getToken({
+    req: request,
+    secret: process.env.AUTH_SECRET,
+  });
 
-  // HARD CHECK: user must exist
-  if (session?.user?.id) {
-    const userExists = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: {
-        id: true,
-        requirePasswordChange: true,
-        passwordChangeDeadline: true,
-      },
-    });
-
-    if (!userExists) {
-      validSession = null;
-    } else {
-      // Add password change info to session
-      if (validSession && validSession.user) {
-        const user = validSession.user as SessionUser &
-          SessionUserWithPasswordChange;
-        user.requirePasswordChange = userExists.requirePasswordChange;
-        user.passwordChangeDeadline = userExists.passwordChangeDeadline;
-      }
-    }
-  }
-
-  const sessionUser = validSession?.user as
-    | (SessionUser & SessionUserWithPasswordChange)
-    | undefined;
+  const sessionUser = token as {
+    role?: "USER" | "ADMIN";
+    active?: boolean;
+    emailVerified?: unknown;
+    requirePasswordChange?: boolean;
+    passwordChangeDeadline?: number | null;
+  } | null;
 
   // Public routes that don't require email verification
   const publicRoutes = ["/login", "/register", "/verify", "/set-password"];
@@ -53,8 +26,8 @@ export async function proxy(request: NextRequest) {
 
   // Check if user needs to change password (admin-created accounts)
   if (
-    validSession &&
-    sessionUser?.requirePasswordChange &&
+    sessionUser &&
+    sessionUser.requirePasswordChange &&
     !pathname.startsWith("/set-password")
   ) {
     // Redirect to set-password page (action will handle expired deadline)
@@ -62,15 +35,14 @@ export async function proxy(request: NextRequest) {
   }
 
   // Block logged-in users from login & register
-  if (validSession && (pathname === "/login" || pathname === "/register")) {
+  if (sessionUser && (pathname === "/login" || pathname === "/register")) {
     return NextResponse.redirect(new URL("/", request.url));
   }
 
   // If user is logged in but account is deactivated or email is not verified
   // Both conditions require verification to proceed
   const needsVerification =
-    validSession &&
-    (!validSession.user.active || !validSession.user.emailVerified);
+    sessionUser && (!sessionUser.active || !sessionUser.emailVerified);
 
   if (needsVerification) {
     // Allow access to public routes (login, register, verify)
@@ -82,9 +54,9 @@ export async function proxy(request: NextRequest) {
 
   // If account is active, email is verified, and trying to access /verify, redirect to home
   if (
-    validSession &&
-    validSession.user.active &&
-    validSession.user.emailVerified &&
+    sessionUser &&
+    sessionUser.active &&
+    sessionUser.emailVerified &&
     pathname === "/verify"
   ) {
     return NextResponse.redirect(new URL("/", request.url));
@@ -92,17 +64,17 @@ export async function proxy(request: NextRequest) {
 
   // Protect admin routes
   if (pathname.startsWith("/admin")) {
-    if (!validSession) {
+    if (!sessionUser) {
       return NextResponse.redirect(new URL("/login", request.url));
     }
 
-    if (validSession.user.role !== "ADMIN") {
+    if (sessionUser.role !== "ADMIN") {
       return NextResponse.redirect(new URL("/", request.url));
     }
   }
 
   if (pathname.startsWith("/checkout") || pathname.startsWith("/order")) {
-    if (!validSession) {
+    if (!sessionUser) {
       return NextResponse.redirect(new URL("/404", request.url));
     }
   }

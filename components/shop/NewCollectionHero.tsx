@@ -35,10 +35,12 @@ type NewCollectionHeroProps = {
     name: string;
     slug: string;
   }[];
+  collectionLabel?: string | null;
 };
 export function NewCollectionHero({
   products,
   departments,
+  collectionLabel,
 }: NewCollectionHeroProps) {
   const [index, setIndex] = useState(0);
   const [dragStart, setDragStart] = useState<number | null>(null);
@@ -62,6 +64,14 @@ export function NewCollectionHero({
     if (!q) return;
     router.push(`/products?q=${encodeURIComponent(q)}`);
   };
+
+  const collectionText = (collectionLabel ?? "").trim();
+  const collectionParts = collectionText.split(/\s+/).filter(Boolean);
+  const collectionTop = collectionParts[0] ?? "New";
+  const collectionBottom =
+    collectionParts.length > 1
+      ? collectionParts.slice(1).join(" ")
+      : "Arrivals";
 
   const handleToggleFavorite = async (
     productId: string,
@@ -152,7 +162,7 @@ export function NewCollectionHero({
               NEW <br /> COLLECTION
             </h1>
             <p className="text-sm tracking-wide text-black">
-              Summer <br /> 2025
+              {collectionTop} <br /> {collectionBottom}
             </p>
           </div>
 
@@ -269,7 +279,7 @@ export function NewCollectionHero({
                 NEW <br /> COLLECTION
               </h1>
               <p className="text-sm tracking-wide text-black">
-                Summer <br /> 2025
+                {collectionTop} <br /> {collectionBottom}
               </p>
             </div>
 

@@ -15,5 +15,10 @@ export async function sendEmail({ to, subject, html }: SendEmailArgs) {
     html,
   });
 
-  console.log("RESEND RESULT:", result);
+  if (process.env.NODE_ENV !== "production") {
+    console.log("RESEND RESULT:", {
+      id: (result as { data?: { id?: string } })?.data?.id,
+      error: (result as { error?: unknown })?.error,
+    });
+  }
 }
