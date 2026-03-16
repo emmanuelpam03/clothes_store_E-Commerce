@@ -32,10 +32,16 @@ export function LandingMinimal() {
             <div className="space-y-2">
               <p className="text-neutral-400">SHOP</p>
               <div className="space-y-1">
-                <Link href="/products">PRODUCTS</Link>
-                <Link href="/products?filter=new">NEW ARRIVALS</Link>
-                <Link href="/favorites">FAVORITES</Link>
-              </div>
+                <Link href="/products" className="block">
+                  PRODUCTS
+                </Link>
+                <Link href="/products?filter=new" className="block">
+                  NEW ARRIVALS
+                </Link>
+                <Link href="/favorites" className="block">
+                  FAVORITES
+                </Link>
+              </div>{" "}
             </div>
 
             <div className="space-y-2">

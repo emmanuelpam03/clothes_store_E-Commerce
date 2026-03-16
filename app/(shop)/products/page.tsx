@@ -15,6 +15,7 @@ export default async function ProductsPage({
 }: {
   searchParams: Promise<{
     q?: string;
+    category?: string;
     filter?: string;
     sizes?: string;
     colors?: string;
@@ -27,8 +28,22 @@ export default async function ProductsPage({
   }>;
 }) {
   const params = await searchParams;
-  const query = params.q?.trim();
+  let query = params.q?.trim();
+  let category = params.category?.trim();
   const selectedFilter = params.filter?.trim();
+
+  // Backward compatibility: treat old category links that used `q=` as a category.
+  if (!category && query) {
+    const normalized = query.trim().toLowerCase();
+    if (
+      normalized === "men" ||
+      normalized === "women" ||
+      normalized === "kids"
+    ) {
+      category = normalized;
+      query = undefined;
+    }
+  }
 
   // Parse filter parameters
   const sizes = parseArray(params.sizes);
@@ -49,21 +64,20 @@ export default async function ProductsPage({
   const inStock = params.inStock === "true";
   const outOfStock = params.outOfStock === "true";
 
-  const [products, categories] = await Promise.all([
-    getProducts({
-      query,
-      filter: selectedFilter,
-      sizes,
-      colors,
-      tags,
-      collections,
-      minPrice: validMinPrice,
-      maxPrice: validMaxPrice,
-      inStock,
-      outOfStock,
-    }),
-    getCategories(),
-  ]);
+  const categories = await getCategories();
+  const products = await getProducts({
+    query,
+    category,
+    filter: selectedFilter,
+    sizes,
+    colors,
+    tags,
+    collections,
+    minPrice: validMinPrice,
+    maxPrice: validMaxPrice,
+    inStock,
+    outOfStock,
+  });
 
   return (
     <div>

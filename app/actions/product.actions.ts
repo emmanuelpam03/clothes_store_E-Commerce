@@ -5,6 +5,7 @@ import { Prisma } from "@/app/generated/prisma/client";
 
 export interface ProductFilters {
   query?: string;
+  category?: string;
   filter?: string;
   sizes?: string[];
   colors?: string[];
@@ -21,6 +22,7 @@ export async function getProducts(filters: ProductFilters = {}) {
 
   const {
     query,
+    category,
     filter,
     sizes,
     colors,
@@ -31,6 +33,10 @@ export async function getProducts(filters: ProductFilters = {}) {
     inStock,
     outOfStock,
   } = filters;
+
+  const normalizedCategory = category?.trim()
+    ? category.trim().toLowerCase()
+    : undefined;
 
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -88,10 +94,18 @@ export async function getProducts(filters: ProductFilters = {}) {
   const where: Prisma.ProductWhereInput = {
     active: true,
 
+    ...(normalizedCategory
+      ? {
+          category: {
+            slug: normalizedCategory,
+          },
+        }
+      : {}),
+
     // Combine OR conditions using AND
     ...(andConditions.length > 0 && { AND: andConditions }),
 
-    // Category/Featured/New/Best Sellers filter
+    // Featured/New/Best Sellers (and legacy category via `filter`)
     ...(filter === "featured"
       ? { isFeatured: true }
       : filter === "new"
@@ -106,7 +120,7 @@ export async function getProducts(filters: ProductFilters = {}) {
                 some: {},
               },
             }
-          : filter
+          : filter && !normalizedCategory
             ? {
                 category: {
                   slug: filter,

@@ -2,8 +2,12 @@
  * Cleanup Script: Handle Deleted Accounts After 90 Days
  *
  * This script handles two types of deleted accounts:
- * 1. Deactivated accounts (soft delete) - permanently deletes after 90 days
- * 2. Already anonymized accounts - removes user record after 90 days
+ * 1. Deactivated accounts (soft delete) - anonymizes personal data after 90 days
+ * 2. Already anonymized accounts - removes the user record after 90 days
+ *
+ * Note: Deactivated accounts are processed in two steps:
+ * - PART 1 anonymizes the account and deletes related auth artifacts.
+ * - PART 2 deletes the anonymized user record on a subsequent run.
  *
  * Run manually with:
  * npx tsx scripts/cleanup-deleted-accounts.ts
@@ -14,6 +18,8 @@
 import prisma from "@/lib/prisma";
 
 async function permanentlyDeleteUser(userId: string) {
+  // PART 1/2: anonymize personal data and remove related auth artifacts.
+  // The anonymized user record itself is deleted in PART 2 on a subsequent run.
   // Use transaction to ensure all operations succeed together
   await prisma.$transaction(
     async (tx) => {
@@ -112,25 +118,25 @@ async function cleanupDeletedAccounts() {
 
     if (deactivatedAccounts.length > 0) {
       console.log(
-        `\nFound ${deactivatedAccounts.length} deactivated account(s) to permanently delete`,
+        `\nFound ${deactivatedAccounts.length} deactivated account(s) to anonymize (user record deletion happens in PART 2 on a subsequent run)`,
       );
-      console.log("   Deletion details:");
+      console.log("   Anonymization details:");
       deactivatedAccounts.forEach((account) => {
         console.log(
           `   - Account ${account.id} deactivated on: ${account.deletedAt?.toISOString()}`,
         );
       });
 
-      // Permanently delete each deactivated account (anonymize and cleanup)
+      // PART 1/2: anonymize each deactivated account (record deletion occurs in PART 2 on a subsequent run)
       for (const account of deactivatedAccounts) {
         await permanentlyDeleteUser(account.id);
         console.log(
-          `   Anonymized and permanently deleted account: ${account.id}`,
+          `   Anonymized account: ${account.id} (user record deletion happens in PART 2 on a subsequent run)`,
         );
       }
 
       console.log(
-        `\nSuccessfully permanently deleted ${deactivatedAccounts.length} deactivated account(s).`,
+        `\nSuccessfully anonymized ${deactivatedAccounts.length} deactivated account(s). User record deletion happens in PART 2 on a subsequent run.`,
       );
     } else {
       console.log("\nNo deactivated accounts to process.");

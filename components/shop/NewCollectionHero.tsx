@@ -109,9 +109,9 @@ export function NewCollectionHero({ products }: NewCollectionHeroProps) {
       <div className="w-full mx-auto max-w-7xl px-5 py-8 sm:py-16">
         <div className="lg:hidden space-y-6">
           <nav className="flex flex-col space-y-1 text-xs tracking-widest text-black">
-            <Link href="/products?q=men">MEN</Link>
-            <Link href="/products?q=women">WOMEN</Link>
-            <Link href="/products?q=kids">KIDS</Link>
+            <Link href="/products?category=men">MEN</Link>
+            <Link href="/products?category=women">WOMEN</Link>
+            <Link href="/products?category=kids">KIDS</Link>
           </nav>
 
           <div className="flex w-full items-center gap-2 rounded bg-neutral-200 px-3 py-2 text-xs text-black">
@@ -220,9 +220,9 @@ export function NewCollectionHero({ products }: NewCollectionHeroProps) {
           <div className="col-span-5 flex flex-col justify-between">
             <div className="space-y-6">
               <nav className="flex flex-col space-y-1 text-xs tracking-widest text-black">
-                <Link href="/products?q=men">MEN</Link>
-                <Link href="/products?q=women">WOMEN</Link>
-                <Link href="/products?q=kids">KIDS</Link>
+                <Link href="/products?category=men">MEN</Link>
+                <Link href="/products?category=women">WOMEN</Link>
+                <Link href="/products?category=kids">KIDS</Link>
               </nav>
 
               <div className="flex w-64 items-center gap-2 rounded bg-neutral-200 px-3 py-2 text-xs text-black">
