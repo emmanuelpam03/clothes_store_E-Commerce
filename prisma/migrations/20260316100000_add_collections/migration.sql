@@ -34,7 +34,17 @@ BEGIN
     SELECT
       md5(btrim("collection")) AS "id",
       btrim("collection") AS "name",
-      md5(btrim("collection")) AS "slug"
+      COALESCE(
+        NULLIF(
+          trim(
+            both '-'
+            from lower(regexp_replace(btrim("collection"), '[^a-zA-Z0-9]+', '-', 'g'))
+          ),
+          ''
+        ),
+        md5(btrim("collection"))
+      )
+      || '-' || substr(md5(btrim("collection")), 1, 6) AS "slug"
     FROM "Product"
     WHERE "collection" IS NOT NULL AND btrim("collection") <> ''
     GROUP BY btrim("collection")
