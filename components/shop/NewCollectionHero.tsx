@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  blackShirt1,
-  rightArrow,
-  whiteShirt1,
-} from "@/public/assets/images/images";
+import { rightArrow } from "@/public/assets/images/images";
 import { SearchIcon, Heart } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -13,8 +9,6 @@ import { useFavorites } from "@/lib/favorites/useFavorites";
 import { toast } from "sonner";
 import NewCollectionHeroSkeleton from "./skeleton/NewCollectionHeroSkeleton";
 import { useRouter } from "next/navigation";
-
-const SLIDES = [whiteShirt1, blackShirt1, whiteShirt1, blackShirt1];
 
 const SLIDE_WIDTH = 345;
 const GAP = 32;
@@ -67,11 +61,9 @@ export function NewCollectionHero({
 
   const collectionText = (collectionLabel ?? "").trim();
   const collectionParts = collectionText.split(/\s+/).filter(Boolean);
-  const collectionTop = collectionParts[0] ?? "New";
+  const collectionTop = collectionParts[0] ?? "";
   const collectionBottom =
-    collectionParts.length > 1
-      ? collectionParts.slice(1).join(" ")
-      : "Arrivals";
+    collectionParts.length > 1 ? collectionParts.slice(1).join(" ") : "";
 
   const handleToggleFavorite = async (
     productId: string,
@@ -105,7 +97,7 @@ export function NewCollectionHero({
     return () => window.removeEventListener("resize", update);
   }, []);
 
-  const maxIndex = Math.max(SLIDES.length - visible, 0);
+  const maxIndex = Math.max(products.length - visible, 0);
 
   const prev = () => {
     setIndex((i) => Math.max(i - 1, 0));
@@ -162,7 +154,12 @@ export function NewCollectionHero({
               NEW <br /> COLLECTION
             </h1>
             <p className="text-sm tracking-wide text-black">
-              {collectionTop} <br /> {collectionBottom}
+              {collectionTop}
+              {collectionBottom ? (
+                <>
+                  <br /> {collectionBottom}
+                </>
+              ) : null}
             </p>
           </div>
 
@@ -278,9 +275,16 @@ export function NewCollectionHero({
               <h1 className="text-5xl font-extrabold leading-tight tracking-tight text-black">
                 NEW <br /> COLLECTION
               </h1>
-              <p className="text-sm tracking-wide text-black">
-                {collectionTop} <br /> {collectionBottom}
-              </p>
+              {collectionTop ? (
+                <p className="text-sm tracking-wide text-black">
+                  {collectionTop}
+                  {collectionBottom ? (
+                    <>
+                      <br /> {collectionBottom}
+                    </>
+                  ) : null}
+                </p>
+              ) : null}
             </div>
 
             <div className="flex items-center gap-6">

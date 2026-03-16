@@ -6,7 +6,7 @@ export type StoreSettingsRuntime = {
   supportEmail: string;
   currency: string;
   sizeSystem: string;
-  homeCollectionLabel: string;
+  homeCollectionId: string | null;
   shippingOrigin: string;
   shippingCostCents: number;
   freeShippingThresholdCents: number;
@@ -19,7 +19,7 @@ export const defaultStoreSettings: StoreSettingsRuntime = {
   supportEmail: "support@clothesstore.com",
   currency: "USD",
   sizeSystem: "US",
-  homeCollectionLabel: "Summer 2025",
+  homeCollectionId: null,
   shippingOrigin: "United States",
   shippingCostCents: config.shippingCostCents,
   freeShippingThresholdCents: config.freeShippingThresholdCents,
@@ -39,8 +39,8 @@ type StoreSettingsRow = {
   returnWindowDays: number;
 };
 
-type HomeCollectionLabelRow = {
-  homeCollectionLabel: string;
+type HomeCollectionIdRow = {
+  homeCollectionId: string | null;
 };
 
 export async function getStoreSettings(): Promise<StoreSettingsRuntime> {
@@ -64,25 +64,24 @@ export async function getStoreSettings(): Promise<StoreSettingsRuntime> {
     const row = rows[0];
     if (!row) return defaultStoreSettings;
 
-    let homeCollectionLabel = defaultStoreSettings.homeCollectionLabel;
+    let homeCollectionId = defaultStoreSettings.homeCollectionId;
     try {
-      const labelRows = await prisma.$queryRaw<HomeCollectionLabelRow[]>`
+      const idRows = await prisma.$queryRaw<HomeCollectionIdRow[]>`
         SELECT
-          "home_collection_label" AS "homeCollectionLabel"
+          "home_collection_id" AS "homeCollectionId"
         FROM "store_settings"
         WHERE "id" = 'default'
         LIMIT 1
       `;
-      homeCollectionLabel =
-        labelRows[0]?.homeCollectionLabel ??
-        defaultStoreSettings.homeCollectionLabel;
+      homeCollectionId =
+        idRows[0]?.homeCollectionId ?? defaultStoreSettings.homeCollectionId;
     } catch {
       // Backward compatible: column might not exist yet.
     }
 
     return {
       ...row,
-      homeCollectionLabel,
+      homeCollectionId,
     };
   } catch (error) {
     console.error("Failed to fetch store settings:", error);

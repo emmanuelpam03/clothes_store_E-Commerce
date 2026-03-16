@@ -32,7 +32,7 @@ type Product = {
   sizes: string[];
   colors: string[];
   tags: string[];
-  collection: string | null;
+  collectionId: string | null;
   active: boolean;
   isFeatured: boolean;
   inventory: {
@@ -52,16 +52,24 @@ type Department = {
   slug: string;
 };
 
+type Collection = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
 interface EditProductFormProps {
   product: Product;
   categories: Category[];
   departments: Department[];
+  collections: Collection[];
 }
 
 export default function EditProductForm({
   product,
   categories,
   departments,
+  collections,
 }: EditProductFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
@@ -77,7 +85,7 @@ export default function EditProductForm({
     sizes: product.sizes.join(", "),
     colors: product.colors,
     tags: product.tags.join(", "),
-    collection: product.collection || "",
+    collectionId: product.collectionId || "",
     active: product.active,
     isFeatured: product.isFeatured,
   });
@@ -160,7 +168,7 @@ export default function EditProductForm({
                 .map((t) => t.trim())
                 .filter(Boolean)
             : [],
-          collection: formData.collection || undefined,
+          collectionId: formData.collectionId || undefined,
           stock,
           active: formData.active,
           isFeatured: formData.isFeatured,
@@ -376,14 +384,20 @@ export default function EditProductForm({
 
               <div className="space-y-2">
                 <Label htmlFor="collection">Collection</Label>
-                <Input
+                <select
                   id="collection"
-                  type="text"
-                  name="collection"
-                  value={formData.collection}
+                  name="collectionId"
+                  value={formData.collectionId}
                   onChange={handleChange}
-                  placeholder="Spring 2026"
-                />
+                  className="border-input h-9 w-full rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm"
+                >
+                  <option value="">None</option>
+                  {collections.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
               </div>
             </CardContent>
           </Card>

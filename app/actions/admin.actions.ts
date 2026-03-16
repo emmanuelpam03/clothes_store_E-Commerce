@@ -48,6 +48,7 @@ export async function getAllProductsAdmin() {
     include: {
       category: true,
       department: true,
+      collection: true,
       inventory: true,
       _count: {
         select: {
@@ -72,6 +73,7 @@ export async function getProductBySlugAdmin(slug: string) {
     include: {
       category: true,
       department: true,
+      collection: true,
       inventory: true,
     },
   });
@@ -132,7 +134,7 @@ export interface CreateProductInput {
   sizes?: string[];
   colors?: string[];
   tags?: string[];
-  collection?: string;
+  collectionId?: string;
   stock: number;
   active?: boolean;
   isFeatured?: boolean;
@@ -185,7 +187,7 @@ export async function createProductAdmin(input: CreateProductInput) {
       sizes: input.sizes || [],
       colors: input.colors || [],
       tags: input.tags || [],
-      collection: input.collection || null,
+      collectionId: input.collectionId || null,
       active: input.active ?? true,
       isFeatured: input.isFeatured ?? false,
       inventory: {
@@ -197,6 +199,7 @@ export async function createProductAdmin(input: CreateProductInput) {
     include: {
       category: true,
       department: true,
+      collection: true,
       inventory: true,
     },
   });
@@ -263,8 +266,8 @@ export async function updateProductAdmin(
       ...(input.sizes && { sizes: input.sizes }),
       ...(input.colors && { colors: input.colors }),
       ...(input.tags && { tags: input.tags }),
-      ...(input.collection !== undefined && {
-        collection: input.collection || null,
+      ...(input.collectionId !== undefined && {
+        collectionId: input.collectionId || null,
       }),
       ...(input.active !== undefined && { active: input.active }),
       ...(input.isFeatured !== undefined && { isFeatured: input.isFeatured }),
@@ -272,6 +275,7 @@ export async function updateProductAdmin(
     include: {
       category: true,
       department: true,
+      collection: true,
       inventory: true,
     },
   });

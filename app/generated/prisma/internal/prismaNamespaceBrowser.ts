@@ -56,6 +56,7 @@ export const ModelName = {
   User: 'User',
   EmailVerificationToken: 'EmailVerificationToken',
   Product: 'Product',
+  Collection: 'Collection',
   Department: 'Department',
   Inventory: 'Inventory',
   Order: 'Order',
@@ -156,7 +157,7 @@ export const ProductScalarFieldEnum = {
   sizes: 'sizes',
   colors: 'colors',
   tags: 'tags',
-  collection: 'collection',
+  collectionId: 'collectionId',
   categoryId: 'categoryId',
   departmentId: 'departmentId',
   createdAt: 'createdAt',
@@ -164,6 +165,15 @@ export const ProductScalarFieldEnum = {
 } as const
 
 export type ProductScalarFieldEnum = (typeof ProductScalarFieldEnum)[keyof typeof ProductScalarFieldEnum]
+
+
+export const CollectionScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  slug: 'slug'
+} as const
+
+export type CollectionScalarFieldEnum = (typeof CollectionScalarFieldEnum)[keyof typeof CollectionScalarFieldEnum]
 
 
 export const DepartmentScalarFieldEnum = {
@@ -305,6 +315,7 @@ export const StoreSettingsScalarFieldEnum = {
   supportEmail: 'supportEmail',
   currency: 'currency',
   sizeSystem: 'sizeSystem',
+  homeCollectionId: 'homeCollectionId',
   shippingOrigin: 'shippingOrigin',
   shippingCostCents: 'shippingCostCents',
   freeShippingThresholdCents: 'freeShippingThresholdCents',

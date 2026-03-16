@@ -18,6 +18,7 @@ const links = [
   { name: "Products", href: "/admin/products", icon: Package },
   { name: "Departments", href: "/admin/departments", icon: Tags },
   { name: "Categories", href: "/admin/categories", icon: Tags },
+  { name: "Collections", href: "/admin/collections", icon: Tags },
   { name: "Orders", href: "/admin/orders", icon: ShoppingCart },
   { name: "Returns", href: "/admin/returns", icon: RotateCcw },
   { name: "Customers", href: "/admin/users", icon: Users },
@@ -70,9 +71,9 @@ export default function Sidebar() {
         })}
       </nav>
 
-      <div className="pt-6 border-t border-slate-700">
+      {/* <div className="pt-6 border-t border-slate-700">
         <p className="text-xs text-slate-500 px-4">v1.0.0</p>
-      </div>
+      </div> */}
     </aside>
   );
 }

@@ -43,6 +43,11 @@ export type EmailVerificationToken = Prisma.EmailVerificationTokenModel
  */
 export type Product = Prisma.ProductModel
 /**
+ * Model Collection
+ * 
+ */
+export type Collection = Prisma.CollectionModel
+/**
  * Model Department
  * 
  */

@@ -46,6 +46,7 @@ export type StoreSettingsMinAggregateOutputType = {
   supportEmail: string | null
   currency: string | null
   sizeSystem: string | null
+  homeCollectionId: string | null
   shippingOrigin: string | null
   shippingCostCents: number | null
   freeShippingThresholdCents: number | null
@@ -61,6 +62,7 @@ export type StoreSettingsMaxAggregateOutputType = {
   supportEmail: string | null
   currency: string | null
   sizeSystem: string | null
+  homeCollectionId: string | null
   shippingOrigin: string | null
   shippingCostCents: number | null
   freeShippingThresholdCents: number | null
@@ -76,6 +78,7 @@ export type StoreSettingsCountAggregateOutputType = {
   supportEmail: number
   currency: number
   sizeSystem: number
+  homeCollectionId: number
   shippingOrigin: number
   shippingCostCents: number
   freeShippingThresholdCents: number
@@ -107,6 +110,7 @@ export type StoreSettingsMinAggregateInputType = {
   supportEmail?: true
   currency?: true
   sizeSystem?: true
+  homeCollectionId?: true
   shippingOrigin?: true
   shippingCostCents?: true
   freeShippingThresholdCents?: true
@@ -122,6 +126,7 @@ export type StoreSettingsMaxAggregateInputType = {
   supportEmail?: true
   currency?: true
   sizeSystem?: true
+  homeCollectionId?: true
   shippingOrigin?: true
   shippingCostCents?: true
   freeShippingThresholdCents?: true
@@ -137,6 +142,7 @@ export type StoreSettingsCountAggregateInputType = {
   supportEmail?: true
   currency?: true
   sizeSystem?: true
+  homeCollectionId?: true
   shippingOrigin?: true
   shippingCostCents?: true
   freeShippingThresholdCents?: true
@@ -239,6 +245,7 @@ export type StoreSettingsGroupByOutputType = {
   supportEmail: string
   currency: string
   sizeSystem: string
+  homeCollectionId: string | null
   shippingOrigin: string
   shippingCostCents: number
   freeShippingThresholdCents: number
@@ -277,6 +284,7 @@ export type StoreSettingsWhereInput = {
   supportEmail?: Prisma.StringFilter<"StoreSettings"> | string
   currency?: Prisma.StringFilter<"StoreSettings"> | string
   sizeSystem?: Prisma.StringFilter<"StoreSettings"> | string
+  homeCollectionId?: Prisma.StringNullableFilter<"StoreSettings"> | string | null
   shippingOrigin?: Prisma.StringFilter<"StoreSettings"> | string
   shippingCostCents?: Prisma.IntFilter<"StoreSettings"> | number
   freeShippingThresholdCents?: Prisma.IntFilter<"StoreSettings"> | number
@@ -284,6 +292,7 @@ export type StoreSettingsWhereInput = {
   returnWindowDays?: Prisma.IntFilter<"StoreSettings"> | number
   createdAt?: Prisma.DateTimeFilter<"StoreSettings"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"StoreSettings"> | Date | string
+  homeCollection?: Prisma.XOR<Prisma.CollectionNullableScalarRelationFilter, Prisma.CollectionWhereInput> | null
 }
 
 export type StoreSettingsOrderByWithRelationInput = {
@@ -292,6 +301,7 @@ export type StoreSettingsOrderByWithRelationInput = {
   supportEmail?: Prisma.SortOrder
   currency?: Prisma.SortOrder
   sizeSystem?: Prisma.SortOrder
+  homeCollectionId?: Prisma.SortOrderInput | Prisma.SortOrder
   shippingOrigin?: Prisma.SortOrder
   shippingCostCents?: Prisma.SortOrder
   freeShippingThresholdCents?: Prisma.SortOrder
@@ -299,6 +309,7 @@ export type StoreSettingsOrderByWithRelationInput = {
   returnWindowDays?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  homeCollection?: Prisma.CollectionOrderByWithRelationInput
 }
 
 export type StoreSettingsWhereUniqueInput = Prisma.AtLeast<{
@@ -310,6 +321,7 @@ export type StoreSettingsWhereUniqueInput = Prisma.AtLeast<{
   supportEmail?: Prisma.StringFilter<"StoreSettings"> | string
   currency?: Prisma.StringFilter<"StoreSettings"> | string
   sizeSystem?: Prisma.StringFilter<"StoreSettings"> | string
+  homeCollectionId?: Prisma.StringNullableFilter<"StoreSettings"> | string | null
   shippingOrigin?: Prisma.StringFilter<"StoreSettings"> | string
   shippingCostCents?: Prisma.IntFilter<"StoreSettings"> | number
   freeShippingThresholdCents?: Prisma.IntFilter<"StoreSettings"> | number
@@ -317,6 +329,7 @@ export type StoreSettingsWhereUniqueInput = Prisma.AtLeast<{
   returnWindowDays?: Prisma.IntFilter<"StoreSettings"> | number
   createdAt?: Prisma.DateTimeFilter<"StoreSettings"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"StoreSettings"> | Date | string
+  homeCollection?: Prisma.XOR<Prisma.CollectionNullableScalarRelationFilter, Prisma.CollectionWhereInput> | null
 }, "id">
 
 export type StoreSettingsOrderByWithAggregationInput = {
@@ -325,6 +338,7 @@ export type StoreSettingsOrderByWithAggregationInput = {
   supportEmail?: Prisma.SortOrder
   currency?: Prisma.SortOrder
   sizeSystem?: Prisma.SortOrder
+  homeCollectionId?: Prisma.SortOrderInput | Prisma.SortOrder
   shippingOrigin?: Prisma.SortOrder
   shippingCostCents?: Prisma.SortOrder
   freeShippingThresholdCents?: Prisma.SortOrder
@@ -348,6 +362,7 @@ export type StoreSettingsScalarWhereWithAggregatesInput = {
   supportEmail?: Prisma.StringWithAggregatesFilter<"StoreSettings"> | string
   currency?: Prisma.StringWithAggregatesFilter<"StoreSettings"> | string
   sizeSystem?: Prisma.StringWithAggregatesFilter<"StoreSettings"> | string
+  homeCollectionId?: Prisma.StringNullableWithAggregatesFilter<"StoreSettings"> | string | null
   shippingOrigin?: Prisma.StringWithAggregatesFilter<"StoreSettings"> | string
   shippingCostCents?: Prisma.IntWithAggregatesFilter<"StoreSettings"> | number
   freeShippingThresholdCents?: Prisma.IntWithAggregatesFilter<"StoreSettings"> | number
@@ -370,6 +385,7 @@ export type StoreSettingsCreateInput = {
   returnWindowDays?: number
   createdAt?: Date | string
   updatedAt?: Date | string
+  homeCollection?: Prisma.CollectionCreateNestedOneWithoutHomeForStoreSettingsInput
 }
 
 export type StoreSettingsUncheckedCreateInput = {
@@ -378,6 +394,7 @@ export type StoreSettingsUncheckedCreateInput = {
   supportEmail?: string
   currency?: string
   sizeSystem?: string
+  homeCollectionId?: string | null
   shippingOrigin?: string
   shippingCostCents?: number
   freeShippingThresholdCents?: number
@@ -400,6 +417,7 @@ export type StoreSettingsUpdateInput = {
   returnWindowDays?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  homeCollection?: Prisma.CollectionUpdateOneWithoutHomeForStoreSettingsNestedInput
 }
 
 export type StoreSettingsUncheckedUpdateInput = {
@@ -408,6 +426,7 @@ export type StoreSettingsUncheckedUpdateInput = {
   supportEmail?: Prisma.StringFieldUpdateOperationsInput | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
   sizeSystem?: Prisma.StringFieldUpdateOperationsInput | string
+  homeCollectionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingOrigin?: Prisma.StringFieldUpdateOperationsInput | string
   shippingCostCents?: Prisma.IntFieldUpdateOperationsInput | number
   freeShippingThresholdCents?: Prisma.IntFieldUpdateOperationsInput | number
@@ -423,6 +442,7 @@ export type StoreSettingsCreateManyInput = {
   supportEmail?: string
   currency?: string
   sizeSystem?: string
+  homeCollectionId?: string | null
   shippingOrigin?: string
   shippingCostCents?: number
   freeShippingThresholdCents?: number
@@ -453,6 +473,7 @@ export type StoreSettingsUncheckedUpdateManyInput = {
   supportEmail?: Prisma.StringFieldUpdateOperationsInput | string
   currency?: Prisma.StringFieldUpdateOperationsInput | string
   sizeSystem?: Prisma.StringFieldUpdateOperationsInput | string
+  homeCollectionId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   shippingOrigin?: Prisma.StringFieldUpdateOperationsInput | string
   shippingCostCents?: Prisma.IntFieldUpdateOperationsInput | number
   freeShippingThresholdCents?: Prisma.IntFieldUpdateOperationsInput | number
@@ -462,12 +483,23 @@ export type StoreSettingsUncheckedUpdateManyInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
+export type StoreSettingsListRelationFilter = {
+  every?: Prisma.StoreSettingsWhereInput
+  some?: Prisma.StoreSettingsWhereInput
+  none?: Prisma.StoreSettingsWhereInput
+}
+
+export type StoreSettingsOrderByRelationAggregateInput = {
+  _count?: Prisma.SortOrder
+}
+
 export type StoreSettingsCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   brandName?: Prisma.SortOrder
   supportEmail?: Prisma.SortOrder
   currency?: Prisma.SortOrder
   sizeSystem?: Prisma.SortOrder
+  homeCollectionId?: Prisma.SortOrder
   shippingOrigin?: Prisma.SortOrder
   shippingCostCents?: Prisma.SortOrder
   freeShippingThresholdCents?: Prisma.SortOrder
@@ -490,6 +522,7 @@ export type StoreSettingsMaxOrderByAggregateInput = {
   supportEmail?: Prisma.SortOrder
   currency?: Prisma.SortOrder
   sizeSystem?: Prisma.SortOrder
+  homeCollectionId?: Prisma.SortOrder
   shippingOrigin?: Prisma.SortOrder
   shippingCostCents?: Prisma.SortOrder
   freeShippingThresholdCents?: Prisma.SortOrder
@@ -505,6 +538,7 @@ export type StoreSettingsMinOrderByAggregateInput = {
   supportEmail?: Prisma.SortOrder
   currency?: Prisma.SortOrder
   sizeSystem?: Prisma.SortOrder
+  homeCollectionId?: Prisma.SortOrder
   shippingOrigin?: Prisma.SortOrder
   shippingCostCents?: Prisma.SortOrder
   freeShippingThresholdCents?: Prisma.SortOrder
@@ -521,6 +555,183 @@ export type StoreSettingsSumOrderByAggregateInput = {
   returnWindowDays?: Prisma.SortOrder
 }
 
+export type StoreSettingsCreateNestedManyWithoutHomeCollectionInput = {
+  create?: Prisma.XOR<Prisma.StoreSettingsCreateWithoutHomeCollectionInput, Prisma.StoreSettingsUncheckedCreateWithoutHomeCollectionInput> | Prisma.StoreSettingsCreateWithoutHomeCollectionInput[] | Prisma.StoreSettingsUncheckedCreateWithoutHomeCollectionInput[]
+  connectOrCreate?: Prisma.StoreSettingsCreateOrConnectWithoutHomeCollectionInput | Prisma.StoreSettingsCreateOrConnectWithoutHomeCollectionInput[]
+  createMany?: Prisma.StoreSettingsCreateManyHomeCollectionInputEnvelope
+  connect?: Prisma.StoreSettingsWhereUniqueInput | Prisma.StoreSettingsWhereUniqueInput[]
+}
+
+export type StoreSettingsUncheckedCreateNestedManyWithoutHomeCollectionInput = {
+  create?: Prisma.XOR<Prisma.StoreSettingsCreateWithoutHomeCollectionInput, Prisma.StoreSettingsUncheckedCreateWithoutHomeCollectionInput> | Prisma.StoreSettingsCreateWithoutHomeCollectionInput[] | Prisma.StoreSettingsUncheckedCreateWithoutHomeCollectionInput[]
+  connectOrCreate?: Prisma.StoreSettingsCreateOrConnectWithoutHomeCollectionInput | Prisma.StoreSettingsCreateOrConnectWithoutHomeCollectionInput[]
+  createMany?: Prisma.StoreSettingsCreateManyHomeCollectionInputEnvelope
+  connect?: Prisma.StoreSettingsWhereUniqueInput | Prisma.StoreSettingsWhereUniqueInput[]
+}
+
+export type StoreSettingsUpdateManyWithoutHomeCollectionNestedInput = {
+  create?: Prisma.XOR<Prisma.StoreSettingsCreateWithoutHomeCollectionInput, Prisma.StoreSettingsUncheckedCreateWithoutHomeCollectionInput> | Prisma.StoreSettingsCreateWithoutHomeCollectionInput[] | Prisma.StoreSettingsUncheckedCreateWithoutHomeCollectionInput[]
+  connectOrCreate?: Prisma.StoreSettingsCreateOrConnectWithoutHomeCollectionInput | Prisma.StoreSettingsCreateOrConnectWithoutHomeCollectionInput[]
+  upsert?: Prisma.StoreSettingsUpsertWithWhereUniqueWithoutHomeCollectionInput | Prisma.StoreSettingsUpsertWithWhereUniqueWithoutHomeCollectionInput[]
+  createMany?: Prisma.StoreSettingsCreateManyHomeCollectionInputEnvelope
+  set?: Prisma.StoreSettingsWhereUniqueInput | Prisma.StoreSettingsWhereUniqueInput[]
+  disconnect?: Prisma.StoreSettingsWhereUniqueInput | Prisma.StoreSettingsWhereUniqueInput[]
+  delete?: Prisma.StoreSettingsWhereUniqueInput | Prisma.StoreSettingsWhereUniqueInput[]
+  connect?: Prisma.StoreSettingsWhereUniqueInput | Prisma.StoreSettingsWhereUniqueInput[]
+  update?: Prisma.StoreSettingsUpdateWithWhereUniqueWithoutHomeCollectionInput | Prisma.StoreSettingsUpdateWithWhereUniqueWithoutHomeCollectionInput[]
+  updateMany?: Prisma.StoreSettingsUpdateManyWithWhereWithoutHomeCollectionInput | Prisma.StoreSettingsUpdateManyWithWhereWithoutHomeCollectionInput[]
+  deleteMany?: Prisma.StoreSettingsScalarWhereInput | Prisma.StoreSettingsScalarWhereInput[]
+}
+
+export type StoreSettingsUncheckedUpdateManyWithoutHomeCollectionNestedInput = {
+  create?: Prisma.XOR<Prisma.StoreSettingsCreateWithoutHomeCollectionInput, Prisma.StoreSettingsUncheckedCreateWithoutHomeCollectionInput> | Prisma.StoreSettingsCreateWithoutHomeCollectionInput[] | Prisma.StoreSettingsUncheckedCreateWithoutHomeCollectionInput[]
+  connectOrCreate?: Prisma.StoreSettingsCreateOrConnectWithoutHomeCollectionInput | Prisma.StoreSettingsCreateOrConnectWithoutHomeCollectionInput[]
+  upsert?: Prisma.StoreSettingsUpsertWithWhereUniqueWithoutHomeCollectionInput | Prisma.StoreSettingsUpsertWithWhereUniqueWithoutHomeCollectionInput[]
+  createMany?: Prisma.StoreSettingsCreateManyHomeCollectionInputEnvelope
+  set?: Prisma.StoreSettingsWhereUniqueInput | Prisma.StoreSettingsWhereUniqueInput[]
+  disconnect?: Prisma.StoreSettingsWhereUniqueInput | Prisma.StoreSettingsWhereUniqueInput[]
+  delete?: Prisma.StoreSettingsWhereUniqueInput | Prisma.StoreSettingsWhereUniqueInput[]
+  connect?: Prisma.StoreSettingsWhereUniqueInput | Prisma.StoreSettingsWhereUniqueInput[]
+  update?: Prisma.StoreSettingsUpdateWithWhereUniqueWithoutHomeCollectionInput | Prisma.StoreSettingsUpdateWithWhereUniqueWithoutHomeCollectionInput[]
+  updateMany?: Prisma.StoreSettingsUpdateManyWithWhereWithoutHomeCollectionInput | Prisma.StoreSettingsUpdateManyWithWhereWithoutHomeCollectionInput[]
+  deleteMany?: Prisma.StoreSettingsScalarWhereInput | Prisma.StoreSettingsScalarWhereInput[]
+}
+
+export type StoreSettingsCreateWithoutHomeCollectionInput = {
+  id?: string
+  brandName?: string
+  supportEmail?: string
+  currency?: string
+  sizeSystem?: string
+  shippingOrigin?: string
+  shippingCostCents?: number
+  freeShippingThresholdCents?: number
+  lowStockThreshold?: number
+  returnWindowDays?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type StoreSettingsUncheckedCreateWithoutHomeCollectionInput = {
+  id?: string
+  brandName?: string
+  supportEmail?: string
+  currency?: string
+  sizeSystem?: string
+  shippingOrigin?: string
+  shippingCostCents?: number
+  freeShippingThresholdCents?: number
+  lowStockThreshold?: number
+  returnWindowDays?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type StoreSettingsCreateOrConnectWithoutHomeCollectionInput = {
+  where: Prisma.StoreSettingsWhereUniqueInput
+  create: Prisma.XOR<Prisma.StoreSettingsCreateWithoutHomeCollectionInput, Prisma.StoreSettingsUncheckedCreateWithoutHomeCollectionInput>
+}
+
+export type StoreSettingsCreateManyHomeCollectionInputEnvelope = {
+  data: Prisma.StoreSettingsCreateManyHomeCollectionInput | Prisma.StoreSettingsCreateManyHomeCollectionInput[]
+  skipDuplicates?: boolean
+}
+
+export type StoreSettingsUpsertWithWhereUniqueWithoutHomeCollectionInput = {
+  where: Prisma.StoreSettingsWhereUniqueInput
+  update: Prisma.XOR<Prisma.StoreSettingsUpdateWithoutHomeCollectionInput, Prisma.StoreSettingsUncheckedUpdateWithoutHomeCollectionInput>
+  create: Prisma.XOR<Prisma.StoreSettingsCreateWithoutHomeCollectionInput, Prisma.StoreSettingsUncheckedCreateWithoutHomeCollectionInput>
+}
+
+export type StoreSettingsUpdateWithWhereUniqueWithoutHomeCollectionInput = {
+  where: Prisma.StoreSettingsWhereUniqueInput
+  data: Prisma.XOR<Prisma.StoreSettingsUpdateWithoutHomeCollectionInput, Prisma.StoreSettingsUncheckedUpdateWithoutHomeCollectionInput>
+}
+
+export type StoreSettingsUpdateManyWithWhereWithoutHomeCollectionInput = {
+  where: Prisma.StoreSettingsScalarWhereInput
+  data: Prisma.XOR<Prisma.StoreSettingsUpdateManyMutationInput, Prisma.StoreSettingsUncheckedUpdateManyWithoutHomeCollectionInput>
+}
+
+export type StoreSettingsScalarWhereInput = {
+  AND?: Prisma.StoreSettingsScalarWhereInput | Prisma.StoreSettingsScalarWhereInput[]
+  OR?: Prisma.StoreSettingsScalarWhereInput[]
+  NOT?: Prisma.StoreSettingsScalarWhereInput | Prisma.StoreSettingsScalarWhereInput[]
+  id?: Prisma.StringFilter<"StoreSettings"> | string
+  brandName?: Prisma.StringFilter<"StoreSettings"> | string
+  supportEmail?: Prisma.StringFilter<"StoreSettings"> | string
+  currency?: Prisma.StringFilter<"StoreSettings"> | string
+  sizeSystem?: Prisma.StringFilter<"StoreSettings"> | string
+  homeCollectionId?: Prisma.StringNullableFilter<"StoreSettings"> | string | null
+  shippingOrigin?: Prisma.StringFilter<"StoreSettings"> | string
+  shippingCostCents?: Prisma.IntFilter<"StoreSettings"> | number
+  freeShippingThresholdCents?: Prisma.IntFilter<"StoreSettings"> | number
+  lowStockThreshold?: Prisma.IntFilter<"StoreSettings"> | number
+  returnWindowDays?: Prisma.IntFilter<"StoreSettings"> | number
+  createdAt?: Prisma.DateTimeFilter<"StoreSettings"> | Date | string
+  updatedAt?: Prisma.DateTimeFilter<"StoreSettings"> | Date | string
+}
+
+export type StoreSettingsCreateManyHomeCollectionInput = {
+  id?: string
+  brandName?: string
+  supportEmail?: string
+  currency?: string
+  sizeSystem?: string
+  shippingOrigin?: string
+  shippingCostCents?: number
+  freeShippingThresholdCents?: number
+  lowStockThreshold?: number
+  returnWindowDays?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type StoreSettingsUpdateWithoutHomeCollectionInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  brandName?: Prisma.StringFieldUpdateOperationsInput | string
+  supportEmail?: Prisma.StringFieldUpdateOperationsInput | string
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  sizeSystem?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingOrigin?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingCostCents?: Prisma.IntFieldUpdateOperationsInput | number
+  freeShippingThresholdCents?: Prisma.IntFieldUpdateOperationsInput | number
+  lowStockThreshold?: Prisma.IntFieldUpdateOperationsInput | number
+  returnWindowDays?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type StoreSettingsUncheckedUpdateWithoutHomeCollectionInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  brandName?: Prisma.StringFieldUpdateOperationsInput | string
+  supportEmail?: Prisma.StringFieldUpdateOperationsInput | string
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  sizeSystem?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingOrigin?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingCostCents?: Prisma.IntFieldUpdateOperationsInput | number
+  freeShippingThresholdCents?: Prisma.IntFieldUpdateOperationsInput | number
+  lowStockThreshold?: Prisma.IntFieldUpdateOperationsInput | number
+  returnWindowDays?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type StoreSettingsUncheckedUpdateManyWithoutHomeCollectionInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  brandName?: Prisma.StringFieldUpdateOperationsInput | string
+  supportEmail?: Prisma.StringFieldUpdateOperationsInput | string
+  currency?: Prisma.StringFieldUpdateOperationsInput | string
+  sizeSystem?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingOrigin?: Prisma.StringFieldUpdateOperationsInput | string
+  shippingCostCents?: Prisma.IntFieldUpdateOperationsInput | number
+  freeShippingThresholdCents?: Prisma.IntFieldUpdateOperationsInput | number
+  lowStockThreshold?: Prisma.IntFieldUpdateOperationsInput | number
+  returnWindowDays?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
 
 
 export type StoreSettingsSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -529,6 +740,7 @@ export type StoreSettingsSelect<ExtArgs extends runtime.Types.Extensions.Interna
   supportEmail?: boolean
   currency?: boolean
   sizeSystem?: boolean
+  homeCollectionId?: boolean
   shippingOrigin?: boolean
   shippingCostCents?: boolean
   freeShippingThresholdCents?: boolean
@@ -536,6 +748,7 @@ export type StoreSettingsSelect<ExtArgs extends runtime.Types.Extensions.Interna
   returnWindowDays?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  homeCollection?: boolean | Prisma.StoreSettings$homeCollectionArgs<ExtArgs>
 }, ExtArgs["result"]["storeSettings"]>
 
 export type StoreSettingsSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -544,6 +757,7 @@ export type StoreSettingsSelectCreateManyAndReturn<ExtArgs extends runtime.Types
   supportEmail?: boolean
   currency?: boolean
   sizeSystem?: boolean
+  homeCollectionId?: boolean
   shippingOrigin?: boolean
   shippingCostCents?: boolean
   freeShippingThresholdCents?: boolean
@@ -551,6 +765,7 @@ export type StoreSettingsSelectCreateManyAndReturn<ExtArgs extends runtime.Types
   returnWindowDays?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  homeCollection?: boolean | Prisma.StoreSettings$homeCollectionArgs<ExtArgs>
 }, ExtArgs["result"]["storeSettings"]>
 
 export type StoreSettingsSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -559,6 +774,7 @@ export type StoreSettingsSelectUpdateManyAndReturn<ExtArgs extends runtime.Types
   supportEmail?: boolean
   currency?: boolean
   sizeSystem?: boolean
+  homeCollectionId?: boolean
   shippingOrigin?: boolean
   shippingCostCents?: boolean
   freeShippingThresholdCents?: boolean
@@ -566,6 +782,7 @@ export type StoreSettingsSelectUpdateManyAndReturn<ExtArgs extends runtime.Types
   returnWindowDays?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  homeCollection?: boolean | Prisma.StoreSettings$homeCollectionArgs<ExtArgs>
 }, ExtArgs["result"]["storeSettings"]>
 
 export type StoreSettingsSelectScalar = {
@@ -574,6 +791,7 @@ export type StoreSettingsSelectScalar = {
   supportEmail?: boolean
   currency?: boolean
   sizeSystem?: boolean
+  homeCollectionId?: boolean
   shippingOrigin?: boolean
   shippingCostCents?: boolean
   freeShippingThresholdCents?: boolean
@@ -583,17 +801,29 @@ export type StoreSettingsSelectScalar = {
   updatedAt?: boolean
 }
 
-export type StoreSettingsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "brandName" | "supportEmail" | "currency" | "sizeSystem" | "shippingOrigin" | "shippingCostCents" | "freeShippingThresholdCents" | "lowStockThreshold" | "returnWindowDays" | "createdAt" | "updatedAt", ExtArgs["result"]["storeSettings"]>
+export type StoreSettingsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "brandName" | "supportEmail" | "currency" | "sizeSystem" | "homeCollectionId" | "shippingOrigin" | "shippingCostCents" | "freeShippingThresholdCents" | "lowStockThreshold" | "returnWindowDays" | "createdAt" | "updatedAt", ExtArgs["result"]["storeSettings"]>
+export type StoreSettingsInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  homeCollection?: boolean | Prisma.StoreSettings$homeCollectionArgs<ExtArgs>
+}
+export type StoreSettingsIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  homeCollection?: boolean | Prisma.StoreSettings$homeCollectionArgs<ExtArgs>
+}
+export type StoreSettingsIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  homeCollection?: boolean | Prisma.StoreSettings$homeCollectionArgs<ExtArgs>
+}
 
 export type $StoreSettingsPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "StoreSettings"
-  objects: {}
+  objects: {
+    homeCollection: Prisma.$CollectionPayload<ExtArgs> | null
+  }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     brandName: string
     supportEmail: string
     currency: string
     sizeSystem: string
+    homeCollectionId: string | null
     shippingOrigin: string
     shippingCostCents: number
     freeShippingThresholdCents: number
@@ -995,6 +1225,7 @@ readonly fields: StoreSettingsFieldRefs;
  */
 export interface Prisma__StoreSettingsClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  homeCollection<T extends Prisma.StoreSettings$homeCollectionArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.StoreSettings$homeCollectionArgs<ExtArgs>>): Prisma.Prisma__CollectionClient<runtime.Types.Result.GetResult<Prisma.$CollectionPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1029,6 +1260,7 @@ export interface StoreSettingsFieldRefs {
   readonly supportEmail: Prisma.FieldRef<"StoreSettings", 'String'>
   readonly currency: Prisma.FieldRef<"StoreSettings", 'String'>
   readonly sizeSystem: Prisma.FieldRef<"StoreSettings", 'String'>
+  readonly homeCollectionId: Prisma.FieldRef<"StoreSettings", 'String'>
   readonly shippingOrigin: Prisma.FieldRef<"StoreSettings", 'String'>
   readonly shippingCostCents: Prisma.FieldRef<"StoreSettings", 'Int'>
   readonly freeShippingThresholdCents: Prisma.FieldRef<"StoreSettings", 'Int'>
@@ -1053,6 +1285,10 @@ export type StoreSettingsFindUniqueArgs<ExtArgs extends runtime.Types.Extensions
    */
   omit?: Prisma.StoreSettingsOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.StoreSettingsInclude<ExtArgs> | null
+  /**
    * Filter, which StoreSettings to fetch.
    */
   where: Prisma.StoreSettingsWhereUniqueInput
@@ -1071,6 +1307,10 @@ export type StoreSettingsFindUniqueOrThrowArgs<ExtArgs extends runtime.Types.Ext
    */
   omit?: Prisma.StoreSettingsOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.StoreSettingsInclude<ExtArgs> | null
+  /**
    * Filter, which StoreSettings to fetch.
    */
   where: Prisma.StoreSettingsWhereUniqueInput
@@ -1088,6 +1328,10 @@ export type StoreSettingsFindFirstArgs<ExtArgs extends runtime.Types.Extensions.
    * Omit specific fields from the StoreSettings
    */
   omit?: Prisma.StoreSettingsOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.StoreSettingsInclude<ExtArgs> | null
   /**
    * Filter, which StoreSettings to fetch.
    */
@@ -1137,6 +1381,10 @@ export type StoreSettingsFindFirstOrThrowArgs<ExtArgs extends runtime.Types.Exte
    */
   omit?: Prisma.StoreSettingsOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.StoreSettingsInclude<ExtArgs> | null
+  /**
    * Filter, which StoreSettings to fetch.
    */
   where?: Prisma.StoreSettingsWhereInput
@@ -1185,6 +1433,10 @@ export type StoreSettingsFindManyArgs<ExtArgs extends runtime.Types.Extensions.I
    */
   omit?: Prisma.StoreSettingsOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.StoreSettingsInclude<ExtArgs> | null
+  /**
    * Filter, which StoreSettings to fetch.
    */
   where?: Prisma.StoreSettingsWhereInput
@@ -1228,6 +1480,10 @@ export type StoreSettingsCreateArgs<ExtArgs extends runtime.Types.Extensions.Int
    */
   omit?: Prisma.StoreSettingsOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.StoreSettingsInclude<ExtArgs> | null
+  /**
    * The data needed to create a StoreSettings.
    */
   data: Prisma.XOR<Prisma.StoreSettingsCreateInput, Prisma.StoreSettingsUncheckedCreateInput>
@@ -1261,6 +1517,10 @@ export type StoreSettingsCreateManyAndReturnArgs<ExtArgs extends runtime.Types.E
    */
   data: Prisma.StoreSettingsCreateManyInput | Prisma.StoreSettingsCreateManyInput[]
   skipDuplicates?: boolean
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.StoreSettingsIncludeCreateManyAndReturn<ExtArgs> | null
 }
 
 /**
@@ -1275,6 +1535,10 @@ export type StoreSettingsUpdateArgs<ExtArgs extends runtime.Types.Extensions.Int
    * Omit specific fields from the StoreSettings
    */
   omit?: Prisma.StoreSettingsOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.StoreSettingsInclude<ExtArgs> | null
   /**
    * The data needed to update a StoreSettings.
    */
@@ -1327,6 +1591,10 @@ export type StoreSettingsUpdateManyAndReturnArgs<ExtArgs extends runtime.Types.E
    * Limit how many StoreSettings to update.
    */
   limit?: number
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.StoreSettingsIncludeUpdateManyAndReturn<ExtArgs> | null
 }
 
 /**
@@ -1341,6 +1609,10 @@ export type StoreSettingsUpsertArgs<ExtArgs extends runtime.Types.Extensions.Int
    * Omit specific fields from the StoreSettings
    */
   omit?: Prisma.StoreSettingsOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.StoreSettingsInclude<ExtArgs> | null
   /**
    * The filter to search for the StoreSettings to update in case it exists.
    */
@@ -1368,6 +1640,10 @@ export type StoreSettingsDeleteArgs<ExtArgs extends runtime.Types.Extensions.Int
    */
   omit?: Prisma.StoreSettingsOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.StoreSettingsInclude<ExtArgs> | null
+  /**
    * Filter which StoreSettings to delete.
    */
   where: Prisma.StoreSettingsWhereUniqueInput
@@ -1388,6 +1664,25 @@ export type StoreSettingsDeleteManyArgs<ExtArgs extends runtime.Types.Extensions
 }
 
 /**
+ * StoreSettings.homeCollection
+ */
+export type StoreSettings$homeCollectionArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Collection
+   */
+  select?: Prisma.CollectionSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Collection
+   */
+  omit?: Prisma.CollectionOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.CollectionInclude<ExtArgs> | null
+  where?: Prisma.CollectionWhereInput
+}
+
+/**
  * StoreSettings without action
  */
 export type StoreSettingsDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1399,4 +1694,8 @@ export type StoreSettingsDefaultArgs<ExtArgs extends runtime.Types.Extensions.In
    * Omit specific fields from the StoreSettings
    */
   omit?: Prisma.StoreSettingsOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.StoreSettingsInclude<ExtArgs> | null
 }

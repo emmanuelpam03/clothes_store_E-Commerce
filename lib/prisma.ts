@@ -10,12 +10,29 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 const cached = globalForPrisma.prisma;
-const prisma =
-  cached && (cached as unknown as { department?: unknown }).department
-    ? cached
-    : new PrismaClient({
-        adapter,
-      });
+const prisma = (() => {
+  if (!cached) {
+    return new PrismaClient({ adapter });
+  }
+
+  const maybeClient = cached as unknown as {
+    product?: { findMany?: unknown };
+    collection?: { findMany?: unknown };
+  };
+
+  // In dev/HMR the global singleton can outlive a Prisma generate.
+  // Ensure we don't reuse a client instance that predates newer models.
+  const hasProductDelegate =
+    typeof maybeClient.product?.findMany === "function";
+  const hasCollectionDelegate =
+    typeof maybeClient.collection?.findMany === "function";
+
+  if (hasProductDelegate && hasCollectionDelegate) {
+    return cached;
+  }
+
+  return new PrismaClient({ adapter });
+})();
 
 if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
 

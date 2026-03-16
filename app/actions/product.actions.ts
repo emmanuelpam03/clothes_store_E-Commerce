@@ -164,7 +164,9 @@ export async function getProducts(filters: ProductFilters = {}) {
     ...(collections &&
       collections.length > 0 && {
         collection: {
-          in: collections,
+          name: {
+            in: collections,
+          },
         },
       }),
 
@@ -182,6 +184,7 @@ export async function getProducts(filters: ProductFilters = {}) {
     include: {
       category: true,
       department: true,
+      collection: true,
       inventory: true,
     },
     orderBy:
@@ -209,7 +212,14 @@ export async function getProductsByIds(ids: string[]) {
       sizes: true,
       colors: true,
       tags: true,
-      collection: true,
+      collectionId: true,
+      collection: {
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+        },
+      },
       inventory: true,
     },
   });

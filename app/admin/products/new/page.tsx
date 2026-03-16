@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { createProductAdmin } from "@/app/actions/admin.actions";
 import { getCategories } from "@/app/actions/categories.actions";
+import { getCollections } from "@/app/actions/collections.actions";
 import { getDepartments } from "@/app/actions/departments.actions";
 import { slugify } from "@/lib/slug";
 import { useRouter } from "next/navigation";
@@ -35,11 +36,18 @@ type Department = {
   slug: string;
 };
 
+type Collection = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
 export default function NewProductPage() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [categories, setCategories] = useState<Category[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [collections, setCollections] = useState<Collection[]>([]);
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
@@ -52,7 +60,7 @@ export default function NewProductPage() {
     sizes: "",
     colors: [] as string[],
     tags: "",
-    collection: "",
+    collectionId: "",
     active: true,
     isFeatured: false,
   });
@@ -72,6 +80,13 @@ export default function NewProductPage() {
         if (active) setDepartments(deps);
       } catch {
         // non-fatal: allow creating product without department
+      }
+
+      try {
+        const cols = await getCollections();
+        if (active) setCollections(cols);
+      } catch {
+        // non-fatal: allow creating product without collection
       }
     })();
     return () => {
@@ -162,7 +177,7 @@ export default function NewProductPage() {
                 .map((t) => t.trim())
                 .filter(Boolean)
             : [],
-          collection: formData.collection || undefined,
+          collectionId: formData.collectionId || undefined,
           stock,
           active: formData.active,
           isFeatured: formData.isFeatured,
@@ -378,14 +393,20 @@ export default function NewProductPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="collection">Collection</Label>
-                <Input
+                <select
                   id="collection"
-                  type="text"
-                  name="collection"
-                  value={formData.collection}
+                  name="collectionId"
+                  value={formData.collectionId}
                   onChange={handleChange}
-                  placeholder="Spring 2026"
-                />
+                  className="border-input h-9 w-full rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm"
+                >
+                  <option value="">None</option>
+                  {collections.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
               </div>
             </CardContent>
           </Card>

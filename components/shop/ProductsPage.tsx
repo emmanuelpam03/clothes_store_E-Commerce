@@ -30,7 +30,11 @@ type Product = {
   sizes?: string[];
   colors?: string[];
   tags?: string[];
-  collection?: string | null;
+  collection?: {
+    id: string;
+    name: string;
+    slug: string;
+  } | null;
   inventory?: {
     quantity: number;
   } | null;
@@ -298,7 +302,11 @@ export default function ProductsPageComponent({
     );
   const allTags = Array.from(new Set(products.flatMap((p) => p.tags || [])));
   const allCollections = Array.from(
-    new Set(products.map((p) => p.collection).filter(Boolean) as string[]),
+    new Set(
+      products
+        .map((p) => p.collection?.name)
+        .filter((name): name is string => Boolean(name)),
+    ),
   );
 
   // Calculate counts based on CURRENT filtered products

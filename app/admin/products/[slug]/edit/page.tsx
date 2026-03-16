@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getProductBySlugAdmin } from "@/app/actions/admin.actions";
 import EditProductForm from "@/components/admin/EditProductForm";
 import { getCategories } from "@/app/actions/categories.actions";
+import { getCollections } from "@/app/actions/collections.actions";
 import { getDepartments } from "@/app/actions/departments.actions";
 
 export default async function EditProductPage({
@@ -20,12 +21,14 @@ export default async function EditProductPage({
 
   const categories = await getCategories();
   const departments = await getDepartments();
+  const collections = await getCollections();
 
   return (
     <EditProductForm
       product={product}
       categories={categories}
       departments={departments}
+      collections={collections}
     />
   );
 }

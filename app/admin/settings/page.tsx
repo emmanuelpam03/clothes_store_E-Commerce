@@ -5,6 +5,7 @@ import { Save } from "lucide-react";
 import { toast } from "sonner";
 import {
   getAdminStoreSettingsAction,
+  getAvailableProductCollectionsAction,
   updateAdminStoreSettingsAction,
   type AdminStoreSettingsFormValues,
 } from "@/app/actions/store-settings.actions";
@@ -15,7 +16,7 @@ export default function SettingsPage() {
     supportEmail: "support@clothesstore.com",
     currency: "USD",
     sizeSystem: "US",
-    homeCollectionLabel: "Summer 2025",
+    homeCollectionId: "",
     shippingOrigin: "United States",
     shippingCost: 10,
     returnWindowDays: 30,
@@ -24,12 +25,19 @@ export default function SettingsPage() {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [availableCollections, setAvailableCollections] = useState<
+    { id: string; name: string }[]
+  >([]);
 
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        const persistedSettings = await getAdminStoreSettingsAction();
+        const [persistedSettings, collections] = await Promise.all([
+          getAdminStoreSettingsAction(),
+          getAvailableProductCollectionsAction(),
+        ]);
         setSettings(persistedSettings);
+        setAvailableCollections(collections);
       } catch (error) {
         toast.error(
           error instanceof Error
@@ -190,18 +198,33 @@ export default function SettingsPage() {
 
             <div className="md:col-span-2">
               <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Homepage Collection Label
+                Homepage Featured Collection
               </label>
-              <input
-                type="text"
-                name="homeCollectionLabel"
-                value={settings.homeCollectionLabel}
+              <select
+                name="homeCollectionId"
+                value={settings.homeCollectionId}
                 onChange={handleChange}
-                placeholder="Summer 2025"
                 className="w-full px-4 py-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+                disabled={availableCollections.length === 0}
+              >
+                {availableCollections.length === 0 ? (
+                  <option value="">No collections found</option>
+                ) : (
+                  [
+                    <option key="" value="">
+                      Select a collection
+                    </option>,
+                    ...availableCollections.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name}
+                      </option>
+                    )),
+                  ]
+                )}
+              </select>
               <p className="text-xs text-slate-500 mt-2">
-                Shown on the homepage hero under “NEW COLLECTION”.
+                Shows featured products from the selected collection in the
+                homepage “NEW COLLECTION” slider.
               </p>
             </div>
           </div>

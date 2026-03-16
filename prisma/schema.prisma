@@ -95,7 +95,8 @@ model Product {
   sizes       String[] @default([])
   colors      String[] @default([])
   tags        String[] @default([])
-  collection  String?
+  collectionId String?
+  collection   Collection? @relation(fields: [collectionId], references: [id])
 
   categoryId  String?
   category    Category? @relation(fields: [categoryId], references: [id])
@@ -110,6 +111,15 @@ model Product {
   orderItems OrderItem[]
   cartItems  CartItem[]
   favorites  Favorite[]
+}
+
+model Collection {
+  id   String @id @default(cuid())
+  name String @unique
+  slug String @unique
+
+  products Product[]
+  homeForStoreSettings StoreSettings[] @relation("HomeCollection")
 }
 
 model Department {
@@ -285,7 +295,8 @@ model StoreSettings {
   supportEmail               String   @default("support@clothesstore.com") @map("support_email")
   currency                   String   @default("USD")
   sizeSystem                 String   @default("US") @map("size_system")
-  homeCollectionLabel        String   @default("Summer 2025") @map("home_collection_label")
+  homeCollectionId           String?  @map("home_collection_id")
+  homeCollection             Collection? @relation("HomeCollection", fields: [homeCollectionId], references: [id])
   shippingOrigin             String   @default("United States") @map("shipping_origin")
   shippingCostCents          Int      @default(1000) @map("shipping_cost_cents")
   freeShippingThresholdCents Int      @default(10000) @map("free_shipping_threshold_cents")
