@@ -275,7 +275,7 @@ export function NewCollectionHero({
               </div>
             </div>
 
-            <div className="space-y-4 bg-amber-500">
+            <div className="space-y">
               <h1 className="text-5xl font-extrabold leading-tight tracking-tight text-black">
                 NEW <br /> COLLECTION
               </h1>

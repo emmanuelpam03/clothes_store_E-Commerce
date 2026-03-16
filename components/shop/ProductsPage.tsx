@@ -173,8 +173,18 @@ export default function ProductsPageComponent({
     searchParams.get("tags")?.split(",").filter(Boolean) || [],
   );
 
-  const selectedCollectionsRaw =
-    searchParams.get("collections")?.split(",").filter(Boolean) || [];
+  const selectedCollectionsRaw = searchParams
+    .getAll("collections")
+    .flatMap((value) => value.split(","))
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .map((value) => {
+      try {
+        return decodeURIComponent(value);
+      } catch {
+        return value;
+      }
+    });
 
   const collectionIdSet = new Set(collections.map((c) => c.id));
   const collectionSlugSet = new Set(collections.map((c) => c.slug));
@@ -242,6 +252,21 @@ export default function ProductsPageComponent({
         params.set(key, value);
       }
     });
+
+    startTransition(() => {
+      router.replace(`/products?${params.toString()}`, { scroll: false });
+    });
+  };
+
+  const updateCollectionsFilter = (next: Set<string>) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    params.delete("collections");
+    if (next.size > 0) {
+      for (const token of next) {
+        params.append("collections", encodeURIComponent(token));
+      }
+    }
 
     startTransition(() => {
       router.replace(`/products?${params.toString()}`, { scroll: false });
@@ -328,9 +353,7 @@ export default function ProductsPageComponent({
       next.add(slugToken);
     }
 
-    updateFilters({
-      collections: next.size > 0 ? Array.from(next).join(",") : undefined,
-    });
+    updateCollectionsFilter(next);
   };
 
   const toggleInStock = (checked: boolean) => {

@@ -8,25 +8,38 @@ import ProductsPageComponent from "@/components/shop/ProductsPage";
 import { redirect } from "next/navigation";
 
 // Helper function to parse array from search params
-function parseArray(value: string | undefined): string[] | undefined {
+function parseArray(
+  value: string | string[] | undefined,
+): string[] | undefined {
   if (!value) return undefined;
-  return value.split(",").filter(Boolean);
+  const values = Array.isArray(value) ? value : [value];
+  const parts = values.flatMap((v) => v.split(","));
+  const trimmed = parts.map((v) => v.trim()).filter(Boolean);
+  return trimmed.length > 0 ? trimmed : undefined;
 }
 
-function parseCollections(value: string | undefined): string[] | undefined {
+function parseCollections(
+  value: string | string[] | undefined,
+): string[] | undefined {
   const raw = parseArray(value);
   if (!raw) return undefined;
 
   const decoded = raw
     .map((token) => {
-      const trimmed = token.trim();
-      if (trimmed.startsWith("slug:")) return trimmed.slice("slug:".length);
-      if (trimmed.startsWith("id:")) return trimmed.slice("id:".length);
-      if (trimmed.startsWith("name:")) return trimmed.slice("name:".length);
+      let trimmed = token.trim();
+      try {
+        trimmed = decodeURIComponent(trimmed);
+      } catch {
+        // ignore decoding failures
+      }
+      if (trimmed.startsWith("slug:"))
+        return trimmed.slice("slug:".length).trim();
+      if (trimmed.startsWith("id:")) return trimmed.slice("id:".length).trim();
+      if (trimmed.startsWith("name:"))
+        return trimmed.slice("name:".length).trim();
       return trimmed;
     })
     .filter(Boolean);
-
   return decoded.length > 0 ? decoded : undefined;
 }
 
@@ -41,7 +54,7 @@ export default async function ProductsPage({
     sizes?: string;
     colors?: string;
     tags?: string;
-    collections?: string;
+    collections?: string | string[];
     minPrice?: string;
     maxPrice?: string;
     inStock?: string;
@@ -74,6 +87,12 @@ export default async function ProductsPage({
       for (const [key, value] of Object.entries(params)) {
         if (typeof value === "string" && value.trim()) {
           sp.set(key, value);
+        } else if (Array.isArray(value)) {
+          for (const item of value) {
+            if (typeof item === "string" && item.trim()) {
+              sp.append(key, item);
+            }
+          }
         }
       }
       sp.delete("q");
@@ -90,6 +109,12 @@ export default async function ProductsPage({
       for (const [key, value] of Object.entries(params)) {
         if (typeof value === "string" && value.trim()) {
           sp.set(key, value);
+        } else if (Array.isArray(value)) {
+          for (const item of value) {
+            if (typeof item === "string" && item.trim()) {
+              sp.append(key, item);
+            }
+          }
         }
       }
       sp.delete("q");
