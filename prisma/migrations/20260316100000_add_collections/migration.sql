@@ -34,26 +34,22 @@ BEGIN
     SELECT
       md5(btrim("collection")) AS "id",
       btrim("collection") AS "name",
-      COALESCE(
-        NULLIF(
-          trim(both '-' from lower(regexp_replace(btrim("collection"), '[^a-zA-Z0-9]+', '-', 'g'))),
-          ''
-        ),
-        md5(btrim("collection"))
-      ) AS "slug"
+      md5(btrim("collection")) AS "slug"
     FROM "Product"
     WHERE "collection" IS NOT NULL AND btrim("collection") <> ''
     GROUP BY btrim("collection")
-    ON CONFLICT DO NOTHING;
-    UPDATE "Product"
+    ON CONFLICT ("name") DO NOTHING;
+
     UPDATE "Product"
     SET "collectionId" = c."id"
     FROM "Collection" c
-    WHERE "Product"."collection" IS NOT NULL 
+    WHERE "Product"."collection" IS NOT NULL
       AND btrim("Product"."collection") <> ''
-      AND c."id" = md5(btrim("Product"."collection"));    ALTER TABLE "Product" DROP COLUMN IF EXISTS "collection";
+      AND c."id" = md5(btrim("Product"."collection"));
   END IF;
 END $$;
+
+ALTER TABLE "Product" DROP COLUMN IF EXISTS "collection";
 
 -- AddForeignKey
 ALTER TABLE "Product" ADD CONSTRAINT "Product_collectionId_fkey" FOREIGN KEY ("collectionId") REFERENCES "Collection"("id") ON DELETE SET NULL ON UPDATE CASCADE;

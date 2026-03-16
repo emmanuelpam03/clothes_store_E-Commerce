@@ -59,7 +59,7 @@ export async function getProducts(filters: ProductFilters = {}) {
     return Array.from(new Set(trimmed));
   })();
 
-  const normalizedCollectionSlugsOrIds = normalizedCollectionInputs
+  const normalizedCollectionSlugs = normalizedCollectionInputs
     ? Array.from(
         new Set(normalizedCollectionInputs.map((c) => c.toLowerCase())),
       )
@@ -117,15 +117,14 @@ export async function getProducts(filters: ProductFilters = {}) {
       OR: [
         {
           collectionId: {
-            in: normalizedCollectionSlugsOrIds ?? normalizedCollectionInputs,
+            in: normalizedCollectionInputs,
           },
         },
         {
           collection: {
             is: {
               slug: {
-                in:
-                  normalizedCollectionSlugsOrIds ?? normalizedCollectionInputs,
+                in: normalizedCollectionSlugs ?? normalizedCollectionInputs,
               },
             },
           },
