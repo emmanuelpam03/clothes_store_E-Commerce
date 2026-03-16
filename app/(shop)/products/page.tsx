@@ -42,6 +42,10 @@ export default async function ProductsPage({
   if (!category && query) {
     const normalized = query.trim().toLowerCase();
     if (categorySlugs.has(normalized)) {
+      const canonicalSlug =
+        categories.find((c) => c.slug.toLowerCase() === normalized)?.slug ??
+        normalized;
+
       const sp = new URLSearchParams();
       for (const [key, value] of Object.entries(params)) {
         if (typeof value === "string" && value.trim()) {
@@ -49,7 +53,7 @@ export default async function ProductsPage({
         }
       }
       sp.delete("q");
-      sp.set("category", normalized);
+      sp.set("category", canonicalSlug);
       redirect(`/products?${sp.toString()}`);
     }
   }

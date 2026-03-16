@@ -7,10 +7,9 @@ import CategoriesManager from "@/components/admin/CategoriesManager";
 
 export default async function AdminCategoriesPage() {
   const session = await auth();
-  if (session?.user.role !== "ADMIN") {
+  if (session?.user?.role !== "ADMIN") {
     notFound();
   }
-
   const categories = await getCategories();
 
   return (

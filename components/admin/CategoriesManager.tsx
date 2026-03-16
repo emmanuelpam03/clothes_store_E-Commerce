@@ -6,6 +6,7 @@ import {
   createCategoryAdmin,
   deleteCategoryAdmin,
 } from "@/app/actions/categories.actions";
+import { slugify } from "@/lib/slug";
 
 type Category = {
   id: string;
@@ -16,14 +17,6 @@ type Category = {
 type Props = {
   initialCategories: Category[];
 };
-
-function slugify(value: string): string {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
 
 export default function CategoriesManager({ initialCategories }: Props) {
   const [categories, setCategories] = useState<Category[]>(initialCategories);
@@ -53,7 +46,7 @@ export default function CategoriesManager({ initialCategories }: Props) {
             if (isSaving) return;
 
             const trimmedName = name.trim();
-            const finalSlug = slugify(slug || trimmedName);
+            const finalSlug = slugify(slug || trimmedName, { maxLength: 80 });
 
             if (!trimmedName) {
               toast.error("Name is required");
@@ -76,12 +69,13 @@ export default function CategoriesManager({ initialCategories }: Props) {
                 name: trimmedName,
                 slug: finalSlug,
               });
-
               if (result.success) {
                 setCategories((prev) => [...prev, result.category]);
                 setName("");
                 setSlug("");
                 toast.success("Category created");
+              } else {
+                toast.error(result.error);
               }
             } catch (err) {
               toast.error(
@@ -107,7 +101,7 @@ export default function CategoriesManager({ initialCategories }: Props) {
               onChange={(e) => {
                 const next = e.target.value;
                 setName(next);
-                if (!slug.trim()) setSlug(slugify(next));
+                if (!slug.trim()) setSlug(slugify(next, { maxLength: 80 }));
               }}
               placeholder="e.g. Men"
               className="w-full rounded-lg border px-3 py-2 text-sm"
@@ -173,8 +167,9 @@ export default function CategoriesManager({ initialCategories }: Props) {
                         <button
                           type="button"
                           disabled={deletingId === c.id}
-                          className="text-red-600 hover:text-red-700 disabled:opacity-50"
                           onClick={async () => {
+                            if (!confirm(`Delete category "${c.name}"?`))
+                              return;
                             setDeletingId(c.id);
                             try {
                               await deleteCategoryAdmin(c.id);

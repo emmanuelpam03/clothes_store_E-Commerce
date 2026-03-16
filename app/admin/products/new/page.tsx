@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { createProductAdmin } from "@/app/actions/admin.actions";
 import { getCategories } from "@/app/actions/categories.actions";
+import { slugify } from "@/lib/slug";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -78,12 +79,7 @@ export default function NewProductPage() {
     } else {
       // Auto-generate slug from name if applicable
       const autoSlug =
-        name === "name" && !formData.slug
-          ? value
-              .toLowerCase()
-              .replace(/[^a-z0-9]+/g, "-")
-              .replace(/(^-|-$)/g, "")
-          : undefined;
+        name === "name" && !formData.slug ? slugify(value) : undefined;
 
       setFormData({
         ...formData,
