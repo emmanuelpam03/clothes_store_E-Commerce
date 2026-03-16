@@ -29,12 +29,28 @@ type Product = {
 
 type CollectionsGridProps = {
   products?: Product[];
+  categories: {
+    id: string;
+    name: string;
+    slug: string;
+  }[];
 };
 
-export function CollectionsGrid({ products = [] }: CollectionsGridProps) {
+export function CollectionsGrid({
+  products = [],
+  categories,
+}: CollectionsGridProps) {
   const { isFavorited, toggleFavorite, isLoading: isPending } = useFavorites();
   const [dialogProduct, setDialogProduct] = useState<Product | null>(null);
   const { currency, fxRate } = useStoreSettings();
+
+  const navCategories = (() => {
+    const bySlug = new Map(categories.map((c) => [c.slug.toLowerCase(), c]));
+    const preferred = ["men", "women", "kids"]
+      .map((slug) => bySlug.get(slug))
+      .filter(Boolean);
+    return preferred.length > 0 ? preferred : categories.slice(0, 3);
+  })();
 
   // show products in batches of 6
   const BATCH_SIZE = 6;
@@ -70,10 +86,17 @@ export function CollectionsGrid({ products = [] }: CollectionsGridProps) {
 
           <div className="mt-6 flex flex-col sm:flex-row sm:justify-between gap-4 text-sm text-neutral-500">
             <div className="flex gap-6">
-              <button className="text-black">(ALL)</button>
-              <button>Men</button>
-              <button>Women</button>
-              <button>Kid</button>
+              <Link href="/products" className="text-black">
+                (ALL)
+              </Link>
+              {navCategories.map((cat) => (
+                <Link
+                  key={cat.id}
+                  href={`/products?category=${encodeURIComponent(cat.slug)}`}
+                >
+                  {cat.name}
+                </Link>
+              ))}
             </div>
 
             <div className="flex gap-12">

@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import { getProductBySlugAdmin } from "@/app/actions/admin.actions";
 import EditProductForm from "@/components/admin/EditProductForm";
+import { getCategories } from "@/app/actions/categories.actions";
 
 export default async function EditProductPage({
   params,
@@ -16,5 +17,7 @@ export default async function EditProductPage({
   const { slug } = await params;
   const product = await getProductBySlugAdmin(slug);
 
-  return <EditProductForm product={product} />;
+  const categories = await getCategories();
+
+  return <EditProductForm product={product} categories={categories} />;
 }

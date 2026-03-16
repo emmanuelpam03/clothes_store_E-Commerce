@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { createProductAdmin } from "@/app/actions/admin.actions";
+import { getCategories } from "@/app/actions/categories.actions";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
@@ -20,9 +21,16 @@ import { Textarea } from "@/components/ui/textarea";
 import ImageUpload from "@/components/admin/ImageUpload";
 import ColorPicker from "@/components/admin/ColorPicker";
 
+type Category = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
 export default function NewProductPage() {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [categories, setCategories] = useState<Category[]>([]);
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
@@ -38,6 +46,21 @@ export default function NewProductPage() {
     active: true,
     isFeatured: false,
   });
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const cats = await getCategories();
+        if (active) setCategories(cats);
+      } catch {
+        // non-fatal: allow creating product without category
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -228,6 +251,24 @@ export default function NewProductPage() {
                     required
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="categoryId">Category</Label>
+                <select
+                  id="categoryId"
+                  name="categoryId"
+                  value={formData.categoryId}
+                  onChange={handleChange}
+                  className="border-input h-9 w-full rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm"
+                >
+                  <option value="">Uncategorized</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
               </div>
             </CardContent>
           </Card>

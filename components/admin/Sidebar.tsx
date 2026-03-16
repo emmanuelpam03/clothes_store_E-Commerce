@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Package,
+  Tags,
   ShoppingCart,
   Users,
   BarChart3,
@@ -15,6 +16,7 @@ import {
 const links = [
   { name: "Dashboard", href: "/admin", icon: LayoutDashboard },
   { name: "Products", href: "/admin/products", icon: Package },
+  { name: "Categories", href: "/admin/categories", icon: Tags },
   { name: "Orders", href: "/admin/orders", icon: ShoppingCart },
   { name: "Returns", href: "/admin/returns", icon: RotateCcw },
   { name: "Customers", href: "/admin/users", icon: Users },

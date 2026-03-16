@@ -48,8 +48,6 @@ const FILTERS = [
   { label: "BEST SELLERS", slug: "best-sellers" },
 ];
 
-const LEGACY_CATEGORY_VALUES = new Set(["men", "women", "kids"]);
-
 export default function ProductsPageComponent({
   products,
   query,
@@ -69,17 +67,7 @@ export default function ProductsPageComponent({
   const router = useRouter();
   const searchParams = useSearchParams();
   const rawQuery = searchParams.get("q") ?? "";
-  const rawCategory = searchParams.get("category");
-  const legacyCategoryFromQuery =
-    !rawCategory && rawQuery
-      ? (() => {
-          const normalized = rawQuery.trim().toLowerCase();
-          return LEGACY_CATEGORY_VALUES.has(normalized) ? normalized : null;
-        })()
-      : null;
-
-  const queryForInput = legacyCategoryFromQuery ? "" : rawQuery;
-  const [inputValue, setInputValue] = useState(queryForInput);
+  const [inputValue, setInputValue] = useState(rawQuery);
   const [isPending, startTransition] = useTransition();
 
   // suggestions
@@ -90,8 +78,8 @@ export default function ProductsPageComponent({
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   useEffect(() => {
-    setInputValue(queryForInput);
-  }, [queryForInput]);
+    setInputValue(rawQuery);
+  }, [rawQuery]);
 
   useEffect(() => {
     const timeout = setTimeout(() => {

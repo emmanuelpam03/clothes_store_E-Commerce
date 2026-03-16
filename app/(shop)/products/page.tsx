@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import { getCategories } from "@/app/actions/categories.actions";
 import { getProducts } from "@/app/actions/product.actions";
 import ProductsPageComponent from "@/components/shop/ProductsPage";
+import { redirect } from "next/navigation";
 
 // Helper function to parse array from search params
 function parseArray(value: string | undefined): string[] | undefined {
@@ -28,20 +29,28 @@ export default async function ProductsPage({
   }>;
 }) {
   const params = await searchParams;
-  let query = params.q?.trim();
-  let category = params.category?.trim();
+
+  const categories = await getCategories();
+  const categorySlugs = new Set(categories.map((c) => c.slug.toLowerCase()));
+
+  const query = params.q?.trim();
+  const category = params.category?.trim();
   const selectedFilter = params.filter?.trim();
 
-  // Backward compatibility: treat old category links that used `q=` as a category.
+  // Backward compatibility: if `q` exactly matches an existing category slug,
+  // redirect to canonical `category=` URL so the UI stays consistent.
   if (!category && query) {
     const normalized = query.trim().toLowerCase();
-    if (
-      normalized === "men" ||
-      normalized === "women" ||
-      normalized === "kids"
-    ) {
-      category = normalized;
-      query = undefined;
+    if (categorySlugs.has(normalized)) {
+      const sp = new URLSearchParams();
+      for (const [key, value] of Object.entries(params)) {
+        if (typeof value === "string" && value.trim()) {
+          sp.set(key, value);
+        }
+      }
+      sp.delete("q");
+      sp.set("category", normalized);
+      redirect(`/products?${sp.toString()}`);
     }
   }
 
@@ -64,7 +73,6 @@ export default async function ProductsPage({
   const inStock = params.inStock === "true";
   const outOfStock = params.outOfStock === "true";
 
-  const categories = await getCategories();
   const products = await getProducts({
     query,
     category,

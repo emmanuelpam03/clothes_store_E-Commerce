@@ -39,11 +39,21 @@ type Product = {
   } | null;
 };
 
+type Category = {
+  id: string;
+  name: string;
+  slug: string;
+};
+
 interface EditProductFormProps {
   product: Product;
+  categories: Category[];
 }
 
-export default function EditProductForm({ product }: EditProductFormProps) {
+export default function EditProductForm({
+  product,
+  categories,
+}: EditProductFormProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [formData, setFormData] = useState({
@@ -241,6 +251,24 @@ export default function EditProductForm({ product }: EditProductFormProps) {
                     required
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="categoryId">Category</Label>
+                <select
+                  id="categoryId"
+                  name="categoryId"
+                  value={formData.categoryId}
+                  onChange={handleChange}
+                  className="border-input h-9 w-full rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm"
+                >
+                  <option value="">Uncategorized</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
               </div>
             </CardContent>
           </Card>

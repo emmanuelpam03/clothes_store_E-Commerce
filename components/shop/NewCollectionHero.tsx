@@ -30,8 +30,16 @@ type NewCollectionHeroProps = {
     image: string | null;
     slug: string;
   }[];
+  categories: {
+    id: string;
+    name: string;
+    slug: string;
+  }[];
 };
-export function NewCollectionHero({ products }: NewCollectionHeroProps) {
+export function NewCollectionHero({
+  products,
+  categories,
+}: NewCollectionHeroProps) {
   const [index, setIndex] = useState(0);
   const [dragStart, setDragStart] = useState<number | null>(null);
   const [dragOffset, setDragOffset] = useState(0);
@@ -40,6 +48,14 @@ export function NewCollectionHero({ products }: NewCollectionHeroProps) {
   const [value, setValue] = useState("");
 
   const router = useRouter();
+
+  const navCategories = (() => {
+    const bySlug = new Map(categories.map((c) => [c.slug.toLowerCase(), c]));
+    const preferred = ["men", "women", "kids"]
+      .map((slug) => bySlug.get(slug))
+      .filter(Boolean);
+    return preferred.length > 0 ? preferred : categories.slice(0, 3);
+  })();
 
   const submit = () => {
     const q = value.trim();
@@ -109,9 +125,14 @@ export function NewCollectionHero({ products }: NewCollectionHeroProps) {
       <div className="w-full mx-auto max-w-7xl px-5 py-8 sm:py-16">
         <div className="lg:hidden space-y-6">
           <nav className="flex flex-col space-y-1 text-xs tracking-widest text-black">
-            <Link href="/products?category=men">MEN</Link>
-            <Link href="/products?category=women">WOMEN</Link>
-            <Link href="/products?category=kids">KIDS</Link>
+            {navCategories.map((cat) => (
+              <Link
+                key={cat.id}
+                href={`/products?category=${encodeURIComponent(cat.slug)}`}
+              >
+                {cat.name.toUpperCase()}
+              </Link>
+            ))}
           </nav>
 
           <div className="flex w-full items-center gap-2 rounded bg-neutral-200 px-3 py-2 text-xs text-black">
@@ -220,9 +241,14 @@ export function NewCollectionHero({ products }: NewCollectionHeroProps) {
           <div className="col-span-5 flex flex-col justify-between">
             <div className="space-y-6">
               <nav className="flex flex-col space-y-1 text-xs tracking-widest text-black">
-                <Link href="/products?category=men">MEN</Link>
-                <Link href="/products?category=women">WOMEN</Link>
-                <Link href="/products?category=kids">KIDS</Link>
+                {navCategories.map((cat) => (
+                  <Link
+                    key={cat.id}
+                    href={`/products?category=${encodeURIComponent(cat.slug)}`}
+                  >
+                    {cat.name.toUpperCase()}
+                  </Link>
+                ))}
               </nav>
 
               <div className="flex w-64 items-center gap-2 rounded bg-neutral-200 px-3 py-2 text-xs text-black">
