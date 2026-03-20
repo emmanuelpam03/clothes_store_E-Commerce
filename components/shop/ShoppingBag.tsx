@@ -314,7 +314,7 @@ export default function ShoppingBag() {
                 Add some items to get started
               </p>
               <Link href="/products">
-                <button className="bg-black text-white px-8 py-3 uppercase text-sm font-semibold hover:bg-neutral-800 transition">
+                <button className="w-full sm:w-auto bg-black text-white px-6 sm:px-8 py-3 uppercase text-sm font-semibold hover:bg-neutral-800 transition">
                   Continue Shopping
                 </button>
               </Link>
@@ -555,7 +555,7 @@ export default function ShoppingBag() {
                           aria-haspopup="listbox"
                           aria-expanded={openDropdown === `color-${item.id}`}
                           aria-label="Select color"
-                          className="px-3 py-2 min-w-[90px] border border-neutral-300 rounded-md text-xs font-medium cursor-pointer hover:border-black transition-all focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-1 flex items-center justify-between gap-2"
+                          className="px-3 py-2 min-w-22.5 border border-neutral-300 rounded-md text-xs font-medium cursor-pointer hover:border-black transition-all focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-1 flex items-center justify-between gap-2"
                           style={{
                             backgroundColor: getColorValue(
                               parsedItemColor.value,

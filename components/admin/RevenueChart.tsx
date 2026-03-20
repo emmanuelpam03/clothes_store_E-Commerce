@@ -75,18 +75,18 @@ export default function RevenueChart({ data }: { data: MonthData[] }) {
 
   if (!data || data.length === 0) {
     return (
-      <div className="w-full h-80 flex items-center justify-center text-slate-500">
+      <div className="w-full h-64 sm:h-80 flex items-center justify-center text-slate-500">
         No revenue data available
       </div>
     );
   }
 
   return (
-    <div className="w-full min-h-80 h-80">
-      <ResponsiveContainer width="100%" height="100%" minHeight={320}>
+    <div className="w-full h-64 sm:h-80">
+      <ResponsiveContainer width="100%" height="100%">
         <AreaChart
           data={data}
-          margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+          margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
         >
           <defs>
             <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
@@ -102,13 +102,13 @@ export default function RevenueChart({ data }: { data: MonthData[] }) {
           <XAxis
             dataKey="month"
             stroke="#64748b"
-            style={{ fontSize: "12px" }}
+            style={{ fontSize: "11px" }}
             tickLine={false}
           />
           <YAxis
             yAxisId="left"
             stroke="#3b82f6"
-            style={{ fontSize: "12px" }}
+            style={{ fontSize: "11px" }}
             tickLine={false}
             tickFormatter={(value: number) =>
               formatCurrencyCompactFromCentsConverted(value, currency, fxRate)
@@ -118,7 +118,7 @@ export default function RevenueChart({ data }: { data: MonthData[] }) {
             yAxisId="right"
             orientation="right"
             stroke="#a855f7"
-            style={{ fontSize: "12px" }}
+            style={{ fontSize: "11px" }}
             tickLine={false}
           />
           <Tooltip
@@ -127,7 +127,7 @@ export default function RevenueChart({ data }: { data: MonthData[] }) {
             )}
           />
           <Legend
-            wrapperStyle={{ fontSize: "14px", paddingTop: "20px" }}
+            wrapperStyle={{ fontSize: "12px", paddingTop: "12px" }}
             iconType="circle"
           />
           <Area

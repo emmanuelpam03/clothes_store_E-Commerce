@@ -62,16 +62,18 @@ export default async function AnalyticsPage() {
   ]);
 
   return (
-    <div className="p-8 space-y-8 bg-slate-50 min-h-screen">
+    <div className="space-y-6">
       <div>
-        <h1 className="text-4xl font-bold text-slate-900">Analytics</h1>
+        <h1 className="text-3xl sm:text-4xl font-bold text-slate-900">
+          Analytics
+        </h1>
         <p className="text-slate-600 mt-1">
           Track your sales performance, customer behavior, and revenue trends.
         </p>
       </div>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <StatCard
           title="Monthly Revenue"
           value={formatCurrency(analyticsData.currentMonthRevenue)}
@@ -98,8 +100,8 @@ export default async function AnalyticsPage() {
       </div>
 
       {/* Revenue by Month Chart */}
-      <div className="bg-white rounded-xl border border-slate-200 p-8">
-        <h2 className="text-2xl font-bold text-slate-900 mb-6">
+      <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6 lg:p-8">
+        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-4 sm:mb-6">
           Revenue Trend (Last 6 Months)
         </h2>
         <RevenueChart data={revenueByMonth} />
@@ -108,8 +110,8 @@ export default async function AnalyticsPage() {
       {/* Top Products and Category Stats */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Top Products */}
-        <div className="bg-white rounded-xl border border-slate-200 p-8">
-          <h2 className="text-2xl font-bold text-slate-900 mb-6">
+        <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6 lg:p-8">
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-4 sm:mb-6">
             Top Selling Products
           </h2>
           <div className="space-y-4">
@@ -121,10 +123,10 @@ export default async function AnalyticsPage() {
               topProducts.map((product, index) => (
                 <div
                   key={product.id}
-                  className="flex items-center justify-between p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
                 >
-                  <div className="flex items-center gap-4">
-                    <span className="font-bold text-2xl text-slate-300">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="shrink-0 font-bold text-xl sm:text-2xl text-slate-300">
                       #{index + 1}
                     </span>
                     {product.image && (
@@ -133,11 +135,11 @@ export default async function AnalyticsPage() {
                         alt={product.name || "Product"}
                         width={48}
                         height={48}
-                        className="object-cover rounded"
+                        className="shrink-0 object-cover rounded"
                       />
                     )}
-                    <div>
-                      <p className="font-semibold text-slate-900">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-slate-900 truncate">
                         {product.name}
                       </p>
                       <p className="text-sm text-slate-600">
@@ -145,7 +147,7 @@ export default async function AnalyticsPage() {
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="flex items-center justify-between sm:block sm:text-right">
                     <p className="font-bold text-slate-900">
                       {product.totalSold}
                     </p>
@@ -158,8 +160,8 @@ export default async function AnalyticsPage() {
         </div>
 
         {/* Category Performance */}
-        <div className="bg-white rounded-xl border border-slate-200 p-8">
-          <h2 className="text-2xl font-bold text-slate-900 mb-6">
+        <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6 lg:p-8">
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-4 sm:mb-6">
             Category Performance
           </h2>
           <div className="space-y-4">
@@ -170,15 +172,15 @@ export default async function AnalyticsPage() {
             ) : (
               categoryStats.map((category) => (
                 <div key={category.name} className="p-4 bg-slate-50 rounded-lg">
-                  <div className="flex justify-between items-start mb-2">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2 mb-2">
                     <h3 className="font-semibold text-slate-900">
                       {category.name}
                     </h3>
-                    <span className="text-sm font-medium text-green-600">
+                    <span className="text-sm font-medium text-green-600 whitespace-nowrap">
                       {formatCurrency(category.revenue)}
                     </span>
                   </div>
-                  <div className="flex gap-4 text-sm text-slate-600">
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-600">
                     <span>{category.itemsSold} sold</span>
                     <span>•</span>
                     <span>{category.productCount} products</span>
@@ -191,8 +193,8 @@ export default async function AnalyticsPage() {
       </div>
 
       {/* Order Status Distribution */}
-      <div className="bg-white rounded-xl border border-slate-200 p-8">
-        <h2 className="text-2xl font-bold text-slate-900 mb-6">
+      <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6 lg:p-8">
+        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-4 sm:mb-6">
           Order Status Distribution
         </h2>
         {orderStatusDistribution.length === 0 ? (
@@ -200,13 +202,13 @@ export default async function AnalyticsPage() {
             No order status data available yet
           </p>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
             {orderStatusDistribution.map((statusItem) => (
               <div
                 key={statusItem.status}
-                className="text-center p-6 bg-slate-50 rounded-lg"
+                className="text-center p-3 sm:p-6 bg-slate-50 rounded-lg"
               >
-                <p className="text-3xl font-bold text-slate-900">
+                <p className="text-2xl sm:text-3xl font-bold text-slate-900">
                   {statusItem.count}
                 </p>
                 <p className="text-sm text-slate-600 mt-2 capitalize">
@@ -219,8 +221,8 @@ export default async function AnalyticsPage() {
       </div>
 
       {/* Recent Orders */}
-      <div className="bg-white rounded-xl border border-slate-200 p-8">
-        <h2 className="text-2xl font-bold text-slate-900 mb-6">
+      <div className="bg-white rounded-xl border border-slate-200 p-4 sm:p-6 lg:p-8">
+        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mb-4 sm:mb-6">
           Recent Orders
         </h2>
         <div className="space-y-4">
@@ -247,10 +249,10 @@ export default async function AnalyticsPage() {
               return (
                 <div
                   key={order.id}
-                  className="flex items-center justify-between p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors"
                 >
-                  <div className="flex-1">
-                    <p className="font-semibold text-slate-900">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-slate-900 truncate">
                       {order.user?.name || order.email}
                     </p>
                     <p className="text-sm text-slate-600">
@@ -258,13 +260,13 @@ export default async function AnalyticsPage() {
                       {new Date(order.createdAt).toLocaleDateString()}
                     </p>
                   </div>
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4">
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-semibold ${statusClasses}`}
                     >
                       {statusLabel}
                     </span>
-                    <span className="font-bold text-slate-900">
+                    <span className="font-bold text-slate-900 whitespace-nowrap">
                       {formatCurrency(order.total)}
                     </span>
                   </div>
@@ -276,22 +278,24 @@ export default async function AnalyticsPage() {
       </div>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-linear-to-br from-blue-500 to-blue-600 rounded-xl p-8 text-white">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
+        <div className="bg-linear-to-br from-blue-500 to-blue-600 rounded-xl p-4 sm:p-6 lg:p-8 text-white">
           <Package size={32} className="mb-4 opacity-80" />
-          <p className="text-4xl font-bold mb-2">{analyticsData.totalOrders}</p>
+          <p className="text-3xl sm:text-4xl font-bold mb-2">
+            {analyticsData.totalOrders}
+          </p>
           <p className="text-blue-100">Total Orders</p>
         </div>
-        <div className="bg-linear-to-br from-green-500 to-green-600 rounded-xl p-8 text-white">
+        <div className="bg-linear-to-br from-green-500 to-green-600 rounded-xl p-4 sm:p-6 lg:p-8 text-white">
           <DollarSign size={32} className="mb-4 opacity-80" />
-          <p className="text-4xl font-bold mb-2">
+          <p className="text-3xl sm:text-4xl font-bold mb-2">
             {formatCurrency(analyticsData.totalRevenue)}
           </p>
           <p className="text-green-100">All-Time Revenue</p>
         </div>
-        <div className="bg-linear-to-br from-purple-500 to-purple-600 rounded-xl p-8 text-white">
+        <div className="bg-linear-to-br from-purple-500 to-purple-600 rounded-xl p-4 sm:p-6 lg:p-8 text-white">
           <TrendingUp size={32} className="mb-4 opacity-80" />
-          <p className="text-4xl font-bold mb-2">
+          <p className="text-3xl sm:text-4xl font-bold mb-2">
             {formatCurrency(analyticsData.allTimeAverageOrderValue)}
           </p>
           <p className="text-purple-100">Avg Order Value</p>

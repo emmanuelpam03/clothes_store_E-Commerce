@@ -49,7 +49,7 @@ export default async function OrdersPage() {
             </p>
             <Link
               href="/products"
-              className="inline-block bg-black text-white px-8 py-3 text-sm font-semibold uppercase hover:bg-neutral-800 transition"
+              className="inline-block bg-black text-white px-6 sm:px-8 py-3 text-sm font-semibold uppercase hover:bg-neutral-800 transition"
             >
               Start Shopping
             </Link>

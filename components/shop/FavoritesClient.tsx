@@ -91,7 +91,7 @@ export default function FavoritesClient({
             <Heart className="h-16 w-16 text-neutral-300 mx-auto mb-4" />
             <p className="text-xl font-bold mb-2">No favorites yet</p>
             <Link href="/products">
-              <button className="bg-black text-white px-8 py-3 uppercase text-sm">
+              <button className="w-full sm:w-auto bg-black text-white px-6 sm:px-8 py-3 uppercase text-sm">
                 Browse Products
               </button>
             </Link>
