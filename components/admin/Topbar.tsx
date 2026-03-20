@@ -2,22 +2,19 @@
 
 import { Bell, User, Search, Menu } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
 
-export default function Topbar() {
-  const [isOpen, setIsOpen] = useState(false);
-
+export default function Topbar({ onMenuClick }: { onMenuClick?: () => void }) {
   return (
-    <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 sticky top-0 z-40">
+    <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 sm:px-6 lg:px-8 sticky top-0 z-40">
       <div className="flex items-center gap-4 flex-1">
-        <button className="lg:hidden">
+        <button className="lg:hidden" type="button" onClick={onMenuClick}>
           <Menu size={20} className="text-slate-600" />
         </button>
         <Link
           href="/"
           className="flex items-center gap-3 hover:bg-slate-100 px-3 py-2 rounded-lg transition"
         >
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-400 to-cyan-400 rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 bg-linear-to-br from-blue-400 to-cyan-400 rounded-lg flex items-center justify-center">
             <User size={16} className="text-white" />
           </div>
           <span className="text-sm font-medium text-slate-700">Home</span>

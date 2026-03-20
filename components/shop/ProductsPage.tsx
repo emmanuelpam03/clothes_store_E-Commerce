@@ -888,17 +888,125 @@ export default function ProductsPageComponent({
               )}
             </aside>
 
-            <aside
-              className={`
-                md:hidden w-64 shrink-0 space-y-8 bg-white p-4 overflow-y-auto
-                transition-all duration-300 ease-in-out
-                ${
-                  isMobileFiltersOpen
-                    ? "max-w-64 opacity-100"
-                    : "max-w-0 opacity-0 overflow-hidden p-0"
-                }
-              `}
-            >
+            <div className="flex-1">
+              <div className="space-y-6">
+                {query && (
+                  <div className="sticky top-16 md:top-24 z-20 bg-neutral-200 pb-4 items-center justify-between gap-2 rounded text-white px-4 py-3 mb-6">
+                    <p className="text-sm text-neutral-900">
+                      Showing results for{" "}
+                      <span className="font-semibold">
+                        &ldquo;{query}&rdquo;
+                      </span>
+                      <span className="ml-2 text-neutral-900">
+                        ({products.length} item
+                        {products.length !== 1 ? "s" : ""} found)
+                      </span>
+                    </p>
+                  </div>
+                )}
+
+                <Suspense fallback={<ProductsGridSkeleton />}>
+                  {isPending ? (
+                    <ProductsGridSkeleton />
+                  ) : (
+                    <>
+                      <div
+                        className={`
+                          grid gap-8 transition-opacity duration-300
+                          ${isPending ? "opacity-40" : "opacity-100"}
+                          grid-cols-1 sm:grid-cols-2 lg:grid-cols-3
+                        `}
+                      >
+                        {products.map((product) => (
+                          <Link
+                            key={product.id}
+                            href={`/products/${product.slug}`}
+                          >
+                            {/* product card */}
+                            <div className="relative h-105 bg-white group">
+                              <Image
+                                src={product.image || "/placeholder.png"}
+                                alt={product.name}
+                                fill
+                                className="object-cover"
+                              />
+
+                              {/* FAVORITE BUTTON */}
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleToggleFavorite(product.id);
+                                }}
+                                className="absolute top-4 right-4 p-2 rounded-full bg-white/80 hover:bg-white transition-colors z-10"
+                              >
+                                <Heart
+                                  className={`h-5 w-5 ${
+                                    isFavorited(product.id)
+                                      ? "fill-red-500 text-red-500"
+                                      : "text-black"
+                                  }`}
+                                />
+                              </button>
+
+                              {/* ADD TO CART */}
+                              <button
+                                disabled={isFavoritePending}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  setDialogProduct(product);
+                                }}
+                                className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white px-3 py-2 text-sm text-black"
+                              >
+                                <ShoppingBag className="h-4 w-4" />
+                              </button>
+                            </div>
+
+                            <div className="mt-3 flex items-center justify-between text-sm text-black">
+                              <div>
+                                <p className="text-neutral-500">
+                                  {product.description ?? "product"}
+                                </p>
+                                <p className="font-medium">{product.name}</p>
+                              </div>
+                              <p className="font-semibold">
+                                {formatCurrencyFromCentsConverted(
+                                  product.price,
+                                  currency,
+                                  fxRate,
+                                )}
+                              </p>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+
+                      {products.length === 0 && (
+                        <div className="col-span-full py-20 text-center text-neutral-500">
+                          <p className="text-lg">No products found</p>
+                          <p className="text-sm mt-2">
+                            Try adjusting your filters
+                          </p>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </Suspense>
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile filters drawer */}
+          <div
+            className={`fixed inset-0 z-40 md:hidden ${
+              isMobileFiltersOpen ? "block" : "hidden"
+            }`}
+          >
+            <div
+              className="absolute inset-0 bg-black/40"
+              onClick={toggleMobileFilters}
+            />
+            <aside className="absolute left-0 top-0 h-dvh w-72 max-w-[85vw] space-y-8 bg-white p-4 overflow-y-auto">
               <div className="flex items-center justify-between border-b pb-4">
                 <h2 className="text-lg font-bold text-black">Filters</h2>
                 <button onClick={toggleMobileFilters} className="p-1">
@@ -1094,113 +1202,6 @@ export default function ProductsPageComponent({
                 </div>
               )}
             </aside>
-
-            <div className="flex-1">
-              <div className="space-y-6">
-                {query && (
-                  <div className="sticky top-16 md:top-24 z-20 bg-neutral-200 pb-4 items-center justify-between gap-2 rounded text-white px-4 py-3 mb-6">
-                    <p className="text-sm text-neutral-900">
-                      Showing results for{" "}
-                      <span className="font-semibold">
-                        &ldquo;{query}&rdquo;
-                      </span>
-                      <span className="ml-2 text-neutral-900">
-                        ({products.length} item
-                        {products.length !== 1 ? "s" : ""} found)
-                      </span>
-                    </p>
-                  </div>
-                )}
-
-                <Suspense fallback={<ProductsGridSkeleton />}>
-                  {isPending ? (
-                    <ProductsGridSkeleton />
-                  ) : (
-                    <>
-                      <div
-                        className={`
-                          grid gap-8 transition-opacity duration-300
-                          ${isPending ? "opacity-40" : "opacity-100"}
-                          grid-cols-1 sm:grid-cols-2 lg:grid-cols-3
-                        `}
-                      >
-                        {products.map((product) => (
-                          <Link
-                            key={product.id}
-                            href={`/products/${product.slug}`}
-                          >
-                            {/* product card */}
-                            <div className="relative h-105 bg-white group">
-                              <Image
-                                src={product.image || "/placeholder.png"}
-                                alt={product.name}
-                                fill
-                                className="object-cover"
-                              />
-
-                              {/* FAVORITE BUTTON */}
-                              <button
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  handleToggleFavorite(product.id);
-                                }}
-                                className="absolute top-4 right-4 p-2 rounded-full bg-white/80 hover:bg-white transition-colors z-10"
-                              >
-                                <Heart
-                                  className={`h-5 w-5 ${
-                                    isFavorited(product.id)
-                                      ? "fill-red-500 text-red-500"
-                                      : "text-black"
-                                  }`}
-                                />
-                              </button>
-
-                              {/* ADD TO CART */}
-                              <button
-                                disabled={isFavoritePending}
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  setDialogProduct(product);
-                                }}
-                                className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-white px-3 py-2 text-sm text-black"
-                              >
-                                <ShoppingBag className="h-4 w-4" />
-                              </button>
-                            </div>
-
-                            <div className="mt-3 flex items-center justify-between text-sm text-black">
-                              <div>
-                                <p className="text-neutral-500">
-                                  {product.description ?? "product"}
-                                </p>
-                                <p className="font-medium">{product.name}</p>
-                              </div>
-                              <p className="font-semibold">
-                                {formatCurrencyFromCentsConverted(
-                                  product.price,
-                                  currency,
-                                  fxRate,
-                                )}
-                              </p>
-                            </div>
-                          </Link>
-                        ))}
-                      </div>
-
-                      {products.length === 0 && (
-                        <div className="col-span-full py-20 text-center text-neutral-500">
-                          <p className="text-lg">No products found</p>
-                          <p className="text-sm mt-2">
-                            Try adjusting your filters
-                          </p>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </Suspense>
-              </div>
-            </div>
           </div>
         </div>
       </div>

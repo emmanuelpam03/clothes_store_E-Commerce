@@ -1,5 +1,4 @@
-import Sidebar from "@/components/admin/Sidebar";
-import Topbar from "@/components/admin/Topbar";
+import AdminShell from "@/components/admin/AdminShell";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 
@@ -17,14 +16,6 @@ export default async function AdminLayout({
   if (session.user.role !== "ADMIN") {
     redirect("/");
   }
-  return (
-    <div className="min-h-screen bg-[#F6F6F4] text-[#0A0A0A]">
-      <Sidebar />
 
-      <main className="ml-64 px-14 py-12">
-        <Topbar />
-        {children}
-      </main>
-    </div>
-  );
+  return <AdminShell>{children}</AdminShell>;
 }
