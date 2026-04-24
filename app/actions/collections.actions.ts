@@ -215,28 +215,18 @@ export async function deleteCollectionAdmin(collectionId: string) {
     where: { collectionId },
   });
 
-  if (count > 0) {
-    return {
-      success: false as const,
-      error: `Cannot delete collection with ${count} product${count === 1 ? "" : "s"}`,
-      productCount: count,
-    };
-  }
-
   try {
-    await prisma.collection.delete({
-      where: { id: collectionId },
-    });
+    await prisma.$transaction([
+      prisma.product.updateMany({
+        where: { collectionId },
+        data: { collectionId: null },
+      }),
+      prisma.collection.delete({
+        where: { id: collectionId },
+      }),
+    ]);
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError) {
-      // Foreign key constraint: products reference this collection.
-      if (err.code === "P2003") {
-        return {
-          success: false as const,
-          error: "Cannot delete a collection with products",
-          productCount: 1,
-        };
-      }
       // Record to delete does not exist.
       if (err.code === "P2025") {
         return {
@@ -253,5 +243,5 @@ export async function deleteCollectionAdmin(collectionId: string) {
   revalidatePath("/admin/products");
   revalidatePath("/products");
 
-  return { success: true as const, productCount: 0 };
+  return { success: true as const, productCount: count };
 }

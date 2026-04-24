@@ -229,14 +229,12 @@ export default function CollectionsManager({ initialCollections }: Props) {
               Delete collection?
             </h3>
             <p className="text-sm text-slate-600">
-              Collection &quot;{confirmDelete.name}&quot; currently has{" "}
-              {confirmDelete.productCount} product
+              Collection &quot;{confirmDelete.name}&quot; currently has {confirmDelete.productCount} product
               {confirmDelete.productCount === 1 ? "" : "s"}.
             </p>
             {confirmDelete.productCount > 0 ? (
-              <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
-                This collection cannot be deleted until all products are moved
-                out of it.
+              <p className="text-sm text-slate-600">
+                Those products will remain, but their collection link will be removed.
               </p>
             ) : (
               <p className="text-sm text-slate-600">
@@ -255,10 +253,7 @@ export default function CollectionsManager({ initialCollections }: Props) {
               </button>
               <button
                 type="button"
-                disabled={
-                  deletingId === confirmDelete.id ||
-                  confirmDelete.productCount > 0
-                }
+                disabled={deletingId === confirmDelete.id}
                 onClick={async () => {
                   setDeletingId(confirmDelete.id);
                   try {
@@ -268,15 +263,6 @@ export default function CollectionsManager({ initialCollections }: Props) {
 
                     if (!result.success) {
                       toast.error(result.error);
-                      if (typeof result.productCount === "number") {
-                        setCollections((prev) =>
-                          prev.map((x) =>
-                            x.id === confirmDelete.id
-                              ? { ...x, productCount: result.productCount }
-                              : x,
-                          ),
-                        );
-                      }
                       return;
                     }
 
