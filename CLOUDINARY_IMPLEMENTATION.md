@@ -114,7 +114,7 @@ Comprehensive documentation including:
 - ✅ Includes all Cloudinary credentials
 - ✅ Other required environment variables
 
-## 📁 File Structure
+##  File Structure
 
 ```
 clothes_store/
@@ -139,7 +139,7 @@ clothes_store/
 └── package.json                         # ✅ Cloudinary installed
 ```
 
-## 🔧 Environment Variables Required
+##  Environment Variables Required
 
 ```env
 CLOUDINARY_CLOUD_NAME=your_cloud_name
@@ -148,7 +148,7 @@ CLOUDINARY_API_SECRET=your_api_secret
 CLOUDINARY_URL=cloudinary://api_key:api_secret@cloud_name
 ```
 
-## 🎯 Features & Capabilities
+##  Features & Capabilities
 
 ### Image Upload
 
@@ -184,7 +184,7 @@ CLOUDINARY_URL=cloudinary://api_key:api_secret@cloud_name
 - ✅ Server actions pattern
 - ✅ Clean separation of concerns
 
-## 🚀 How to Use
+##  How to Use
 
 ### Quick Start
 
@@ -208,7 +208,7 @@ See `CLOUDINARY.md` for:
 - URL utilities
 - Best practices
 
-## ✨ Key Improvements
+##  Key Improvements
 
 1. **User Experience**
    - Intuitive drag-and-drop interface
@@ -234,7 +234,7 @@ See `CLOUDINARY.md` for:
    - Type-safe APIs
    - Easy to extend
 
-## 🔐 Security
+##  Security
 
 - ✅ Server-side validation
 - ✅ File type restrictions
@@ -243,7 +243,7 @@ See `CLOUDINARY.md` for:
 - ✅ Secure API credentials
 - ⚠️ **Note:** Ensure admin routes are protected with authentication
 
-## 📊 Testing Checklist
+##  Testing Checklist
 
 - [ ] Upload a valid image (JPG/PNG/WebP)
 - [ ] Try uploading an invalid file type

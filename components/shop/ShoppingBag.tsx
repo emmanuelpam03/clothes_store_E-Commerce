@@ -27,7 +27,7 @@ import {
 } from "@/app/actions/cart.actions";
 import { getProductsByIds } from "@/app/actions/product.actions";
 import { useFavorites } from "@/lib/favorites/useFavorites";
-import { parseColor } from "@/components/admin/ColorPicker";
+import { parseStoredColor } from "@/lib/colors";
 
 const DEFAULT_SIZES = ["XS", "S", "M", "L", "XL", "2X"];
 const DEFAULT_COLORS = ["Black", "White", "Gray", "Blue", "Red", "Green"];
@@ -324,7 +324,7 @@ export default function ShoppingBag() {
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-16">
             <div className="flex flex-wrap gap-12 py-5 border-y border-neutral-300 justify-center">
               {optimisticItems.map((item) => {
-                const parsedItemColor = parseColor(item.color);
+                const parsedItemColor = parseStoredColor(item.color);
                 const productData = productsData.get(item.productId);
                 const stockQuantity = productData?.inventory?.quantity ?? 0;
                 const hasStockIssue = stockQuantity < item.qty;
@@ -580,7 +580,7 @@ export default function ShoppingBag() {
                               productsData.get(item.productId)?.colors ||
                               DEFAULT_COLORS
                             ).map((color, idx) => {
-                              const parsed = parseColor(color);
+                              const parsed = parseStoredColor(color);
                               return (
                                 <button
                                   key={color}

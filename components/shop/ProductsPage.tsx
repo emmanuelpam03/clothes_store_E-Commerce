@@ -19,6 +19,11 @@ import { useTransition, useEffect } from "react";
 import AddToCartDialog from "./AddToCartDialog";
 import { formatCurrencyFromCentsConverted } from "@/lib/money";
 import { useStoreSettings } from "@/lib/store-settings-client";
+import {
+  PREDEFINED_COLORS,
+  parseStoredColor,
+  resolveStoredColor,
+} from "@/lib/colors";
 
 type Product = {
   id: string;
@@ -58,6 +63,14 @@ type Collection = {
   slug: string;
 };
 
+type ColorFilterOption = {
+  key: string;
+  name: string;
+  swatch?: string;
+  /** Raw DB values (variants) that should be included when filtering. */
+  values: string[];
+};
+
 const MERCH_FILTERS = [
   { label: "FEATURED", slug: "featured" },
   { label: "NEW", slug: "new" },
@@ -75,34 +88,6 @@ export default function ProductsPageComponent({
   categories: Category[];
   collections: Collection[];
 }) {
-  const parseStoredColor = (
-    color: string,
-  ): {
-    name: string;
-    value: string;
-  } => {
-    const hashIndex = color.indexOf("#");
-    if (hashIndex !== -1) {
-      let name = color.substring(0, hashIndex);
-      const value = color.substring(hashIndex);
-      name = name.replace(/:$/, "");
-      if (name) return { name, value };
-      return { name: value, value };
-    }
-
-    if (color.includes(":")) {
-      const lastColonIndex = color.lastIndexOf(":");
-      const name = color.substring(0, lastColonIndex);
-      const value = color.substring(lastColonIndex + 1);
-      return { name, value };
-    }
-
-    return { name: color, value: color };
-  };
-
-  const isHexColor = (value: string) =>
-    /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(value);
-
   const [expandedFilters, setExpandedFilters] = useState<Set<string>>(
     new Set(["Department", "Filter", "Category", "Price Range"]),
   );
@@ -310,13 +295,16 @@ export default function ProductsPageComponent({
     });
   };
 
-  const toggleColor = (color: string) => {
+  const toggleColorOption = (option: ColorFilterOption) => {
     const next = new Set(selectedColors);
-    if (next.has(color)) {
-      next.delete(color);
+    const isSelected = option.values.some((v) => next.has(v));
+
+    if (isSelected) {
+      for (const v of option.values) next.delete(v);
     } else {
-      next.add(color);
+      for (const v of option.values) next.add(v);
     }
+
     updateFilters({
       colors: next.size > 0 ? Array.from(next).join(",") : undefined,
     });
@@ -375,11 +363,87 @@ export default function ProductsPageComponent({
   // Get unique values from ALL products for filter options (not filtered)
   // Note: In production, you might want to get these from the database
   const allSizes = Array.from(new Set(products.flatMap((p) => p.sizes || [])));
-  const allColors = Array.from(new Set(products.flatMap((p) => p.colors || [])))
-    .filter(Boolean)
-    .sort((a, b) =>
-      parseStoredColor(a).name.localeCompare(parseStoredColor(b).name),
+  const allColorValues = Array.from(
+    new Set(products.flatMap((p) => p.colors || [])),
+  ).filter((c): c is string => typeof c === "string" && c.trim().length > 0);
+
+  const looksLikeHex = (value: string) =>
+    /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{4}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$/.test(
+      value.trim(),
     );
+
+  const normalizeNameKey = (value: string) =>
+    value
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "")
+      .replace(/grey/g, "gray");
+
+  const colorOptions: ColorFilterOption[] = (() => {
+    const parsedEntries = allColorValues
+      .map((raw) => {
+        const parsed = parseStoredColor(raw);
+        const resolved = resolveStoredColor(raw);
+        const name = parsed.name.trim() || parsed.value.trim() || raw.trim();
+        const swatch = resolved.swatch;
+        const groupKey = swatch
+          ? `hex:${swatch.toLowerCase()}`
+          : `name:${normalizeNameKey(name)}`;
+
+        return {
+          raw,
+          name,
+          swatch,
+          groupKey,
+        };
+      })
+      .sort((a, b) => a.raw.localeCompare(b.raw));
+
+    const grouped = new Map<
+      string,
+      { swatch?: string; entries: typeof parsedEntries }
+    >();
+
+    for (const entry of parsedEntries) {
+      const existing = grouped.get(entry.groupKey);
+      if (existing) {
+        existing.entries.push(entry);
+        if (!existing.swatch && entry.swatch) existing.swatch = entry.swatch;
+      } else {
+        grouped.set(entry.groupKey, {
+          swatch: entry.swatch,
+          entries: [entry],
+        });
+      }
+    }
+
+    const options: ColorFilterOption[] = [];
+
+    for (const [key, group] of grouped) {
+      const swatch = group.swatch;
+      const predefinedByHex = swatch
+        ? PREDEFINED_COLORS.find(
+            (color) => color.value.toLowerCase() === swatch.toLowerCase(),
+          )
+        : undefined;
+
+      const firstHumanName = group.entries
+        .map((entry) => entry.name.trim())
+        .find((name) => name.length > 0 && !looksLikeHex(name));
+
+      const displayName = predefinedByHex?.name || firstHumanName || swatch || "Color";
+
+      options.push({
+        key,
+        name: displayName,
+        swatch,
+        values: group.entries.map((entry) => entry.raw),
+      });
+    }
+
+    return options.sort((a, b) => a.name.localeCompare(b.name));
+  })();
+
   const allTags = Array.from(new Set(products.flatMap((p) => p.tags || [])));
   const allCollections = collections;
 
@@ -718,7 +782,7 @@ export default function ProductsPageComponent({
               </div>
 
               {/* COLORS FILTER */}
-              {allColors.length > 0 && (
+              {colorOptions.length > 0 && (
                 <div>
                   <button
                     onClick={() => toggleFilter("Colors")}
@@ -733,27 +797,25 @@ export default function ProductsPageComponent({
                   </button>
                   {isExpanded("Colors") && (
                     <div className="mt-4 flex flex-wrap gap-2">
-                      {allColors.map((color) => {
-                        const parsed = parseStoredColor(color);
-                        const swatch = isHexColor(parsed.value)
-                          ? parsed.value
-                          : undefined;
+                      {colorOptions.map((option) => {
+                        const swatch = option.swatch;
+                        const isSelected = option.values.some((v) =>
+                          selectedColors.has(v),
+                        );
                         return (
                           <button
-                            key={color}
-                            onClick={() => toggleColor(color)}
+                            key={option.key}
+                            onClick={() => toggleColorOption(option)}
                             style={
                               swatch ? { backgroundColor: swatch } : undefined
                             }
-                            aria-label={parsed.name}
-                            className={`h-8 w-8 rounded border hover:scale-110 transition-transform ${
-                              swatch ? "" : "bg-gray-300"
-                            } ${
-                              selectedColors.has(color)
+                            aria-label={option.name}
+                            className={`h-8 w-8 rounded border hover:scale-110 transition-transform ${"bg-gray-300"} ${
+                              isSelected
                                 ? "ring-2 ring-offset-2 ring-black"
                                 : ""
                             }`}
-                            title={parsed.name}
+                            title={option.name}
                           />
                         );
                       })}
@@ -1166,35 +1228,31 @@ export default function ProductsPageComponent({
                 </div>
               )}
 
-              {allColors.length > 0 && (
+              {colorOptions.length > 0 && (
                 <div>
                   <h3 className="mb-4 text-sm font-semibold text-black">
                     Colors
                   </h3>
                   <div className="flex flex-wrap gap-2">
-                    {allColors.map((color) => {
-                      const parsed = parseStoredColor(color);
-                      const swatch = isHexColor(parsed.value)
-                        ? parsed.value
-                        : undefined;
+                    {colorOptions.map((option) => {
+                      const swatch = option.swatch;
+                      const isSelected = option.values.some((v) =>
+                        selectedColors.has(v),
+                      );
 
                       return (
                         <button
-                          key={color}
+                          key={option.key}
                           type="button"
-                          onClick={() => toggleColor(color)}
+                          onClick={() => toggleColorOption(option)}
                           style={
                             swatch ? { backgroundColor: swatch } : undefined
                           }
-                          aria-label={parsed.name}
-                          className={`h-8 w-8 rounded border hover:scale-110 transition-transform ${
-                            swatch ? "" : "bg-gray-300"
-                          } ${
-                            selectedColors.has(color)
-                              ? "ring-2 ring-offset-2 ring-black"
-                              : ""
+                          aria-label={option.name}
+                          className={`h-8 w-8 rounded border hover:scale-110 transition-transform ${"bg-gray-300"} ${
+                            isSelected ? "ring-2 ring-offset-2 ring-black" : ""
                           }`}
-                          title={parsed.name}
+                          title={option.name}
                         />
                       );
                     })}

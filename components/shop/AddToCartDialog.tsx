@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { useCart } from "@/lib/cart/cart";
 import { addToCartAction } from "@/app/actions/cart.actions";
 import { useSession } from "next-auth/react";
-import { parseColor } from "@/components/admin/ColorPicker";
+import { parseStoredColor } from "@/lib/colors";
 import { formatCurrencyFromCentsConverted } from "@/lib/money";
 import { useStoreSettings } from "@/lib/store-settings-client";
 
@@ -227,11 +227,11 @@ export default function AddToCartDialog({ product, isOpen, onClose }: Props) {
         <div className="mb-5">
           <p className="text-xs uppercase text-neutral-500 mb-2">
             Color
-            {selectedColor && `: ${parseColor(selectedColor).name}`}
+            {selectedColor && `: ${parseStoredColor(selectedColor).name}`}
           </p>
           <div className="flex flex-wrap gap-2">
             {colors.map((color) => {
-              const parsed = parseColor(color);
+              const parsed = parseStoredColor(color);
               return (
                 <button
                   key={color}

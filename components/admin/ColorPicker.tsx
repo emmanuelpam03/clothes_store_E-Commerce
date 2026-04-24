@@ -3,104 +3,17 @@
 import { useState } from "react";
 import { HexColorPicker } from "react-colorful";
 import { Plus, X } from "lucide-react";
-
-// Expanded predefined color palette
-const PREDEFINED_COLORS = [
-  { name: "Black", value: "#111827" },
-  { name: "White", value: "#ffffff" },
-  { name: "Gray", value: "#9ca3af" },
-  { name: "Light Gray", value: "#d1d5db" },
-  { name: "Dark Gray", value: "#4b5563" },
-  { name: "Navy", value: "#1e3a8a" },
-  { name: "Blue", value: "#3b82f6" },
-  { name: "Sky Blue", value: "#0ea5e9" },
-  { name: "Light Blue", value: "#bfdbfe" },
-  { name: "Royal Blue", value: "#1e40af" },
-  { name: "Red", value: "#ef4444" },
-  { name: "Dark Red", value: "#dc2626" },
-  { name: "Burgundy", value: "#7f1d1d" },
-  { name: "Pink", value: "#ec4899" },
-  { name: "Light Pink", value: "#fbcfe8" },
-  { name: "Rose", value: "#f43f5e" },
-  { name: "Green", value: "#22c55e" },
-  { name: "Dark Green", value: "#15803d" },
-  { name: "Olive", value: "#84cc16" },
-  { name: "Emerald", value: "#10b981" },
-  { name: "Teal", value: "#14b8a6" },
-  { name: "Cyan", value: "#06b6d4" },
-  { name: "Purple", value: "#a855f7" },
-  { name: "Violet", value: "#8b5cf6" },
-  { name: "Indigo", value: "#6366f1" },
-  { name: "Lavender", value: "#c4b5fd" },
-  { name: "Yellow", value: "#facc15" },
-  { name: "Amber", value: "#f59e0b" },
-  { name: "Orange", value: "#f97316" },
-  { name: "Coral", value: "#fb7185" },
-  { name: "Brown", value: "#92400e" },
-  { name: "Tan", value: "#d97706" },
-  { name: "Beige", value: "#d6d3d1" },
-  { name: "Cream", value: "#fef3c7" },
-  { name: "Ivory", value: "#fffbeb" },
-  { name: "Mint", value: "#d1fae5" },
-  { name: "Peach", value: "#fed7aa" },
-  { name: "Lilac", value: "#e9d5ff" },
-  { name: "Khaki", value: "#a8a29e" },
-  { name: "Charcoal", value: "#374151" },
-];
+import {
+  PREDEFINED_COLORS,
+  formatStoredColor,
+  parseStoredColor,
+} from "@/lib/colors";
 
 interface ColorPickerProps {
   selectedColors: string[];
   onChange: (colors: string[]) => void;
   id?: string;
 }
-
-/**
- * Parse a color string to extract name and hex value
- * Accepts formats: "Name#hex" (current) and "Name:#hex" (legacy)
- * Handles color names that may contain colons by using '#' marker or lastIndexOf(':')
- * Strips trailing ':' from names for backward compatibility with legacy format
- */
-export const parseColor = (color: string): { name: string; value: string } => {
-  // If color contains '#', use it as the delimiter between name and hex value
-  const hashIndex = color.indexOf("#");
-  if (hashIndex !== -1) {
-    let name = color.substring(0, hashIndex);
-    const value = color.substring(hashIndex);
-    // Strip trailing colon for backward compatibility with legacy "Name:#hex" format
-    name = name.replace(/:$/, "");
-    // If there's a name part (not just a hex value), return both
-    if (name) {
-      return { name, value };
-    }
-    // Just a hex value without name prefix
-    return { name: value, value };
-  }
-
-  // If no '#' but contains ':', use the last colon to split
-  if (color.includes(":")) {
-    const lastColonIndex = color.lastIndexOf(":");
-    const name = color.substring(0, lastColonIndex);
-    const value = color.substring(lastColonIndex + 1);
-    return { name, value };
-  }
-
-  // Fallback: return the whole string for both name and value
-  return { name: color, value: color };
-};
-
-/**
- * Format a color for storage
- * Returns "Name#hex" format (name directly followed by hex with # marker)
- * or just "#hex" if name equals value to avoid duplication
- */
-export const formatColor = (name: string, value: string): string => {
-  // Don't duplicate if name is the same as the hex value
-  if (name === value) {
-    return value;
-  }
-  // Use the hex # as separator, no colon needed
-  return `${name}${value}`;
-};
 
 export default function ColorPicker({
   selectedColors,
@@ -113,7 +26,7 @@ export default function ColorPicker({
   const [customColorError, setCustomColorError] = useState("");
 
   const handleToggleColor = (name: string, value: string) => {
-    const formattedColor = formatColor(name, value);
+    const formattedColor = formatStoredColor(name, value);
     if (selectedColors.includes(formattedColor)) {
       onChange(selectedColors.filter((c) => c !== formattedColor));
     } else {
@@ -143,19 +56,19 @@ export default function ColorPicker({
 
     // Check if color already exists (by hex value)
     const existingColor = selectedColors.find((c) => {
-      const parsed = parseColor(c);
+      const parsed = parseStoredColor(c);
       return parsed.value.toLowerCase() === validHex.toLowerCase();
     });
 
     if (existingColor) {
-      const parsed = parseColor(existingColor);
+      const parsed = parseStoredColor(existingColor);
       setCustomColorError(`Color already added as "${parsed.name}"`);
       return;
     }
 
     // Use custom name if provided, otherwise use hex value
     const name = customColorName.trim() || validHex;
-    const formattedColor = formatColor(name, validHex);
+    const formattedColor = formatStoredColor(name, validHex);
 
     onChange([...selectedColors, formattedColor]);
 
@@ -173,7 +86,7 @@ export default function ColorPicker({
   // Check if a predefined color is selected
   const isColorSelected = (value: string): boolean => {
     return selectedColors.some((c) => {
-      const parsed = parseColor(c);
+      const parsed = parseStoredColor(c);
       return parsed.value.toLowerCase() === value.toLowerCase();
     });
   };
@@ -187,7 +100,7 @@ export default function ColorPicker({
             Selected Colors:
           </p>
           {selectedColors.map((color) => {
-            const parsed = parseColor(color);
+            const parsed = parseStoredColor(color);
             return (
               <div
                 key={color}
