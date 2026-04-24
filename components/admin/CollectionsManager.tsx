@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import {
   createCollectionAdmin,
   deleteCollectionAdmin,
+  updateCollectionAdmin,
 } from "@/app/actions/collections.actions";
 import { slugify } from "@/lib/slug";
 
@@ -12,6 +13,7 @@ type Collection = {
   id: string;
   name: string;
   slug: string;
+  productCount: number;
 };
 
 type Props = {
@@ -26,11 +28,21 @@ export default function CollectionsManager({ initialCollections }: Props) {
   const [isSaving, setIsSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<Collection | null>(null);
+  const [editing, setEditing] = useState<Collection | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editSlug, setEditSlug] = useState("");
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const existingSlugs = useMemo(
     () => new Set(collections.map((c) => c.slug.toLowerCase())),
     [collections],
   );
+
+  const openEditModal = (collection: Collection) => {
+    setEditing(collection);
+    setEditName(collection.name);
+    setEditSlug(collection.slug);
+  };
 
   return (
     <div className="space-y-8">
@@ -152,6 +164,7 @@ export default function CollectionsManager({ initialCollections }: Props) {
                 <tr className="text-left text-slate-600">
                   <th className="py-2 pr-4">Name</th>
                   <th className="py-2 pr-4">Slug</th>
+                  <th className="py-2 pr-4">Products</th>
                   <th className="py-2">Actions</th>
                 </tr>
               </thead>
@@ -165,15 +178,27 @@ export default function CollectionsManager({ initialCollections }: Props) {
                         {c.name}
                       </td>
                       <td className="py-2 pr-4 text-slate-700">{c.slug}</td>
+                      <td className="py-2 pr-4 text-slate-700">
+                        {c.productCount}
+                      </td>
                       <td className="py-2">
-                        <button
-                          type="button"
-                          disabled={deletingId === c.id}
-                          className="text-red-600 hover:text-red-700 disabled:opacity-50"
-                          onClick={() => setConfirmDelete(c)}
-                        >
-                          {deletingId === c.id ? "Deleting..." : "Delete"}
-                        </button>
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            className="text-slate-700 hover:text-slate-900"
+                            onClick={() => openEditModal(c)}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            disabled={deletingId === c.id}
+                            className="text-red-600 hover:text-red-700 disabled:opacity-50"
+                            onClick={() => setConfirmDelete(c)}
+                          >
+                            {deletingId === c.id ? "Deleting..." : "Delete"}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -204,8 +229,20 @@ export default function CollectionsManager({ initialCollections }: Props) {
               Delete collection?
             </h3>
             <p className="text-sm text-slate-600">
-              This will permanently delete &quot;{confirmDelete.name}&quot;.
+              Collection &quot;{confirmDelete.name}&quot; currently has{" "}
+              {confirmDelete.productCount} product
+              {confirmDelete.productCount === 1 ? "" : "s"}.
             </p>
+            {confirmDelete.productCount > 0 ? (
+              <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+                This collection cannot be deleted until all products are moved
+                out of it.
+              </p>
+            ) : (
+              <p className="text-sm text-slate-600">
+                This action is permanent.
+              </p>
+            )}
 
             <div className="flex gap-3 pt-2">
               <button
@@ -214,11 +251,14 @@ export default function CollectionsManager({ initialCollections }: Props) {
                 onClick={() => setConfirmDelete(null)}
                 className="flex-1 rounded-lg border py-2 text-sm hover:bg-neutral-50 disabled:opacity-50"
               >
-                Cancel
+                Close
               </button>
               <button
                 type="button"
-                disabled={deletingId === confirmDelete.id}
+                disabled={
+                  deletingId === confirmDelete.id ||
+                  confirmDelete.productCount > 0
+                }
                 onClick={async () => {
                   setDeletingId(confirmDelete.id);
                   try {
@@ -228,6 +268,15 @@ export default function CollectionsManager({ initialCollections }: Props) {
 
                     if (!result.success) {
                       toast.error(result.error);
+                      if (typeof result.productCount === "number") {
+                        setCollections((prev) =>
+                          prev.map((x) =>
+                            x.id === confirmDelete.id
+                              ? { ...x, productCount: result.productCount }
+                              : x,
+                          ),
+                        );
+                      }
                       return;
                     }
 
@@ -251,6 +300,149 @@ export default function CollectionsManager({ initialCollections }: Props) {
                 {deletingId === confirmDelete.id ? "Deleting..." : "Delete"}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {editing && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4"
+          onClick={() => {
+            if (!isUpdating) setEditing(null);
+          }}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="collection-edit-title"
+            className="w-full max-w-md rounded-xl bg-white p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3
+              id="collection-edit-title"
+              className="text-base font-semibold text-slate-900"
+            >
+              Edit collection
+            </h3>
+
+            <form
+              className="space-y-4"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!editing || isUpdating) return;
+
+                const trimmedName = editName.trim();
+                const finalSlug = slugify(editSlug || trimmedName, {
+                  maxLength: 80,
+                });
+
+                if (!trimmedName) {
+                  toast.error("Name is required");
+                  return;
+                }
+
+                if (!finalSlug) {
+                  toast.error("Slug is required");
+                  return;
+                }
+
+                const duplicate = collections.find(
+                  (c) =>
+                    c.id !== editing.id &&
+                    c.slug.toLowerCase() === finalSlug.toLowerCase(),
+                );
+                if (duplicate) {
+                  toast.error("A collection with this slug already exists");
+                  return;
+                }
+
+                setIsUpdating(true);
+                try {
+                  const result = await updateCollectionAdmin({
+                    id: editing.id,
+                    name: trimmedName,
+                    slug: finalSlug,
+                  });
+
+                  if (!result.success) {
+                    toast.error(result.error);
+                    return;
+                  }
+
+                  setCollections((prev) =>
+                    prev.map((c) =>
+                      c.id === editing.id ? result.collection : c,
+                    ),
+                  );
+                  toast.success("Collection updated");
+                  setEditing(null);
+                } catch (err) {
+                  toast.error(
+                    err instanceof Error
+                      ? err.message
+                      : "Failed to update collection",
+                  );
+                } finally {
+                  setIsUpdating(false);
+                }
+              }}
+            >
+              <div className="space-y-1">
+                <label
+                  className="text-sm font-medium text-slate-700"
+                  htmlFor="editColName"
+                >
+                  Name
+                </label>
+                <input
+                  id="editColName"
+                  value={editName}
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    setEditName(next);
+                    if (!editSlug.trim()) {
+                      setEditSlug(slugify(next, { maxLength: 80 }));
+                    }
+                  }}
+                  className="w-full rounded-lg border px-3 py-2 text-sm"
+                  disabled={isUpdating}
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label
+                  className="text-sm font-medium text-slate-700"
+                  htmlFor="editColSlug"
+                >
+                  Slug
+                </label>
+                <input
+                  id="editColSlug"
+                  value={editSlug}
+                  onChange={(e) => setEditSlug(e.target.value)}
+                  className="w-full rounded-lg border px-3 py-2 text-sm"
+                  disabled={isUpdating}
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  disabled={isUpdating}
+                  onClick={() => setEditing(null)}
+                  className="flex-1 rounded-lg border py-2 text-sm hover:bg-neutral-50 disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUpdating}
+                  className="flex-1 rounded-lg bg-slate-900 py-2 text-sm text-white disabled:opacity-50"
+                >
+                  {isUpdating ? "Saving..." : "Save"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
